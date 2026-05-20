@@ -19,6 +19,10 @@ export default defineConfig({
     ],
   },
   server: {
+    allowedHosts: 'all',
+    headers: {
+      'ngrok-skip-browser-warning': 'true',
+    },
     warmup: {
       clientFiles: [
         './src/main.jsx',
