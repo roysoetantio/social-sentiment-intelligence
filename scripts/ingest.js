@@ -472,6 +472,11 @@ const MY_RSS_FEEDS = [
   { name: 'Business Today MY',  url: 'https://businesstoday.com.my/feed',                       lang: 'en' },
   { name: 'Digital News Asia',  url: 'https://www.digitalnewsasia.com/rss.xml',                 lang: 'en' },
   { name: 'BFM Business Hour',  url: 'https://www.bfm.my/podcast/the-business-hour/feed.rss',  lang: 'en' },
+  // Google Alerts
+  { name: 'Google Alerts – UEM Edgenta',  url: 'https://www.google.com/alerts/feeds/12316143374781661516/1101122181871461795', lang: 'en' },
+  { name: 'Google Alerts – Edgenta NXT',  url: 'https://www.google.com/alerts/feeds/12316143374781661516/3382957027404277608', lang: 'en' },
+  { name: 'Google Alerts – Shaiful Subhan', url: 'https://www.google.com/alerts/feeds/12316143374781661516/5404247446319529934', lang: 'en' },
+  { name: 'Google Alerts – Chua Yong Howe', url: 'https://www.google.com/alerts/feeds/12316143374781661516/16525644864808479612', lang: 'en' },
 ]
 
 const parseRSSDate = (str) => {
