@@ -326,6 +326,7 @@ function DetailPanel({ mention, onClose, onSaved }) {
                   serper_social: '💬 Social Media (Serper)',
                   realtimesnews: '⚡ Real-Time News',
                   rss_my:        '🇲🇾 MY News Portals',
+                  google_alerts: '🔔 Google Alerts',
                   gnews:         '📡 GNews',
                   reddit:               '🔴 Reddit',
                   google_news_rapidapi: '📰 Google News',

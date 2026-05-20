@@ -10,6 +10,7 @@ const SOURCE_LABELS = {
   serper_social:  { label: 'Social Media',     icon: '💬' },
   realtimesnews:  { label: 'Real-Time News',   icon: '⚡' },
   rss_my:         { label: 'MY News Portals',  icon: '🇲🇾' },
+  google_alerts:  { label: 'Google Alerts',    icon: '🔔' },
   gnews:          { label: 'GNews',            icon: '📡' },
   reddit:                { label: 'Reddit',           icon: '🔴' },
   google_news_rapidapi:  { label: 'Google News',      icon: '📰' },

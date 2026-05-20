@@ -78,7 +78,10 @@ const run = async () => {
         }
         const title   = getTag('title')
         const linkMatch = item.match(/<link[^>]+href=["']([^"']+)["']/)
-        const link    = linkMatch?.[1] || getTag('link') || ''
+        const rawLink = (linkMatch?.[1] || getTag('link') || '').replace(/&amp;/g, '&')
+        // Unwrap Google redirect URLs → extract real article URL
+        const urlParam = rawLink.match(/[?&]url=([^&]+)/)
+        const link = urlParam ? decodeURIComponent(urlParam[1]) : rawLink
         const desc    = getTag('content') || getTag('summary') || ''
         const pubDate = getTag('published') || getTag('updated')
         const text    = `${title} ${desc}`
@@ -110,7 +113,7 @@ const run = async () => {
           risk_level: sent.label === 'negative' ? 'medium' : null,
           topics: extractTopics(text),
           is_competitor: false,
-          source: 'rss_my',
+          source: 'google_alerts',
           status: 'new',
         })
       }
