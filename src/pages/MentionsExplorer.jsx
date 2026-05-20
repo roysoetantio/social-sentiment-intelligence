@@ -232,11 +232,11 @@ function DetailPanel({ mention, onClose, onSaved }) {
         )}
 
         {/* Emotions */}
-        {mention.emotions.length > 0 && (
+        {(mention.emotions || []).length > 0 && (
           <div>
             <p className="section-label mb-1.5">Detected Emotions</p>
             <div className="flex flex-wrap gap-1.5">
-              {mention.emotions.map(e => (
+              {(mention.emotions || []).map(e => (
                 <span
                   key={e}
                   className="tag-chip capitalize"

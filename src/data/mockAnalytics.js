@@ -134,7 +134,7 @@ export const getKPIs = (mentions) => {
 
   const keywordCounts = {}
   mentions.forEach(m => {
-    m.keywordMatched.forEach(k => {
+    (m.keywordMatched || []).forEach(k => {
       keywordCounts[k] = (keywordCounts[k] || 0) + 1
     })
   })
@@ -192,7 +192,7 @@ export const getShareOfVoice = (mentions) => {
 export const getTopEmotions = (mentions) => {
   const emotionCounts = {}
   mentions.forEach(m => {
-    m.emotions.forEach(e => {
+    (m.emotions || []).forEach(e => {
       emotionCounts[e] = (emotionCounts[e] || 0) + 1
     })
   })
@@ -204,7 +204,7 @@ export const getTopEmotions = (mentions) => {
 export const getKeywordComparisonData = (mentions, allKeywords = []) => {
   const keywordMap = {}
   mentions.forEach(m => {
-    m.keywordMatched.forEach(kId => {
+    (m.keywordMatched || []).forEach(kId => {
       if (!keywordMap[kId]) {
         const kw = allKeywords.find(k => k.id === kId)
         keywordMap[kId] = { id: kId, term: kw?.term || kId, total: 0, positive: 0, negative: 0, neutral: 0, engagement: 0, reach: 0 }

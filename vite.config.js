@@ -5,9 +5,29 @@ import ingestApiPlugin from './vite-plugin-ingest-api.js'
 export default defineConfig({
   plugins: [react(), ingestApiPlugin()],
   optimizeDeps: {
-    include: ['sentiment'],
+    include: [
+      'sentiment',
+      '@supabase/supabase-js',
+      'react',
+      'react-dom',
+      'react-router-dom',
+      'date-fns',
+      'recharts',
+      'lucide-react',
+      'clsx',
+      'uuid',
+    ],
   },
   server: {
+    warmup: {
+      clientFiles: [
+        './src/main.jsx',
+        './src/App.jsx',
+        './src/context/DashboardContext.jsx',
+        './src/components/layout/Layout.jsx',
+        './src/pages/Overview.jsx',
+      ],
+    },
     proxy: {
       // Proxy NewsAPI calls to avoid CORS on free tier
       '/newsapi': {

@@ -5,6 +5,7 @@ import {
   MessageSquare,
   BarChart3,
   Tags,
+  X,
 } from 'lucide-react'
 import { useDashboard } from '../../context/DashboardContext'
 import { ANALYST_NAME } from '../../constants/sentiment'
@@ -17,14 +18,21 @@ const navItems = [
   { path: '/keywords', label: 'Keyword Manager', icon: Tags },
 ]
 
-const Logo = () => (
-  <div className="flex items-center gap-3 px-4 border-b border-hairline dark:border-white/8" style={{ height: '64px' }}>
-    <img
-      src="/assets/uemedgenta-logo.png"
-      alt="UEM Edgenta"
-      className="h-7 w-auto object-contain object-left flex-shrink-0"
-    />
-    <div className="text-[12px] font-semibold text-body dark:text-on-dark-soft leading-tight">Social Sentiment<br />Intelligence</div>
+const Logo = ({ onClose }) => (
+  <div className="flex items-center justify-between px-4 border-b border-hairline dark:border-white/8 flex-shrink-0" style={{ height: '64px' }}>
+    <div className="flex items-center gap-3 min-w-0">
+      <img
+        src="/assets/uemedgenta-logo.png"
+        alt="UEM Edgenta"
+        className="h-7 w-auto object-contain object-left flex-shrink-0"
+      />
+      <div className="text-[12px] font-semibold text-body dark:text-on-dark-soft leading-tight">Social Sentiment<br />Intelligence</div>
+    </div>
+    {onClose && (
+      <button onClick={onClose} className="lg:hidden ml-2 p-1 rounded-md hover:bg-surface-strong text-muted">
+        <X size={16} />
+      </button>
+    )}
   </div>
 )
 
@@ -35,7 +43,7 @@ const StatPill = ({ label, value, color }) => (
   </div>
 )
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen, onClose }) {
   const { filteredMentions } = useDashboard()
 
   const riskCount = filteredMentions.filter(m => m.riskFlag).length
@@ -44,10 +52,17 @@ export default function Sidebar() {
   const positivePct = total > 0 ? Math.round(positiveCount / total * 100) : 0
 
   return (
-    <aside className="w-[220px] h-full bg-canvas-soft dark:bg-surface-dark border-r border-hairline dark:border-white/8 flex flex-col flex-shrink-0 overflow-y-auto">
-      <Logo />
+    <aside
+      className={clsx(
+        'w-[220px] h-full bg-canvas-soft dark:bg-surface-dark border-r border-hairline dark:border-white/8 flex flex-col flex-shrink-0 overflow-y-auto',
+        // On mobile/tablet: fixed drawer overlay
+        'fixed inset-y-0 left-0 z-30 transition-transform duration-250 ease-in-out lg:relative lg:translate-x-0 lg:z-auto',
+        isOpen ? 'translate-x-0' : '-translate-x-full'
+      )}
+    >
+      <Logo onClose={onClose} />
 
-      <nav className="flex-1 p-3 space-y-0.5 pt-4">
+      <nav className="flex-1 p-3 space-y-0.5 pt-4" onClick={onClose}>
         {navItems.map(({ path, label, icon: Icon }) => (
           <NavLink
             key={path}

@@ -48,12 +48,23 @@
 
   /* Card — white bg, 12px radius, hairline-strong border, hover shadow */
   .card {
-    @apply bg-canvas rounded-lg border border-hairline-strong p-5 transition-shadow duration-200 hover:shadow-card;
+    background-color: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #E6E6E8;
+    padding: 20px;
+    transition: box-shadow 200ms;
+  }
+  .card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
   }
 
   /* Dark card */
   .card-dark {
-    @apply bg-surface-dark-elevated rounded-lg border border-white/8 p-5 text-on-dark;
+    background-color: #1a1a1a;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.08);
+    padding: 20px;
+    color: #ffffff;
   }
 
   /* Badge pill */
@@ -63,53 +74,80 @@
 
   /* Sentiment badges using muted tones */
   .badge-positive {
-    @apply badge-pill bg-teal/10 text-teal border border-teal/30;
+    @apply badge-pill;
+    background-color: rgba(25,201,165,0.1);
+    color: #19C9A5;
+    border: 1px solid rgba(25,201,165,0.3);
   }
 
   .badge-negative {
-    @apply badge-pill bg-orange/10 text-orange border border-orange/30;
+    @apply badge-pill;
+    background-color: rgba(233,113,50,0.1);
+    color: #E97132;
+    border: 1px solid rgba(233,113,50,0.3);
   }
 
   .badge-neutral {
-    @apply badge-pill bg-sky/10 text-sky border border-sky/30;
+    @apply badge-pill;
+    background-color: rgba(20,144,234,0.1);
+    color: #1490EA;
+    border: 1px solid rgba(20,144,234,0.3);
   }
 
   .badge-mixed {
-    @apply badge-pill bg-purple/10 text-purple border border-purple/30;
+    @apply badge-pill;
+    background-color: rgba(115,43,204,0.1);
+    color: #732BCC;
+    border: 1px solid rgba(115,43,204,0.3);
   }
 
   /* Buttons */
   .btn-primary {
-    @apply bg-primary text-on-dark px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-active transition-colors;
+    background-color: #000000;
+    color: #ffffff;
+    @apply px-4 py-2 rounded-md text-sm font-medium transition-colors;
   }
+  .btn-primary:hover { background-color: #1a1a1a; }
 
   .btn-secondary {
-    @apply bg-canvas text-ink border border-hairline-strong px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-strong transition-colors;
+    background-color: #ffffff;
+    color: #171717;
+    border: 1px solid #E6E6E8;
+    @apply px-4 py-2 rounded-md text-sm font-medium transition-colors;
   }
+  .btn-secondary:hover { background-color: #f0f0f3; }
 
   .btn-ghost {
-    @apply text-body px-3 py-2 rounded-md text-sm font-medium hover:bg-surface-strong transition-colors;
+    color: #60646c;
+    @apply px-3 py-2 rounded-md text-sm font-medium transition-colors;
   }
+  .btn-ghost:hover { background-color: #f0f0f3; }
 
   /* Nav items */
   .nav-item {
-    @apply flex items-center gap-3 px-3 py-2 rounded-md text-[14px] font-medium hover:bg-surface-strong transition-colors cursor-pointer;
+    @apply flex items-center gap-3 px-3 py-2 rounded-md text-[14px] font-medium transition-colors cursor-pointer;
     color: #5B5B64;
   }
+  .nav-item:hover { background-color: #f0f0f3; }
 
   .nav-item-active {
-    @apply flex items-center gap-3 px-3 py-2 rounded-md text-[14px] font-medium bg-surface-strong transition-colors cursor-pointer;
+    @apply flex items-center gap-3 px-3 py-2 rounded-md text-[14px] font-medium transition-colors cursor-pointer;
+    background-color: #f0f0f3;
     color: #1C1C1D;
   }
 
   /* Section label — 11px Inter 600 muted */
   .section-label {
-    @apply text-[11px] font-semibold text-muted;
+    font-size: 11px;
+    font-weight: 600;
+    color: rgb(120,120,129);
   }
 
   /* Nav group heading */
   .nav-section-label {
-    @apply text-[11px] font-semibold text-muted;
+    font-size: 11px;
+    font-weight: 600;
+    color: rgb(120,120,129);
   }
 
   /* Tag chip */
@@ -119,20 +157,33 @@
 
   /* Form inputs */
   .form-input {
-    @apply w-full px-3 h-11 text-sm border border-hairline-strong rounded-md focus:outline-none focus:border-ink bg-canvas transition-colors;
+    background-color: #ffffff;
+    border: 1px solid #E6E6E8;
+    color: #171717;
+    @apply w-full px-3 h-11 text-sm rounded-md focus:outline-none transition-colors;
   }
+  .form-input:focus { border-color: #171717; }
 
   .form-textarea {
-    @apply w-full px-3 py-2 text-xs border border-hairline-strong rounded-md focus:outline-none focus:border-ink bg-surface-strong text-body placeholder-muted-soft resize-none;
+    background-color: #f0f0f3;
+    border: 1px solid #E6E6E8;
+    color: #60646c;
+    @apply w-full px-3 py-2 text-xs rounded-md focus:outline-none resize-none;
   }
+  .form-textarea::placeholder { color: #cccccc; }
+  .form-textarea:focus { border-color: #171717; }
 
   /* Chart tooltip */
   .chart-tooltip {
-    @apply bg-canvas rounded-lg shadow-card border border-hairline-strong p-3 text-xs;
+    background-color: #ffffff;
+    border: 1px solid #E6E6E8;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+    @apply rounded-lg p-3 text-xs;
   }
 
   .chart-empty {
-    @apply flex items-center justify-center text-sm text-muted;
+    @apply flex items-center justify-center text-sm;
+    color: rgb(120,120,129);
   }
 
   /* Sky gradient wash for hero areas */

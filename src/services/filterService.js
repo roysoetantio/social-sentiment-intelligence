@@ -33,7 +33,7 @@ export const filterMentions = (mentions, filters) => {
 
     // Keyword filter
     if (selectedKeywords && selectedKeywords.length > 0) {
-      const hasKeyword = mention.keywordMatched.some(k => selectedKeywords.includes(k))
+      const hasKeyword = (mention.keywordMatched || []).some(k => selectedKeywords.includes(k))
       if (!hasKeyword) return false
     }
 
@@ -78,7 +78,7 @@ export const filterMentions = (mentions, filters) => {
       const textMatch = mention.text.toLowerCase().includes(query)
       const authorMatch = mention.author.name.toLowerCase().includes(query) ||
         mention.author.handle.toLowerCase().includes(query)
-      const topicMatch = mention.topics.some(t => t.toLowerCase().includes(query))
+      const topicMatch = (mention.topics || []).some(t => t.toLowerCase().includes(query))
       if (!textMatch && !authorMatch && !topicMatch) return false
     }
 
