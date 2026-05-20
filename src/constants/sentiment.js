@@ -24,4 +24,4 @@ export const isAtRisk = (m) => {
   )
 }
 
-export const ANALYST_NAME = 'Roy Soetantio'
+export const ANALYST_NAME = 'Amirul Hafiz bin Zulkifli'

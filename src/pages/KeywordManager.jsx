@@ -17,7 +17,7 @@ const getHealthStatus = (total, positive, negative) => {
 }
 
 function KeywordMiniBar({ positive, negative, neutral, total }) {
-  if (!total) return <div className="text-xs text-gray-400">No data</div>
+  if (!total) return <div className="text-xs text-muted">No data</div>
   const posPct = Math.round(positive / total * 100)
   const negPct = Math.round(negative / total * 100)
   const neuPct = 100 - posPct - negPct
@@ -28,10 +28,10 @@ function KeywordMiniBar({ positive, negative, neutral, total }) {
         <div style={{ width: `${neuPct}%`, backgroundColor: SENTIMENT_COLORS.neutral }} />
         <div style={{ width: `${negPct}%`, backgroundColor: SENTIMENT_COLORS.negative }} />
       </div>
-      <div className="flex gap-2 text-[10px] text-gray-400">
+      <div className="flex gap-2 text-[10px] text-muted">
         <span className="text-teal">{posPct}%+</span>
         <span className="text-orange">{negPct}%-</span>
-        <span className="text-gray-400">{total} total</span>
+        <span className="text-muted">{total} total</span>
       </div>
     </div>
   )
@@ -97,11 +97,11 @@ function IngestLogPanel({ logs, onClose }) {
           <span className="text-xs font-semibold text-white">Ingest Log</span>
         </div>
         <button onClick={onClose} className="p-1 rounded hover:bg-gray-700 transition-colors">
-          <X size={13} className="text-gray-400" />
+          <X size={13} className="text-muted" />
         </button>
       </div>
       <div className="h-48 overflow-y-auto px-4 py-3 space-y-0.5 font-mono text-[11px]">
-        {logs.length === 0 && <p className="text-gray-500">Starting...</p>}
+        {logs.length === 0 && <p className="text-body">Starting...</p>}
         {logs.map((l, i) => (
           <p key={i} className={l.error ? 'text-red-400' : 'text-gray-300'}>{l.text}</p>
         ))}
@@ -121,10 +121,10 @@ function GroupNameEditor({ group, onSave, onCancel }) {
         value={name}
         onChange={e => setName(e.target.value)}
         onKeyDown={e => { if (e.key === 'Enter') onSave(name); if (e.key === 'Escape') onCancel() }}
-        className="flex-1 text-xs border border-primary rounded px-2 py-1 focus:outline-none min-w-0"
+        className="flex-1 text-xs border border-ink dark:border-white/20 rounded px-2 py-1 focus:outline-none min-w-0 bg-canvas dark:bg-[#171717] text-ink dark:text-on-dark"
       />
-      <button onClick={() => onSave(name)} className="p-1 rounded hover:bg-gray-100"><Save size={11} className="text-primary" /></button>
-      <button onClick={onCancel} className="p-1 rounded hover:bg-gray-100"><X size={11} className="text-gray-400" /></button>
+      <button onClick={() => onSave(name)} className="p-1 rounded hover:bg-surface-strong dark:hover:bg-white/8"><Save size={11} className="text-ink dark:text-on-dark" /></button>
+      <button onClick={onCancel} className="p-1 rounded hover:bg-surface-strong dark:hover:bg-white/8"><X size={11} className="text-muted dark:text-on-dark-soft" /></button>
     </div>
   )
 }
@@ -134,11 +134,11 @@ function DeleteKeywordModal({ keyword, mentionCount, onConfirm, onCancel, saving
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
-        <div className="p-5 border-b border-gray-100">
-          <h3 className="text-sm font-semibold text-darktext">Delete "{keyword.term}"</h3>
-          <p className="text-xs text-gray-400 mt-0.5">
-            This keyword has <span className="font-semibold text-gray-600">{mentionCount} mention{mentionCount !== 1 ? 's' : ''}</span> in the database. What should happen to them?
+      <div className="bg-white dark:bg-surface-dark-elevated rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden border border-transparent dark:border-white/8">
+        <div className="p-5 border-b border-hairline dark:border-white/8">
+          <h3 className="text-sm font-semibold text-ink dark:text-on-dark">Delete "{keyword.term}"</h3>
+          <p className="text-xs text-muted dark:text-on-dark-soft mt-0.5">
+            This keyword has <span className="font-semibold text-body dark:text-on-dark-soft">{mentionCount} mention{mentionCount !== 1 ? 's' : ''}</span> in the database. What should happen to them?
           </p>
         </div>
 
@@ -147,16 +147,16 @@ function DeleteKeywordModal({ keyword, mentionCount, onConfirm, onCancel, saving
             onClick={() => setChoice('hide')}
             className={clsx(
               'w-full text-left rounded-xl border-2 p-4 transition-all',
-              choice === 'hide' ? 'border-primary bg-primary/5' : 'border-gray-100 hover:border-gray-200'
+              choice === 'hide' ? 'border-ink dark:border-white/30 bg-surface-strong dark:bg-white/8' : 'border-hairline dark:border-white/8 hover:border-hairline-strong dark:hover:border-white/20'
             )}
           >
             <div className="flex items-center gap-3">
-              <div className={clsx('w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0', choice === 'hide' ? 'border-primary' : 'border-gray-300')}>
-                {choice === 'hide' && <div className="w-2 h-2 rounded-full bg-primary" />}
+              <div className={clsx('w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0', choice === 'hide' ? 'border-ink dark:border-white/50' : 'border-gray-300 dark:border-white/20')}>
+                {choice === 'hide' && <div className="w-2 h-2 rounded-full bg-ink dark:bg-on-dark" />}
               </div>
               <div>
-                <p className="text-xs font-semibold text-darktext">Keep &amp; Hide</p>
-                <p className="text-xs text-gray-400 mt-0.5">Mentions stay in Supabase but are hidden from all views and charts. Reversible.</p>
+                <p className="text-xs font-semibold text-ink dark:text-on-dark">Keep &amp; Hide</p>
+                <p className="text-xs text-muted dark:text-on-dark-soft mt-0.5">Mentions stay in Supabase but are hidden from all views and charts. Reversible.</p>
               </div>
             </div>
           </button>
@@ -165,16 +165,16 @@ function DeleteKeywordModal({ keyword, mentionCount, onConfirm, onCancel, saving
             onClick={() => setChoice('delete')}
             className={clsx(
               'w-full text-left rounded-xl border-2 p-4 transition-all',
-              choice === 'delete' ? 'border-red-400 bg-red-50' : 'border-gray-100 hover:border-gray-200'
+              choice === 'delete' ? 'border-red-400 bg-red-50 dark:bg-red-950/30' : 'border-hairline dark:border-white/8 hover:border-hairline-strong dark:hover:border-white/20'
             )}
           >
             <div className="flex items-center gap-3">
-              <div className={clsx('w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0', choice === 'delete' ? 'border-red-400' : 'border-gray-300')}>
+              <div className={clsx('w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0', choice === 'delete' ? 'border-red-400' : 'border-gray-300 dark:border-white/20')}>
                 {choice === 'delete' && <div className="w-2 h-2 rounded-full bg-red-400" />}
               </div>
               <div>
                 <p className="text-xs font-semibold text-red-600">Delete permanently</p>
-                <p className="text-xs text-gray-400 mt-0.5">Removes all {mentionCount} mention{mentionCount !== 1 ? 's' : ''} from Supabase. This cannot be undone.</p>
+                <p className="text-xs text-muted dark:text-on-dark-soft mt-0.5">Removes all {mentionCount} mention{mentionCount !== 1 ? 's' : ''} from Supabase. This cannot be undone.</p>
               </div>
             </div>
           </button>
@@ -183,7 +183,7 @@ function DeleteKeywordModal({ keyword, mentionCount, onConfirm, onCancel, saving
         <div className="px-5 pb-5 flex gap-2">
           <button
             onClick={onCancel}
-            className="flex-1 py-2 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+            className="flex-1 py-2 text-xs font-medium text-body dark:text-on-dark-soft border border-hairline-strong dark:border-white/8 rounded-lg hover:bg-surface-strong dark:hover:bg-white/8 transition-colors"
           >
             Cancel
           </button>
@@ -191,8 +191,8 @@ function DeleteKeywordModal({ keyword, mentionCount, onConfirm, onCancel, saving
             onClick={() => onConfirm(choice)}
             disabled={!choice || saving}
             className={clsx(
-              'flex-1 py-2 text-xs font-medium text-white rounded-lg transition-colors flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed',
-              choice === 'delete' ? 'bg-red-500 hover:bg-red-600' : 'bg-primary hover:bg-primary/90'
+              'flex-1 py-2 text-xs font-medium text-on-dark rounded-md transition-colors flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed',
+              choice === 'delete' ? 'bg-red-500 hover:bg-red-600' : 'bg-ink hover:bg-primary-active'
             )}
           >
             {saving && <Loader size={12} className="animate-spin" />}
@@ -223,23 +223,23 @@ function GearPopover({ keyword, onDelete, onClose }) {
   }
 
   return (
-    <div ref={ref} className="absolute right-0 top-8 z-40 bg-white border border-gray-200 rounded-xl shadow-xl w-52 overflow-hidden">
+    <div ref={ref} className="absolute right-0 top-8 z-40 bg-white dark:bg-surface-dark-elevated border border-hairline-strong dark:border-white/8 rounded-xl shadow-xl w-52 overflow-hidden">
       <div className="p-1">
         <button
           onClick={handlePauseToggle}
           disabled={toggling}
-          className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-gray-50 transition-colors"
+          className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-surface-strong dark:hover:bg-white/8 transition-colors"
         >
           <div className="flex items-center gap-2">
-            {paused ? <Play size={13} className="text-teal" /> : <Pause size={13} className="text-gray-400" />}
-            <span className="text-xs text-gray-700 font-medium">{paused ? 'Resume syncing' : 'Pause syncing'}</span>
+            {paused ? <Play size={13} className="text-teal" /> : <Pause size={13} className="text-muted" />}
+            <span className="text-xs text-ink dark:text-on-dark font-medium">{paused ? 'Resume syncing' : 'Pause syncing'}</span>
           </div>
           <div className={clsx('w-8 h-4 rounded-full transition-colors relative', paused ? 'bg-orange' : 'bg-gray-200')}>
             <div className={clsx('absolute top-0.5 w-3 h-3 rounded-full bg-white shadow transition-all', paused ? 'left-4' : 'left-0.5')} />
           </div>
         </button>
 
-        <div className="border-t border-gray-100 my-1" />
+        <div className="border-t border-hairline dark:border-white/8 my-1" />
 
         <button
           onClick={() => { onClose(); onDelete() }}
@@ -265,7 +265,7 @@ function KeywordForm({ keyword, groupColor, onSave, onCancel, saving }) {
   }
 
   return (
-    <div className="border border-gray-200 rounded-lg p-3 bg-gray-50 space-y-2.5">
+    <div className="border border-hairline-strong dark:border-white/8 rounded-lg p-3 bg-surface-strong dark:bg-white/8 space-y-2.5">
       <div>
         <label className="section-label">Keyword</label>
         <input
@@ -287,7 +287,7 @@ function KeywordForm({ keyword, groupColor, onSave, onCancel, saving }) {
           {saving ? <Loader size={12} className="animate-spin" /> : <Save size={12} />}
           {saving ? 'Saving...' : 'Save'}
         </button>
-        <button onClick={onCancel} className="flex items-center gap-1.5 text-xs font-medium text-gray-500 px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+        <button onClick={onCancel} className="flex items-center gap-1.5 text-xs font-medium text-body dark:text-on-dark-soft px-3 py-1.5 rounded-lg border border-hairline-strong dark:border-white/8 hover:bg-surface-strong dark:hover:bg-white/8 transition-colors">
           <X size={12} /> Cancel
         </button>
       </div>
@@ -466,8 +466,8 @@ export default function KeywordManager() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader size={24} className="animate-spin text-primary" />
-        <span className="ml-2 text-sm text-gray-500">Loading keywords...</span>
+        <Loader size={24} className="animate-spin text-ink" />
+        <span className="ml-2 text-sm text-body">Loading keywords...</span>
       </div>
     )
   }
@@ -501,19 +501,19 @@ export default function KeywordManager() {
       <div className="w-64 flex-shrink-0 overflow-y-auto">
         <div className="card space-y-2">
           <div className="flex items-center justify-between mb-1">
-            <h3 className="text-sm font-semibold text-darktext">Keyword Groups</h3>
+            <h3 className="text-sm font-semibold text-ink dark:text-on-dark">Keyword Groups</h3>
             <div className="flex items-center gap-1">
-              <button
+              {false && <button
                 onClick={() => { setShowLog(true); runIngest() }}
                 disabled={running}
-                className="flex items-center gap-1 text-[10px] text-primary font-medium px-2 py-1 rounded-lg hover:bg-primary/5 transition-colors disabled:opacity-40"
+                className="flex items-center gap-1 text-[10px] text-ink dark:text-on-dark font-medium px-2 py-1 rounded-md hover:bg-surface-strong dark:hover:bg-white/8 transition-colors disabled:opacity-40"
                 title="Fetch all keywords"
               >
                 {running && fetchingIds.length === 0 ? <Loader size={11} className="animate-spin" /> : <Download size={11} />}
                 Fetch All
-              </button>
-              <button onClick={loadKeywords} className="p-1 rounded hover:bg-gray-100 transition-colors" title="Refresh">
-                <RefreshCw size={12} className="text-gray-400" />
+              </button>}
+              <button onClick={loadKeywords} className="p-1 rounded hover:bg-surface-strong transition-colors" title="Refresh">
+                <RefreshCw size={12} className="text-muted" />
               </button>
             </div>
           </div>
@@ -527,22 +527,22 @@ export default function KeywordManager() {
                 key={g.id}
                 className={clsx(
                   'w-full flex items-center justify-between px-3 py-2.5 rounded-xl border text-left transition-all',
-                  isSelected ? 'bg-primary/5 border-primary shadow-sm' : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'
+                  isSelected ? 'bg-surface-strong dark:bg-white/8 border-ink dark:border-white/20 shadow-sm' : 'border-hairline dark:border-white/8 hover:border-hairline-strong dark:hover:border-white/20 hover:bg-surface-strong dark:hover:bg-white/8'
                 )}
                 onClick={() => setSelectedGroup(g)}
               >
                 <span className="flex items-center gap-2 min-w-0">
                   <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: g.color }} />
-                  <span className={clsx('text-xs font-semibold truncate', isSelected ? 'text-primary' : 'text-gray-700')}>{g.name}</span>
+                  <span className={clsx('text-xs font-semibold truncate text-ink dark:text-on-dark')}>{g.name}</span>
                 </span>
-                <span className="text-[10px] text-gray-400 flex-shrink-0">({g.keywords.length})</span>
+                <span className="text-[10px] text-muted dark:text-on-dark-soft flex-shrink-0">({g.keywords.length})</span>
               </button>
             )
           })}
 
           <button
             onClick={handleAddGroup}
-            className="flex items-center justify-center gap-1.5 w-full text-xs text-primary hover:bg-primary/5 px-2 py-2 rounded-lg border border-dashed border-primary/30 transition-colors mt-1"
+            className="flex items-center justify-center gap-1.5 w-full text-xs text-ink dark:text-on-dark hover:bg-surface-strong dark:hover:bg-white/8 px-2 py-2 rounded-md border border-dashed border-hairline-strong dark:border-white/8 transition-colors mt-1"
           >
             <Plus size={13} /> New Group
           </button>
@@ -568,18 +568,18 @@ export default function KeywordManager() {
                         onCancel={() => setEditingGroup(null)}
                       />
                     ) : (
-                      <h2 className="text-base font-semibold text-darktext">{selectedGroupData.name}</h2>
+                      <h2 className="text-base font-semibold text-ink dark:text-on-dark">{selectedGroupData.name}</h2>
                     )}
-                    <p className="text-xs text-gray-400">{selectedGroupData.keywords.length} keywords tracked</p>
+                    <p className="text-xs text-muted dark:text-on-dark-soft">{selectedGroupData.keywords.length} keywords tracked</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => setEditingGroup(editingGroup === selectedGroupData.id ? null : selectedGroupData.id)}
-                    className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                    className="p-1.5 rounded-lg hover:bg-surface-strong transition-colors"
                     title="Rename group"
                   >
-                    <Edit2 size={13} className="text-gray-400" />
+                    <Edit2 size={13} className="text-muted" />
                   </button>
                   <button
                     onClick={() => handleDeleteGroup(selectedGroupData.id, selectedGroupData.name)}
@@ -602,9 +602,9 @@ export default function KeywordManager() {
                     { label: 'Negative', value: s.negative, color: SENTIMENT_COLORS.negative },
                     { label: 'Neutral', value: s.neutral, color: SENTIMENT_COLORS.neutral },
                   ].map(stat => (
-                    <div key={stat.label} className="bg-gray-50 rounded-lg p-3 text-center">
+                    <div key={stat.label} className="bg-surface-strong dark:bg-[#171717] rounded-lg p-3 text-center border border-transparent dark:border-white/8">
                       <div className="kpi-number text-xl font-bold" style={{ color: stat.color }}>{stat.value}</div>
-                      <div className="text-[10px] text-gray-500 mt-0.5">{stat.label}</div>
+                      <div className="text-[10px] text-body dark:text-on-dark-soft mt-0.5">{stat.label}</div>
                     </div>
                   ))
                 })()}
@@ -614,18 +614,18 @@ export default function KeywordManager() {
             {/* Keywords */}
             <div className="card">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold text-darktext">Keywords</h3>
+                <h3 className="text-sm font-semibold text-ink dark:text-on-dark">Keywords</h3>
                 <div className="flex items-center gap-2">
-                  <button
+                  {false && <button
                     onClick={() => { setShowLog(true); runIngest(selectedGroupData.keywords.map(k => k.id)) }}
                     disabled={running || selectedGroupData.keywords.length === 0}
-                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-hairline-strong dark:border-white/8 text-body dark:text-on-dark-soft hover:bg-surface-strong dark:hover:bg-white/8 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     {running && fetchingIds.length > 0 && fetchingIds.every(id => selectedGroupData.keywords.map(k=>k.id).includes(id))
                       ? <Loader size={12} className="animate-spin" />
                       : <Download size={12} />}
                     Fetch Group
-                  </button>
+                  </button>}
                   <button
                     onClick={() => setAddingToGroup(selectedGroupData.id)}
                     className="flex items-center gap-1.5 text-xs text-white px-3 py-1.5 rounded-lg transition-colors"
@@ -649,7 +649,7 @@ export default function KeywordManager() {
 
               <div className="space-y-3">
                 {selectedGroupData.keywords.length === 0 && (
-                  <p className="text-sm text-gray-400 text-center py-6">No keywords yet. Add one above.</p>
+                  <p className="text-sm text-muted dark:text-on-dark-soft text-center py-6">No keywords yet. Add one above.</p>
                 )}
                 {selectedGroupData.keywords.map(kw => {
                   const ks = getKeywordStats(kw.id)
@@ -658,7 +658,7 @@ export default function KeywordManager() {
                   const isEditing = editingKeyword?.kw.id === kw.id
 
                   return (
-                    <div key={kw.id} className="border border-gray-100 rounded-xl p-4">
+                    <div key={kw.id} className="border border-hairline dark:border-white/8 rounded-xl p-4">
                       {isEditing ? (
                         <KeywordForm
                           keyword={kw}
@@ -673,7 +673,7 @@ export default function KeywordManager() {
                             <div>
                               <div className="flex items-center gap-2 mb-1">
                                 <HealthIcon size={14} style={{ color: health.color }} />
-                                <span className="text-sm font-semibold text-darktext">{kw.term}</span>
+                                <span className="text-sm font-semibold text-ink dark:text-on-dark">{kw.term}</span>
                               </div>
                             </div>
                             <div className="flex items-center gap-1.5">
@@ -681,7 +681,7 @@ export default function KeywordManager() {
                                 <div className="flex items-center gap-1.5">
                                   <select
                                     autoFocus
-                                    className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white focus:outline-none focus:border-primary"
+                                    className="text-xs border border-hairline-strong dark:border-white/8 rounded-lg px-2 py-1 bg-white dark:bg-surface-dark-elevated dark:text-on-dark focus:outline-none focus:border-ink dark:focus:border-white/30"
                                     defaultValue=""
                                     onChange={e => {
                                       if (e.target.value) {
@@ -695,43 +695,43 @@ export default function KeywordManager() {
                                       <option key={g.id} value={g.id}>{g.name}</option>
                                     ))}
                                   </select>
-                                  <button onClick={() => setMovingKeyword(null)} className="p-1 rounded hover:bg-gray-100">
-                                    <X size={12} className="text-gray-400" />
+                                  <button onClick={() => setMovingKeyword(null)} className="p-1 rounded hover:bg-surface-strong">
+                                    <X size={12} className="text-muted" />
                                   </button>
                                 </div>
                               ) : (
                                 <>
-                                  <button
+                                  {false && <button
                                     onClick={() => { setShowLog(true); runIngest([kw.id]) }}
                                     disabled={running}
-                                    className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-40"
+                                    className="p-1.5 rounded-lg hover:bg-surface-strong dark:hover:bg-white/8 transition-colors disabled:opacity-40"
                                     title="Fetch mentions for this keyword"
                                   >
                                     {running && fetchingIds.includes(kw.id)
-                                      ? <Loader size={13} className="animate-spin text-primary" />
-                                      : <Download size={13} className="text-gray-400" />}
-                                  </button>
+                                      ? <Loader size={13} className="animate-spin text-ink" />
+                                      : <Download size={13} className="text-muted" />}
+                                  </button>}
                                   <button
                                     onClick={() => setMovingKeyword(kw.id)}
-                                    className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                                    className="p-1.5 rounded-lg hover:bg-surface-strong dark:hover:bg-white/8 transition-colors"
                                     title="Move to group"
                                   >
-                                    <FolderInput size={13} className="text-gray-400" />
+                                    <FolderInput size={13} className="text-muted" />
                                   </button>
                                   <button
                                     onClick={() => setEditingKeyword({ groupId: selectedGroupData.id, kw })}
-                                    className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                                    className="p-1.5 rounded-lg hover:bg-surface-strong dark:hover:bg-white/8 transition-colors"
                                     title="Edit"
                                   >
-                                    <Edit2 size={13} className="text-gray-400" />
+                                    <Edit2 size={13} className="text-muted" />
                                   </button>
                                   <div className="relative">
                                     <button
                                       onClick={() => setGearOpen(gearOpen === kw.id ? null : kw.id)}
-                                      className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                                      className="p-1.5 rounded-lg hover:bg-surface-strong dark:hover:bg-white/8 transition-colors"
                                       title="More options"
                                     >
-                                      <Settings size={13} className="text-gray-400" />
+                                      <Settings size={13} className="text-muted" />
                                     </button>
                                     {gearOpen === kw.id && (
                                       <GearPopover
@@ -746,18 +746,10 @@ export default function KeywordManager() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2 mb-2">
-                            <Activity size={12} className="text-gray-400" />
-                            <span className="text-xs text-gray-500">{health.label}</span>
+                            <Activity size={12} className="text-muted" />
+                            <span className="text-xs text-body dark:text-on-dark-soft">{health.label}</span>
                           </div>
-                          {ks.total === 0 ? (
-                            <button
-                              onClick={() => { setShowLog(true); runIngest([kw.id]) }}
-                              disabled={running}
-                              className="flex items-center gap-1.5 text-xs text-primary hover:underline disabled:opacity-40"
-                            >
-                              <Download size={11} /> Fetch mentions now
-                            </button>
-                          ) : (
+                          {ks.total === 0 ? null : (
                             <KeywordMiniBar {...ks} />
                           )}
                         </>

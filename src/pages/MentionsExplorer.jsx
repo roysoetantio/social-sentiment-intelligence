@@ -34,14 +34,14 @@ function AfinnTooltip({ text, fullText }) {
   }, [text, fullText])
 
   return (
-    <div className="absolute left-0 top-full mt-2 z-50 bg-white border border-gray-200 rounded-xl shadow-xl p-3 w-72">
+    <div className="absolute left-0 top-full mt-2 z-50 bg-white dark:bg-surface-dark-elevated border border-hairline-strong dark:border-white/8 rounded-xl shadow-xl p-3 w-72">
       <p className="section-label mb-2">How AFINN calculated this</p>
       <div className="flex items-center gap-3 mb-3">
         <div className="text-center">
-          <p className="text-lg font-bold text-darktext">{result.score}</p>
-          <p className="text-[10px] text-gray-400">Raw score</p>
+          <p className="text-lg font-bold text-ink dark:text-on-dark">{result.score}</p>
+          <p className="text-[10px] text-muted dark:text-on-dark-soft">Raw score</p>
         </div>
-        <div className="flex-1 text-xs text-gray-500 leading-relaxed">
+        <div className="flex-1 text-xs text-body dark:text-on-dark-soft leading-relaxed">
           Each matched word has a value from −5 to +5. Scores are summed, then divided by 10 and clamped to [−1, 1].
         </div>
       </div>
@@ -66,9 +66,9 @@ function AfinnTooltip({ text, fullText }) {
         </div>
       )}
       {result.positive.length === 0 && result.negative.length === 0 && (
-        <p className="text-xs text-gray-400">No AFINN-recognised words found in this text.</p>
+        <p className="text-xs text-muted">No AFINN-recognised words found in this text.</p>
       )}
-      <p className="text-[10px] text-gray-300 mt-2 border-t border-gray-100 pt-2">
+      <p className="text-[10px] text-gray-300 dark:text-white/30 mt-2 border-t border-hairline dark:border-white/8 pt-2">
         Threshold: &gt;+0.05 = Positive · &lt;−0.05 = Negative · else Neutral
       </p>
     </div>
@@ -164,11 +164,11 @@ function DetailPanel({ mention, onClose, onSaved }) {
   }
 
   return (
-    <div className="fixed top-14 right-0 bottom-0 w-96 bg-white border-l border-gray-100 flex flex-col slide-in-right z-30 shadow-xl">
-      <div className="flex items-center justify-between p-4 border-b border-gray-100">
-        <h3 className="text-sm font-semibold text-darktext">Mention Detail</h3>
-        <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100 transition-colors">
-          <X size={16} className="text-gray-500" />
+    <div className="fixed top-16 right-0 bottom-0 w-96 bg-canvas dark:bg-surface-dark-elevated border-l border-hairline-strong dark:border-white/8 flex flex-col slide-in-right z-30 shadow-xl">
+      <div className="flex items-center justify-between p-4 border-b border-hairline dark:border-white/8">
+        <h3 className="text-sm font-semibold text-ink dark:text-on-dark">Mention Detail</h3>
+        <button onClick={onClose} className="p-1 rounded-lg hover:bg-surface-strong dark:hover:bg-white/8 transition-colors">
+          <X size={16} className="text-body dark:text-on-dark-soft" />
         </button>
       </div>
 
@@ -176,19 +176,19 @@ function DetailPanel({ mention, onClose, onSaved }) {
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-sm font-semibold text-darktext">{mention.author.name}</p>
-            <p className="text-xs text-gray-400">@{mention.author.handle}</p>
+            <p className="text-sm font-semibold text-ink dark:text-on-dark">{mention.author.name}</p>
+            <p className="text-xs text-muted dark:text-on-dark-soft">@{mention.author.handle}</p>
             {mention.author.verified && <span className="text-[10px] text-sky font-medium">✓ Verified</span>}
           </div>
           <div className="text-right">
-            <p className="text-xs text-gray-400">{mention.platform}</p>
-            <p className="text-[10px] text-gray-400">{format(parseISO(mention.publishedAt), 'MMM d, yyyy HH:mm')}</p>
+            <p className="text-xs text-muted dark:text-on-dark-soft">{mention.platform}</p>
+            <p className="text-[10px] text-muted dark:text-on-dark-soft">{format(parseISO(mention.publishedAt), 'MMM d, yyyy HH:mm')}</p>
           </div>
         </div>
 
         {/* Full text */}
-        <div className="bg-gray-50 rounded-lg p-3">
-          <p className="text-sm text-gray-700 leading-relaxed">{mention.text}</p>
+        <div className="bg-surface-strong dark:bg-white/8 rounded-lg p-3">
+          <p className="text-sm text-ink dark:text-on-dark leading-relaxed">{mention.text}</p>
         </div>
 
         {/* Sentiment */}
@@ -204,14 +204,14 @@ function DetailPanel({ mention, onClose, onSaved }) {
               />
               {showAfinn && <AfinnTooltip text={mention.text} fullText={mention.fullText} />}
             </div>
-            <span className="text-xs text-gray-400">Confidence: {Math.round(mention.sentiment.confidence * 100)}%</span>
+            <span className="text-xs text-muted dark:text-on-dark-soft">Confidence: {Math.round(mention.sentiment.confidence * 100)}%</span>
             {displayFlag && (
-              <span className="text-[10px] text-gray-400 italic">
+              <span className="text-[10px] text-muted italic">
                 was <span className="font-medium">{mention.sentiment.originalLabel || mention.sentiment.label}</span>
               </span>
             )}
           </div>
-          <div className="mt-2 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+          <div className="mt-2 h-1.5 bg-surface-strong dark:bg-white/8 rounded-full overflow-hidden">
             <div
               className="h-full rounded-full"
               style={{
@@ -277,7 +277,7 @@ function DetailPanel({ mention, onClose, onSaved }) {
             <p className="section-label mb-1.5">Topics</p>
             <div className="flex flex-wrap gap-1">
               {mention.topics.map(t => (
-                <span key={t} className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">{t}</span>
+                <span key={t} className="px-2 py-0.5 bg-surface-strong dark:bg-white/8 text-body dark:text-on-dark-soft rounded text-xs">{t}</span>
               ))}
             </div>
           </div>
@@ -293,11 +293,11 @@ function DetailPanel({ mention, onClose, onSaved }) {
               { icon: MessageCircle, label: 'Comments', value: mention.engagement.comments },
               { icon: Eye, label: 'Reach', value: mention.engagement.reach },
             ].map(({ icon: Icon, label, value }) => (
-              <div key={label} className="bg-gray-50 rounded-lg p-2.5 flex items-center gap-2">
-                <Icon size={13} className="text-gray-400" />
+              <div key={label} className="bg-surface-strong dark:bg-white/8 rounded-lg p-2.5 flex items-center gap-2">
+                <Icon size={13} className="text-muted dark:text-on-dark-soft" />
                 <div>
-                  <p className="text-[10px] text-gray-400">{label}</p>
-                  <p className="text-xs font-semibold text-gray-700">{formatNum(value)}</p>
+                  <p className="text-[10px] text-muted dark:text-on-dark-soft">{label}</p>
+                  <p className="text-xs font-semibold text-ink dark:text-on-dark">{formatNum(value)}</p>
                 </div>
               </div>
             ))}
@@ -307,10 +307,10 @@ function DetailPanel({ mention, onClose, onSaved }) {
         {/* Geography */}
         <div>
           <p className="section-label mb-1.5">Geography</p>
-          <div className="flex items-center gap-1.5 text-xs text-gray-600">
-            <Globe size={12} className="text-gray-400" />
+          <div className="flex items-center gap-1.5 text-xs text-body dark:text-on-dark-soft">
+            <Globe size={12} className="text-muted dark:text-on-dark-soft" />
             {mention.geography.country}{mention.geography.region ? `, ${mention.geography.region}` : ''}
-            <span className="text-gray-400">• {mention.language.toUpperCase()}</span>
+            <span className="text-muted">• {mention.language.toUpperCase()}</span>
           </div>
         </div>
 
@@ -319,7 +319,7 @@ function DetailPanel({ mention, onClose, onSaved }) {
           <div>
             <p className="section-label mb-1.5">Source</p>
             <div className="flex items-center gap-1.5">
-              <span className="text-xs px-2 py-1 rounded-md bg-gray-50 border border-gray-200 text-gray-600 font-medium">
+              <span className="text-xs px-2 py-1 rounded-md bg-surface-strong dark:bg-white/8 border border-hairline-strong dark:border-white/8 text-body dark:text-on-dark-soft font-medium">
                 {{
                   twitter135:    '🐦 Twitter',
                   serper_news:   '📰 Google News (Serper)',
@@ -337,7 +337,7 @@ function DetailPanel({ mention, onClose, onSaved }) {
         )}
 
         {/* Analyst Review */}
-        <div className="border border-gray-200 rounded-xl p-3 space-y-3">
+        <div className="border border-hairline-strong dark:border-white/8 rounded-xl p-3 space-y-3">
           <div className="flex items-center justify-between">
             <p className="section-label">Analyst Review</p>
             {reviewed && (
@@ -365,29 +365,28 @@ function DetailPanel({ mention, onClose, onSaved }) {
                     <Trash2 size={12} className="text-red-400" />
                   </button>
                 </div>
-                <p className="text-gray-500">
+                <p className="text-body">
                   by {displayFlag.by} · {displayFlag.at ? format(parseISO(displayFlag.at), 'MMM d, yyyy h:mma') : ''}
                 </p>
-                {reason && <p className="text-gray-600 italic mt-1">"{reason}"</p>}
+                {reason && <p className="text-body italic mt-1">"{reason}"</p>}
               </div>
             )
           })()}
 
           {/* Override sentiment buttons */}
           <div>
-            <p className="text-[10px] text-gray-400 mb-1.5">Override sentiment</p>
+            <p className="text-[10px] text-muted dark:text-on-dark-soft mb-1.5">Override sentiment</p>
             <div className="flex gap-1.5">
               {SENTIMENT_OPTIONS.map(opt => (
                 <button
                   key={opt.value}
                   onClick={() => setOverrideSentiment(overrideSentiment === opt.value ? null : opt.value)}
-                  className="flex-1 py-1.5 rounded-lg text-xs font-medium border transition-all"
+                  className="flex-1 py-1.5 rounded-lg text-xs font-medium border transition-all dark:border-white/8"
                   style={overrideSentiment === opt.value ? {
                     backgroundColor: opt.bg,
                     color: opt.color,
                     borderColor: opt.color,
                   } : {
-                    backgroundColor: 'white',
                     color: '#9ca3af',
                     borderColor: '#e5e7eb',
                   }}
@@ -400,7 +399,7 @@ function DetailPanel({ mention, onClose, onSaved }) {
 
           {/* Reason */}
           <div>
-            <p className="text-[10px] text-gray-400 mb-1.5">Reason <span className="text-gray-300">(optional)</span></p>
+            <p className="text-[10px] text-muted dark:text-on-dark-soft mb-1.5">Reason <span className="text-gray-300 dark:text-white/30">(optional)</span></p>
             <textarea
               value={reason}
               onChange={e => setReason(e.target.value)}
@@ -414,7 +413,7 @@ function DetailPanel({ mention, onClose, onSaved }) {
           <button
             onClick={handleSaveReview}
             disabled={saving || !overrideSentiment}
-            className="flex items-center justify-center gap-1.5 w-full py-2 text-xs font-medium text-white bg-primary hover:bg-primary-light rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-1.5 w-full py-2 text-xs font-medium text-on-dark bg-ink hover:bg-primary-active rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {saving ? <Loader size={12} className="animate-spin" /> : <Save size={12} />}
             {saving ? 'Saving…' : 'Save Review'}
@@ -423,13 +422,13 @@ function DetailPanel({ mention, onClose, onSaved }) {
           {/* Exclude / Unexclude */}
           <div className={clsx(
             'rounded-lg px-3 py-2.5 flex items-center justify-between border',
-            excluded ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'
+            excluded ? 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800/40' : 'bg-surface-strong dark:bg-white/8 border-hairline-strong dark:border-white/8'
           )}>
             <div>
-              <p className={clsx('text-xs font-semibold', excluded ? 'text-red-600' : 'text-gray-600')}>
+              <p className={clsx('text-xs font-semibold', excluded ? 'text-red-600' : 'text-body')}>
                 {excluded ? '⊘ This post is excluded' : 'Exclude this post'}
               </p>
-              <p className="text-[10px] text-gray-400 mt-0.5">
+              <p className="text-[10px] text-muted mt-0.5">
                 {excluded ? 'Hidden from all lists, charts & scores' : 'Remove from all lists, charts & calculations'}
               </p>
             </div>
@@ -439,8 +438,8 @@ function DetailPanel({ mention, onClose, onSaved }) {
               className={clsx(
                 'text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-40',
                 excluded
-                  ? 'text-gray-600 border-gray-300 bg-white hover:bg-gray-50'
-                  : 'text-red-600 border-red-300 bg-white hover:bg-red-50'
+                  ? 'text-body dark:text-on-dark-soft border-gray-300 dark:border-white/20 bg-white dark:bg-white/8 hover:bg-surface-strong dark:hover:bg-white/12'
+                  : 'text-red-600 border-red-300 dark:border-red-700/50 bg-white dark:bg-transparent hover:bg-red-50 dark:hover:bg-red-950/30'
               )}
             >
               {excluded ? 'Unexclude' : 'Exclude'}
@@ -449,12 +448,12 @@ function DetailPanel({ mention, onClose, onSaved }) {
         </div>
       </div>
 
-      <div className="p-4 border-t border-gray-100">
+      <div className="p-4 border-t border-hairline dark:border-white/8">
         <a
           href={mention.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center justify-center gap-1.5 w-full py-2 text-sm font-medium text-primary border border-primary/30 rounded-lg hover:bg-primary/5 transition-colors"
+          className="flex items-center justify-center gap-1.5 w-full py-2 text-sm font-medium text-ink dark:text-on-dark border border-hairline-strong dark:border-white/8 rounded-md hover:bg-surface-strong dark:hover:bg-white/8 transition-colors"
         >
           <ExternalLink size={13} />
           View Original
@@ -530,19 +529,19 @@ export default function MentionsExplorer() {
       <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${selectedMention ? 'pr-96' : ''}`}>
         {/* Feed header */}
         <div className="flex items-center justify-between mb-3">
-          <span className="text-xs text-gray-400">{filteredMentions.length} mentions</span>
+          <span className="text-xs text-muted dark:text-on-dark-soft">{filteredMentions.length} mentions</span>
           <div className="flex items-center gap-2">
             <div className="relative">
               <select
                 value={sortBy}
                 onChange={e => setSortBy(e.target.value)}
-                className="text-xs border border-gray-200 rounded-lg px-3 py-1.5 bg-white text-gray-600 appearance-none pr-7 focus:outline-none focus:border-primary"
+                className="text-xs border border-hairline-strong dark:border-white/8 rounded-md px-3 py-1.5 bg-canvas dark:bg-surface-dark-elevated text-body dark:text-on-dark-soft appearance-none pr-7 focus:outline-none focus:border-ink dark:focus:border-white/30"
               >
                 {SORT_OPTIONS.map(o => (
                   <option key={o.value} value={o.value}>{o.label}</option>
                 ))}
               </select>
-              <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
             </div>
           </div>
         </div>
@@ -550,7 +549,7 @@ export default function MentionsExplorer() {
         {/* Mentions list */}
         <div className="relative flex-1 min-h-0">
           {scrolled && (
-            <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-[#f2f2f2] to-transparent z-10 pointer-events-none" />
+            <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-canvas-soft dark:from-surface-dark to-transparent z-10 pointer-events-none" />
           )}
           <div
             ref={listRef}
@@ -558,7 +557,7 @@ export default function MentionsExplorer() {
             onScroll={e => setScrolled(e.currentTarget.scrollTop > 10)}
           >
           {paginated.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+            <div className="flex flex-col items-center justify-center h-64 text-muted">
               <MessageCircle size={32} className="mb-2 opacity-30" />
               <p className="text-sm">No mentions match your filters</p>
             </div>
@@ -576,7 +575,7 @@ export default function MentionsExplorer() {
               {paginated.length < sorted.length && (
                 <button
                   onClick={() => setPage(p => p + 1)}
-                  className="w-full py-3 text-sm text-primary font-medium hover:bg-primary/5 rounded-xl border border-primary/20 transition-colors"
+                  className="w-full py-3 text-sm text-ink dark:text-on-dark font-medium hover:bg-surface-strong dark:hover:bg-white/8 rounded-lg border border-hairline-strong dark:border-white/8 transition-colors"
                 >
                   Load more ({sorted.length - paginated.length} remaining)
                 </button>

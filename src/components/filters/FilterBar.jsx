@@ -31,12 +31,12 @@ const ToggleButton = ({ active, onClick, children, color }) => (
   <button
     onClick={onClick}
     className={clsx(
-      'px-2.5 py-1 text-xs rounded-md border font-medium transition-all',
+      'px-2.5 py-1 text-xs rounded-md border border-hairline-strong font-medium transition-all',
       active
         ? 'text-white border-transparent'
-        : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+        : 'bg-canvas text-body hover:border-ink/30'
     )}
-    style={active ? { backgroundColor: color || '#2940BE', borderColor: color || '#2940BE' } : {}}
+    style={active ? { backgroundColor: color || '#000000', borderColor: color || '#000000' } : {}}
   >
     {children}
   </button>
@@ -81,19 +81,19 @@ export default function FilterBar() {
   }, [mentionsWithoutSourceFilter])
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm">
+    <div className="bg-canvas dark:bg-surface-dark-elevated rounded-lg border border-hairline-strong dark:border-white/8">
       <div className="p-4 pb-6">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-gray-700">Filters</span>
+            <span className="text-sm font-semibold text-ink dark:text-on-dark">Filters</span>
             {activeFilterCount > 0 && (
-              <span className="px-1.5 py-0.5 text-[10px] font-bold bg-primary text-white rounded-full">
+              <span className="px-1.5 py-0.5 text-[10px] font-bold bg-ink text-on-dark rounded-full">
                 {activeFilterCount}
               </span>
             )}
           </div>
           {activeFilterCount > 0 && (
-            <button onClick={resetFilters} className="text-xs text-gray-400 hover:text-orange transition-colors">
+            <button onClick={resetFilters} className="text-xs text-muted hover:text-orange transition-colors">
               Clear all
             </button>
           )}
@@ -101,7 +101,7 @@ export default function FilterBar() {
 
         {/* Sentiment */}
         <div className="mb-5">
-          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Sentiment</p>
+          <p className="section-label mb-1.5">Sentiment</p>
           <div className="flex flex-wrap gap-1.5">
             {SENTIMENTS.map(s => (
               <ToggleButton
@@ -118,23 +118,23 @@ export default function FilterBar() {
 
         {/* Keyword Groups */}
         <div className="mb-5">
-          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Keyword Groups</p>
+          <p className="section-label mb-1.5">Keyword Groups</p>
           <div className="space-y-1.5">
             {keywordGroups.map(g => (
               <div key={g.id}>
                 <button
                   onClick={() => toggleGroup(g.id)}
                   className={clsx(
-                    'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all text-left',
+                    'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md border text-xs font-medium transition-all text-left',
                     selectedGroups.includes(g.id)
                       ? 'text-white border-transparent'
-                      : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+                      : 'bg-canvas dark:bg-white/8 text-body dark:text-on-dark-soft border-hairline-strong dark:border-white/8 hover:border-ink/30 dark:hover:border-white/20'
                   )}
                   style={selectedGroups.includes(g.id) ? { backgroundColor: g.color, borderColor: g.color } : {}}
                 >
                   <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: selectedGroups.includes(g.id) ? 'rgba(255,255,255,0.7)' : g.color }} />
                   {g.name}
-                  <span className="ml-auto opacity-60">({g.keywords?.length || 0})</span>
+                  <span className="ml-auto opacity-60">({groupCounts[g.id] || 0})</span>
                 </button>
               </div>
             ))}
@@ -143,7 +143,7 @@ export default function FilterBar() {
 
         {/* Language */}
         <div className="mb-5">
-          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Language</p>
+          <p className="section-label mb-1.5">Language</p>
           <div className="flex gap-1.5">
             {LANGUAGES.map(l => (
               <ToggleButton
@@ -168,19 +168,19 @@ export default function FilterBar() {
         {/* Advanced toggle */}
         <button
           onClick={() => setAdvancedOpen(!advancedOpen)}
-          className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-primary transition-colors"
+          className="flex items-center gap-1.5 text-xs text-body dark:text-on-dark-soft hover:text-ink dark:hover:text-on-dark transition-colors"
         >
           {advancedOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
           Advanced Filters
         </button>
 
         {advancedOpen && (
-          <div className="mt-3 space-y-3 pt-3 border-t border-gray-100">
+          <div className="mt-3 space-y-3 pt-3 border-t border-hairline dark:border-white/8">
 
             {/* Sources */}
             {Object.keys(sourceCounts).length > 0 && (
               <div>
-                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Sources</p>
+                <p className="section-label mb-1.5">Sources</p>
                 <div className="space-y-1">
                   {Object.entries(sourceCounts).sort((a, b) => b[1] - a[1]).map(([src, count]) => {
                     const meta = SOURCE_LABELS[src] || { label: src, icon: '🔗' }
@@ -190,17 +190,17 @@ export default function FilterBar() {
                         key={src}
                         onClick={() => toggleSource(src)}
                         className={clsx(
-                          'w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg border text-left transition-all',
+                          'w-full flex items-center justify-between px-2.5 py-1.5 rounded-md border text-left transition-all',
                           active
-                            ? 'bg-primary border-primary text-white'
-                            : 'bg-gray-50 border-gray-100 hover:border-gray-300'
+                            ? 'bg-ink border-ink text-on-dark'
+                            : 'bg-canvas dark:bg-white/8 border-hairline-strong dark:border-white/8 hover:border-ink/30 dark:hover:border-white/20'
                         )}
                       >
-                        <span className={clsx('flex items-center gap-1.5 text-xs', active ? 'text-white' : 'text-gray-600')}>
+                        <span className={clsx('flex items-center gap-1.5 text-xs', active ? 'text-on-dark' : 'text-body dark:text-on-dark-soft')}>
                           <span>{meta.icon}</span>
                           <span>{meta.label}</span>
                         </span>
-                        <span className={clsx('text-[10px] font-semibold rounded-full px-1.5 py-0.5', active ? 'bg-white/20 text-white' : 'bg-white border border-gray-200 text-gray-400')}>
+                        <span className={clsx('text-[10px] font-semibold rounded-full px-1.5 py-0.5', active ? 'bg-white/20 text-on-dark' : 'bg-canvas dark:bg-white/8 border border-hairline-strong dark:border-white/8 text-muted dark:text-on-dark-soft')}>
                           {count}
                         </span>
                       </button>
@@ -212,7 +212,7 @@ export default function FilterBar() {
 
             {/* Platform */}
             <div>
-              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Platform</p>
+              <p className="section-label mb-1.5">Platform</p>
               <div className="flex flex-wrap gap-1">
                 {PLATFORMS.map(p => (
                   <ToggleButton
@@ -228,7 +228,7 @@ export default function FilterBar() {
 
             {/* Mention Type */}
             <div>
-              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Mention Type</p>
+              <p className="section-label mb-1.5">Mention Type</p>
               <div className="flex flex-wrap gap-1">
                 {MENTION_TYPES.map(t => (
                   <ToggleButton
@@ -251,9 +251,9 @@ export default function FilterBar() {
                   type="checkbox"
                   checked={riskOnly}
                   onChange={e => setRiskOnly(e.target.checked)}
-                  className="w-3.5 h-3.5 accent-primary"
+                  className="w-3.5 h-3.5"
                 />
-                <span className="text-xs text-gray-600 font-medium">Show risk flags only</span>
+                <span className="text-xs text-body dark:text-on-dark-soft font-medium">Show risk flags only</span>
               </label>
             </div>
 
@@ -264,9 +264,9 @@ export default function FilterBar() {
                   type="checkbox"
                   checked={showExcluded}
                   onChange={e => setShowExcluded(e.target.checked)}
-                  className="w-3.5 h-3.5 accent-orange"
+                  className="w-3.5 h-3.5"
                 />
-                <span className="text-xs text-gray-600 font-medium">Show excluded posts</span>
+                <span className="text-xs text-body dark:text-on-dark-soft font-medium">Show excluded posts</span>
               </label>
             </div>
           </div>

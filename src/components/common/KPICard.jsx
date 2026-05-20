@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import clsx from 'clsx'
 
 const useCountUp = (target, duration = 800) => {
@@ -33,12 +32,12 @@ export default function KPICard({
   prefix = '',
   subtitle,
   icon: Icon,
-  iconColor = '#2940BE',
-  trend,
-  trendValue,
+  iconColor = '#171717',
   className,
   valueColor,
   formatter,
+  dark = false,
+  compact = false,
 }) {
   const isNumber = typeof value === 'number'
   const animated = useCountUp(isNumber ? value : 0)
@@ -50,50 +49,43 @@ export default function KPICard({
     : value
 
   return (
-    <div className={clsx('card', className)}>
-      <div className="flex items-start justify-between mb-3">
+    <div className={clsx(
+      'rounded-lg border p-3 transition-shadow duration-200 hover:shadow-card flex flex-col justify-between',
+      dark
+        ? 'bg-surface-dark-elevated border-white/8 text-on-dark'
+        : 'bg-canvas dark:bg-surface-dark-elevated border-hairline-strong dark:border-white/8',
+      className
+    )}>
+      <div className="flex items-start justify-between mb-1.5">
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-medium text-gray-500 mb-0.5 truncate">{title}</p>
+          <p className={clsx(
+            'text-[11px] font-semibold mb-1 truncate',
+            dark ? 'text-on-dark-soft' : 'text-muted dark:text-on-dark-soft'
+          )}>
+            {title}
+          </p>
           <div className="flex items-baseline gap-1">
-            {prefix && <span className="text-sm font-medium text-gray-400">{prefix}</span>}
+            {prefix && <span className={clsx('text-sm font-medium', dark ? 'text-on-dark-soft' : 'text-muted dark:text-on-dark-soft')}>{prefix}</span>}
             <span
-              className="kpi-number text-2xl font-bold leading-none"
-              style={{ color: valueColor || '#313231' }}
+              className={clsx('kpi-number font-semibold leading-none tracking-tight dark:text-on-dark', compact ? 'text-[20px]' : 'text-[26px]')}
+              style={{ color: valueColor || (dark ? '#ffffff' : '#171717') }}
             >
               {displayValue}
             </span>
-            {unit && <span className="text-sm font-medium text-gray-400">{unit}</span>}
+            {unit && <span className={clsx('text-sm font-medium', dark ? 'text-on-dark-soft' : 'text-muted dark:text-on-dark-soft')}>{unit}</span>}
           </div>
         </div>
         {Icon && (
-          <div
-            className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-            style={{ backgroundColor: `${iconColor}15` }}
-          >
-            <Icon size={18} style={{ color: iconColor }} />
+          <div className="flex-shrink-0">
+            <Icon size={15} style={{ color: '#787881' }} />
           </div>
         )}
       </div>
 
       {subtitle && (
-        <p className="text-xs text-gray-500 truncate">{subtitle}</p>
+        <p className={clsx('text-xs truncate', dark ? 'text-on-dark-soft' : 'text-body dark:text-on-dark-soft')}>{subtitle}</p>
       )}
 
-      {(trend !== undefined || trendValue !== undefined) && (
-        <div className="mt-2 flex items-center gap-1">
-          {trend === 'up' && <TrendingUp size={12} className="text-teal" />}
-          {trend === 'down' && <TrendingDown size={12} className="text-orange" />}
-          {trend === 'flat' && <Minus size={12} className="text-gray-400" />}
-          {trendValue && (
-            <span className={clsx(
-              'text-xs font-medium',
-              trend === 'up' ? 'text-teal' : trend === 'down' ? 'text-orange' : 'text-gray-400'
-            )}>
-              {trendValue}
-            </span>
-          )}
-        </div>
-      )}
     </div>
   )
 }

@@ -7,7 +7,7 @@ import {
 import clsx from 'clsx'
 
 const DAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
-const PRIMARY = '#2940BE'
+const PRIMARY = '#171717'
 
 function CalendarMonth({ month, startDate, endDate, hoverDate, onDayClick, onDayHover, onDayLeave, selectingEnd, mentionDates }) {
   const today = startOfDay(new Date())
@@ -18,14 +18,14 @@ function CalendarMonth({ month, startDate, endDate, hoverDate, onDayClick, onDay
   return (
     <div className="w-56">
       {/* Month header */}
-      <p className="text-xs font-semibold text-gray-700 text-center mb-3">
+      <p className="text-xs font-semibold text-ink dark:text-on-dark text-center mb-3">
         {format(month, 'MMMM yyyy')}
       </p>
 
       {/* Day headers */}
       <div className="grid grid-cols-7 mb-1">
         {DAYS.map(d => (
-          <div key={d} className="text-[10px] text-gray-400 text-center font-medium py-0.5">{d}</div>
+          <div key={d} className="text-[10px] text-muted text-center font-medium py-0.5">{d}</div>
         ))}
       </div>
 
@@ -67,12 +67,12 @@ function CalendarMonth({ month, startDate, endDate, hoverDate, onDayClick, onDay
                 className={clsx(
                   'relative z-10 w-7 h-7 text-[11px] font-medium transition-colors rounded-full flex items-center justify-center',
                   isFuture
-                    ? 'text-gray-300 cursor-not-allowed'
+                    ? 'text-muted-soft cursor-not-allowed'
                     : (isStart || isEnd || isHoverEnd)
                       ? 'text-white'
                       : inRange
-                        ? 'text-gray-700'
-                        : 'text-gray-600 hover:bg-gray-100'
+                        ? 'text-ink dark:text-on-dark'
+                        : 'text-body dark:text-on-dark-soft hover:bg-surface-strong dark:hover:bg-white/8'
                 )}
                 style={
                   !isFuture && (isStart || isEnd || isHoverEnd)
@@ -155,16 +155,16 @@ export default function DateRangePicker({ startDate, endDate, onApply, onCancel,
   const canApply = pickedStart && pickedEnd && !selectingEnd
 
   return (
-    <div className="absolute right-0 top-11 z-50 bg-white border border-gray-200 rounded-xl shadow-xl p-5 w-auto">
+    <div className="absolute right-0 top-11 z-50 bg-canvas dark:bg-surface-dark-elevated border border-hairline-strong dark:border-white/8 rounded-lg shadow-card p-5 w-auto">
       {/* Mode toggle */}
-      <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5 w-fit mb-4 mx-auto">
+      <div className="flex items-center gap-1 bg-surface-strong dark:bg-white/8 rounded-lg p-0.5 w-fit mb-4 mx-auto">
         {[{ label: 'Date Range', value: 'range' }, { label: 'Single Day', value: 'single' }].map(opt => (
           <button
             key={opt.value}
             onClick={() => switchMode(opt.value)}
             className={clsx(
               'px-3 h-7 text-xs font-medium rounded-md transition-all',
-              mode === opt.value ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              mode === opt.value ? 'bg-white dark:bg-white/20 text-ink dark:text-on-dark shadow-sm' : 'text-body dark:text-on-dark-soft hover:text-ink dark:hover:text-on-dark'
             )}
           >
             {opt.label}
@@ -176,11 +176,11 @@ export default function DateRangePicker({ startDate, endDate, onApply, onCancel,
         {/* Left */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <button onClick={() => setLeftMonth(m => subMonths(m, 1))} className="p-1 rounded hover:bg-gray-100 text-gray-500">
+            <button onClick={() => setLeftMonth(m => subMonths(m, 1))} className="p-1 rounded hover:bg-surface-strong dark:hover:bg-white/8 text-body dark:text-on-dark-soft">
               <ChevronLeft size={14} />
             </button>
             <span />
-            <button onClick={() => setLeftMonth(m => addMonths(m, 1))} className="p-1 rounded hover:bg-gray-100 text-gray-500">
+            <button onClick={() => setLeftMonth(m => addMonths(m, 1))} className="p-1 rounded hover:bg-surface-strong dark:hover:bg-white/8 text-body dark:text-on-dark-soft">
               <ChevronRight size={14} />
             </button>
           </div>
@@ -197,16 +197,16 @@ export default function DateRangePicker({ startDate, endDate, onApply, onCancel,
           />
         </div>
 
-        {mode === 'range' && <div className="w-px bg-gray-100 self-stretch" />}
+        {mode === 'range' && <div className="w-px bg-surface-strong dark:bg-white/8 self-stretch" />}
 
         {/* Right */}
         {mode === 'range' && <div>
           <div className="flex items-center justify-between mb-2">
-            <button onClick={() => setRightMonth(m => subMonths(m, 1))} className="p-1 rounded hover:bg-gray-100 text-gray-500">
+            <button onClick={() => setRightMonth(m => subMonths(m, 1))} className="p-1 rounded hover:bg-surface-strong dark:hover:bg-white/8 text-body dark:text-on-dark-soft">
               <ChevronLeft size={14} />
             </button>
             <span />
-            <button onClick={() => setRightMonth(m => addMonths(m, 1))} className="p-1 rounded hover:bg-gray-100 text-gray-500">
+            <button onClick={() => setRightMonth(m => addMonths(m, 1))} className="p-1 rounded hover:bg-surface-strong dark:hover:bg-white/8 text-body dark:text-on-dark-soft">
               <ChevronRight size={14} />
             </button>
           </div>
@@ -225,8 +225,8 @@ export default function DateRangePicker({ startDate, endDate, onApply, onCancel,
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
-        <p className="text-xs text-gray-400">
+      <div className="flex items-center justify-between mt-4 pt-3 border-t border-hairline dark:border-white/8">
+        <p className="text-xs text-muted dark:text-on-dark-soft">
           {pickedStart && pickedEnd
             ? mode === 'single'
               ? format(pickedStart, 'MMM d, yyyy')
@@ -238,7 +238,7 @@ export default function DateRangePicker({ startDate, endDate, onApply, onCancel,
         <div className="flex gap-2">
           <button
             onClick={onCancel}
-            className="px-3 h-8 text-xs text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+            className="px-3 h-8 text-xs text-body dark:text-on-dark-soft border border-hairline-strong dark:border-white/8 rounded-md hover:bg-surface-strong dark:hover:bg-white/8 transition-colors"
           >
             Cancel
           </button>
@@ -248,8 +248,8 @@ export default function DateRangePicker({ startDate, endDate, onApply, onCancel,
             className={clsx(
               'px-4 h-8 text-xs font-medium rounded-lg transition-colors',
               canApply
-                ? 'bg-primary text-white hover:bg-primary/90'
-                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                ? 'bg-ink text-on-dark hover:bg-primary-active'
+                : 'bg-surface-strong dark:bg-white/8 text-muted dark:text-on-dark-soft cursor-not-allowed'
             )}
             style={canApply ? { backgroundColor: PRIMARY } : {}}
           >

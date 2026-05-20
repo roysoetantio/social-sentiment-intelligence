@@ -28,22 +28,22 @@ export default function KeywordFilterPanel() {
         return (
           <div key={g.id} className="rounded-lg overflow-hidden">
             <div
-              className="flex items-center gap-2 p-2 cursor-pointer hover:bg-gray-50 rounded-lg transition-colors"
+              className="flex items-center gap-2 p-2 cursor-pointer hover:bg-surface-strong dark:hover:bg-white/8 rounded-lg transition-colors"
               onClick={() => toggleOpen(g.id)}
             >
               <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: g.color }} />
-              <span className="flex-1 text-xs font-semibold text-gray-700">{g.name}</span>
+              <span className="flex-1 text-xs font-semibold text-ink dark:text-on-dark">{g.name}</span>
               <button
                 onClick={e => { e.stopPropagation(); toggleGroup(g.id) }}
                 className={clsx(
                   'text-[10px] px-2 py-0.5 rounded border font-medium transition-all',
-                  groupSelected ? 'text-white border-transparent' : 'text-gray-400 border-gray-200 hover:border-gray-300'
+                  groupSelected ? 'text-white border-transparent' : 'text-muted dark:text-on-dark-soft border-hairline-strong dark:border-white/8 hover:border-hairline-strong dark:hover:border-white/20'
                 )}
                 style={groupSelected ? { backgroundColor: g.color } : {}}
               >
                 All
               </button>
-              {isOpen ? <ChevronDown size={13} className="text-gray-400" /> : <ChevronRight size={13} className="text-gray-400" />}
+              {isOpen ? <ChevronDown size={13} className="text-muted" /> : <ChevronRight size={13} className="text-muted" />}
             </div>
 
             {isOpen && (
@@ -56,13 +56,13 @@ export default function KeywordFilterPanel() {
                       onClick={() => toggleKeyword(kw.id)}
                       className={clsx(
                         'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-all text-left',
-                        isSelected ? 'font-medium' : 'text-gray-600 hover:bg-gray-50'
+                        isSelected ? 'font-medium' : 'text-body dark:text-on-dark-soft hover:bg-surface-strong dark:hover:bg-white/8'
                       )}
                       style={isSelected ? { color: g.color, backgroundColor: `${g.color}10` } : {}}
                     >
                       <div className={clsx(
                         'w-4 h-4 rounded border flex items-center justify-center flex-shrink-0',
-                        isSelected ? 'border-transparent' : 'border-gray-300'
+                        isSelected ? 'border-transparent' : 'border-hairline-strong dark:border-white/20'
                       )}
                         style={isSelected ? { backgroundColor: g.color } : {}}
                       >

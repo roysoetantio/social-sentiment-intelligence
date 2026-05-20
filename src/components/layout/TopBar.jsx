@@ -13,6 +13,17 @@ const presets = [
   { label: '1Y', value: '1y' },
 ]
 
+function useDarkMode() {
+  const [dark, setDark] = useState(false)
+
+  useEffect(() => {
+    document.documentElement.classList.remove('dark')
+    localStorage.removeItem('expo-dark-mode')
+  }, [])
+
+  return [dark, setDark]
+}
+
 export default function TopBar({ title }) {
   const {
     searchQuery, setSearchQuery,
@@ -28,6 +39,7 @@ export default function TopBar({ title }) {
   const [customStart, setCustomStart] = useState('')
   const [customEnd, setCustomEnd] = useState('')
   const pickerRef = useRef(null)
+  const [, ] = useDarkMode() // dark mode disabled for now; defaulting to light
 
   useEffect(() => {
     const handler = (e) => {
@@ -51,39 +63,39 @@ export default function TopBar({ title }) {
   const riskCount = allMentions.filter(m => m.riskFlag && m.riskLevel === 'high').length
 
   return (
-    <header className="h-14 bg-white border-b border-gray-100 flex items-center px-6 gap-4 flex-shrink-0">
+    <header className="h-16 bg-canvas dark:bg-surface-dark border-b border-hairline dark:border-white/8 flex items-center px-4 gap-4 flex-shrink-0">
       <div className="flex-1">
-        <h1 className="text-base font-semibold text-darktext">{title}</h1>
+        <h1 className="text-[18px] font-semibold text-ink dark:text-on-dark tracking-tight">{title}</h1>
       </div>
 
       {/* Search */}
       <div className="relative w-64">
-        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
         <input
           type="text"
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
           placeholder="Search mentions..."
-          className="w-full h-9 pl-8 pr-4 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-primary focus:bg-white transition-colors"
+          className="w-full h-9 pl-8 pr-4 text-sm bg-canvas dark:bg-surface-dark-elevated border border-hairline-strong dark:border-white/8 rounded-md focus:outline-none focus:border-ink dark:focus:border-white/30 transition-colors text-ink dark:text-on-dark placeholder-muted"
         />
         {searchQuery && (
-          <button onClick={() => setSearchQuery('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+          <button onClick={() => setSearchQuery('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-ink">
             <X size={12} />
           </button>
         )}
       </div>
 
       {/* Date presets */}
-      <div className="flex items-center gap-1 h-9 bg-gray-50 border border-gray-200 rounded-lg p-1">
+      <div className="flex items-center gap-1 h-9 bg-canvas dark:bg-surface-dark-elevated border border-hairline-strong dark:border-white/8 rounded-md p-1">
         {presets.map(p => (
           <button
             key={p.value}
             onClick={() => setDatePreset(p.value)}
             className={clsx(
-              'px-3 py-1 text-xs font-medium rounded-md transition-all border',
+              'px-3 py-1 text-xs font-medium rounded transition-all',
               activePreset === p.value
-                ? 'bg-primary text-white border-primary'
-                : 'text-gray-500 border-transparent hover:text-gray-700'
+                ? 'bg-ink text-on-dark dark:bg-on-dark dark:text-ink'
+                : 'text-body dark:text-on-dark-soft hover:text-ink dark:hover:text-on-dark'
             )}
           >
             {p.label}
@@ -100,8 +112,10 @@ export default function TopBar({ title }) {
             setPickerOpen(v => !v)
           }}
           className={clsx(
-            'flex items-center justify-between gap-1.5 h-9 text-xs bg-gray-50 border rounded-lg px-3 w-56 transition-colors',
-            pickerOpen ? 'border-primary text-primary' : 'border-gray-200 text-gray-500 hover:border-gray-300'
+            'flex items-center justify-between gap-1.5 h-9 text-xs border rounded-md px-3 w-56 transition-colors',
+            pickerOpen
+              ? 'border-ink dark:border-on-dark text-ink dark:text-on-dark bg-canvas dark:bg-surface-dark-elevated'
+              : 'border-hairline-strong dark:border-white/8 text-body dark:text-on-dark-soft bg-canvas dark:bg-surface-dark-elevated hover:border-ink/30'
           )}
         >
           <span>
@@ -132,7 +146,7 @@ export default function TopBar({ title }) {
       {activeFilterCount > 0 && (
         <button
           onClick={resetFilters}
-          className="flex items-center gap-1.5 h-9 text-xs text-orange font-medium bg-orange/10 border border-orange/20 rounded-lg px-3 hover:bg-orange/20 transition-colors"
+          className="flex items-center gap-1.5 h-9 text-xs text-orange font-medium bg-orange/10 border border-orange/20 rounded-md px-3 hover:bg-orange/20 transition-colors"
         >
           <Filter size={13} />
           <span>{activeFilterCount} active</span>
@@ -141,10 +155,10 @@ export default function TopBar({ title }) {
       )}
 
       {/* Notifications */}
-      <button className="relative p-2 rounded-lg hover:bg-gray-50 transition-colors">
-        <Bell size={17} className="text-gray-500" />
+      <button className="relative p-2 rounded-md hover:bg-surface-strong dark:hover:bg-surface-dark-elevated transition-colors">
+        <Bell size={17} className="text-body dark:text-on-dark-soft" />
         {riskCount > 0 && (
-          <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
+          <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-error text-white text-[9px] font-bold flex items-center justify-center">
             {riskCount > 9 ? '9+' : riskCount}
           </span>
         )}

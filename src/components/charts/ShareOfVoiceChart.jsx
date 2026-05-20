@@ -7,9 +7,9 @@ const CustomTooltip = ({ active, payload }) => {
   const d = payload[0].payload
   return (
     <div className="chart-tooltip">
-      <p className="font-semibold text-gray-700 mb-1">{d.name}</p>
-      <p className="text-gray-600">Mentions: <span className="font-medium">{d.count}</span></p>
-      <p className="text-gray-600">Share: <span className="font-medium">{d.percent}%</span></p>
+      <p className="font-semibold text-ink dark:text-on-dark mb-1">{d.name}</p>
+      <p className="text-body dark:text-on-dark-soft">Mentions: <span className="font-medium">{d.count}</span></p>
+      <p className="text-body dark:text-on-dark-soft">Share: <span className="font-medium">{d.percent}%</span></p>
     </div>
   )
 }
@@ -18,7 +18,7 @@ export default function ShareOfVoiceChart({ mentions, height = 180 }) {
   const data = useMemo(() => getShareOfVoice(mentions || []), [mentions])
 
   if (!data.length) {
-    return <div className="flex items-center justify-center h-40 text-sm text-gray-400">No data</div>
+    return <div className="flex items-center justify-center h-40 text-sm text-muted">No data</div>
   }
 
   return (

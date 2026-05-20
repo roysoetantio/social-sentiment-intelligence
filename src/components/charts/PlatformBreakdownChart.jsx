@@ -10,8 +10,8 @@ const CustomTooltip = ({ active, payload }) => {
   const d = payload[0].payload
   return (
     <div className="chart-tooltip">
-      <p className="font-semibold text-gray-700 mb-1.5">{d.name}</p>
-      <p className="text-gray-600">Mentions: <span className="font-medium text-gray-800">{d.total}</span></p>
+      <p className="font-semibold text-ink dark:text-on-dark mb-1.5">{d.name}</p>
+      <p className="text-body dark:text-on-dark-soft">Mentions: <span className="font-medium text-ink dark:text-on-dark">{d.total}</span></p>
       <p className="text-teal">Positive: <span className="font-medium">{d.positive}</span></p>
       <p className="text-orange">Negative: <span className="font-medium">{d.negative}</span></p>
     </div>
@@ -35,7 +35,7 @@ export default function PlatformBreakdownChart({ mentions, height = '100%' }) {
   const data = useMemo(() => getPlatformBreakdown(mentions || []), [mentions])
 
   if (!data.length) {
-    return <div className="flex items-center justify-center h-64 text-sm text-gray-400">No data</div>
+    return <div className="flex items-center justify-center h-64 text-sm text-muted">No data</div>
   }
 
   return (

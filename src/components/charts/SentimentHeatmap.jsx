@@ -25,7 +25,7 @@ export default function SentimentHeatmap({ mentions }) {
         {/* Day labels */}
         <div className="flex flex-col justify-around pr-2" style={{ minWidth: 32 }}>
           {DAYS.map(d => (
-            <div key={d} className="text-[10px] text-gray-400 text-right leading-none" style={{ height: 16 }}>{d}</div>
+            <div key={d} className="text-[10px] text-muted text-right leading-none" style={{ height: 16 }}>{d}</div>
           ))}
         </div>
 
@@ -70,7 +70,7 @@ export default function SentimentHeatmap({ mentions }) {
           <div className="flex mt-1.5">
             <div className="flex gap-0.5" style={{ flex: 1 }}>
               {Array.from({ length: 24 }, (_, h) => (
-                <div key={h} className="text-[9px] text-gray-400 text-center" style={{ flex: '1 1 0' }}>
+                <div key={h} className="text-[9px] text-muted text-center" style={{ flex: '1 1 0' }}>
                   {h % 6 === 0 ? `${h}h` : ''}
                 </div>
               ))}
@@ -81,26 +81,26 @@ export default function SentimentHeatmap({ mentions }) {
 
       {/* Legend */}
       <div className="flex items-center gap-2 mt-3">
-        <span className="text-[10px] text-gray-400">Less negative</span>
+        <span className="text-[10px] text-muted">Less negative</span>
         <div className="flex gap-0.5">
           {['#19C9A5', '#74dcc3', '#fbbf24', '#f97316', '#ef4444', '#dc2626'].map((c, i) => (
             <div key={i} className="w-4 h-3 rounded-sm" style={{ backgroundColor: c }} />
           ))}
         </div>
-        <span className="text-[10px] text-gray-400">More negative</span>
+        <span className="text-[10px] text-muted">More negative</span>
       </div>
 
       {/* Tooltip */}
       {tooltip && (
         <div
-          className="fixed z-50 bg-white rounded-lg shadow-xl border border-gray-100 p-2.5 text-xs pointer-events-none"
+          className="fixed z-50 bg-canvas dark:bg-surface-dark-elevated rounded-lg shadow-card border border-hairline-strong dark:border-white/8 p-2.5 text-xs pointer-events-none"
           style={{ left: tooltip.x + 12, top: tooltip.y - 40 }}
         >
-          <p className="font-semibold text-gray-700">{tooltip.day} {tooltip.hour}</p>
-          <p className="text-gray-500">Mentions: <span className="font-medium text-gray-700">{tooltip.total}</span></p>
+          <p className="font-semibold text-ink dark:text-on-dark">{tooltip.day} {tooltip.hour}</p>
+          <p className="text-body dark:text-on-dark-soft">Mentions: <span className="font-medium text-ink dark:text-on-dark">{tooltip.total}</span></p>
           <p className="text-orange">Negative: <span className="font-medium">{tooltip.negative}</span></p>
           {tooltip.total > 0 && (
-            <p className="text-gray-400">Neg rate: {Math.round(tooltip.negative / tooltip.total * 100)}%</p>
+            <p className="text-muted dark:text-on-dark-soft">Neg rate: {Math.round(tooltip.negative / tooltip.total * 100)}%</p>
           )}
         </div>
       )}

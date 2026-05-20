@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { MessageSquare, TrendingUp, TrendingDown, AlertTriangle, Tag, BarChart2, Eye } from 'lucide-react'
+import { MessageSquare, TrendingUp, TrendingDown, AlertTriangle, Tag, BarChart2, Eye, Sparkles } from 'lucide-react'
 import { parseISO, startOfMonth, endOfMonth, startOfWeek, endOfWeek, startOfDay, endOfDay, startOfHour, endOfHour, parse } from 'date-fns'
 import { useDashboard } from '../context/DashboardContext'
 import { getKPIs } from '../data/mockAnalytics'
@@ -10,7 +10,7 @@ import MentionCard from '../components/common/MentionCard'
 import SentimentTimelineChart from '../components/charts/SentimentTimelineChart'
 import PlatformBreakdownChart from '../components/charts/PlatformBreakdownChart'
 import KeywordComparisonChart from '../components/charts/KeywordComparisonChart'
-import { isAtRisk } from '../constants/sentiment'
+import { isAtRisk, ANALYST_NAME } from '../constants/sentiment'
 import { BRAND_COLORS, SENTIMENT_COLORS } from '../constants/colors'
 import { formatNum } from '../utils/format'
 
@@ -80,8 +80,53 @@ export default function Overview() {
 
   const topKeyword = allKeywords.find(k => k.id === kpis.topKeyword)
 
+  const greeting = (() => {
+    const h = parseInt(new Date().toLocaleString('en-US', { hour: 'numeric', hour12: false, timeZone: 'Asia/Kuala_Lumpur' }), 10)
+    if (h < 12) return 'Good Morning'
+    if (h < 17) return 'Good Afternoon'
+    return 'Good Evening'
+  })()
+
   return (
     <div className="flex flex-col h-full gap-4">
+
+      {/* Greeting + AI Digest */}
+      <div className="grid grid-cols-6 gap-4 items-stretch">
+
+        {/* Left — Greeting */}
+        <div className="col-span-2 flex flex-col justify-start">
+          <p className="text-[13px] text-muted mb-0.5">{greeting},</p>
+          <p className="text-[28px] font-semibold text-ink leading-tight">{ANALYST_NAME}</p>
+        </div>
+
+        {/* Right — AI Digest */}
+        <div className="col-span-4 relative px-3 py-2 rounded-lg border border-[#E6E6E8] bg-white overflow-hidden">
+        {/* Diagonal blue lines background */}
+        <div className="absolute inset-0 pointer-events-none" style={{
+          backgroundImage: `repeating-linear-gradient(
+            135deg,
+            transparent,
+            transparent 3px,
+            rgba(207, 231, 255, 0.6) 3px,
+            rgba(207, 231, 255, 0.6) 4px
+          )`
+        }} />
+        <div className="relative">
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-1">
+              <Sparkles size={12} style={{ color: '#2940BE' }} />
+              <span className="text-[11px] font-semibold" style={{ color: '#2940BE' }}>AI Digest</span>
+            </div>
+            <span className="text-[10px] text-muted">Updated 8:00 AM</span>
+          </div>
+          <p className="text-[12px] text-body leading-snug">
+            Sentiment remained broadly positive over the past 30 days, with <span className="font-medium text-ink">UEM Edgenta</span> generating the highest share of coverage across 6 outlets. Infrastructure and ESG topics dominated positive mentions. <span className="font-medium text-ink">1 risk item</span> flagged from The Edge Malaysia warrants monitoring — a report on quarterly impairments published yesterday.
+          </p>
+        </div>
+        </div>
+
+      </div>
+
       {/* KPI Row */}
       <div className="grid grid-cols-6 gap-4">
         <KPICard
@@ -99,7 +144,6 @@ export default function Overview() {
           iconColor={SENTIMENT_COLORS.positive}
           valueColor={SENTIMENT_COLORS.positive}
           subtitle={`${kpis.positiveCount} positive mentions`}
-          trend="up"
         />
         <KPICard
           title="Negative Rate"
@@ -126,7 +170,6 @@ export default function Overview() {
           iconColor={kpis.atRiskCount > 5 ? SENTIMENT_COLORS.negative : '#f59e0b'}
           valueColor={kpis.atRiskCount > 5 ? SENTIMENT_COLORS.negative : BRAND_COLORS.darkText}
           subtitle="Flagged for review"
-          trend={kpis.atRiskCount > 5 ? 'down' : 'flat'}
         />
         <KPICard
           title="Top Keyword"
@@ -134,6 +177,7 @@ export default function Overview() {
           icon={Tag}
           iconColor={BRAND_COLORS.purple}
           subtitle={topKeyword ? `${kpis.topKeywordCount} mentions` : 'No data'}
+          compact
         />
       </div>
 
@@ -143,8 +187,8 @@ export default function Overview() {
         <div className="col-span-4 flex flex-col gap-4 min-h-0">
           <div className="card flex-1 min-h-[300px] max-h-[600px] flex flex-col">
             <div className="flex items-center justify-between mb-4 flex-shrink-0">
-              <h2 className="text-sm font-semibold text-darktext">Sentiment Timeline</h2>
-              <span className="text-xs text-gray-400">{filteredMentions.length} mentions in period</span>
+              <h2 className="text-[16px] font-semibold text-ink dark:text-on-dark tracking-tight">Sentiment Timeline</h2>
+              <span className="text-xs text-muted dark:text-on-dark-soft">{filteredMentions.length} mentions in period</span>
             </div>
             <div className="flex-1 min-h-0">
               <SentimentTimelineChart mentions={filteredMentions} days={days} granularity={granularity} onPointClick={handleTimelineClick} />
@@ -152,13 +196,13 @@ export default function Overview() {
           </div>
           <div className="flex gap-4 flex-1 min-h-[300px] max-h-[600px]">
             <div className="card flex-1 flex flex-col min-h-0">
-              <h2 className="text-sm font-semibold text-darktext mb-4 flex-shrink-0">Platform Breakdown</h2>
+              <h2 className="text-[16px] font-semibold text-ink dark:text-on-dark tracking-tight mb-4 flex-shrink-0">Platform Breakdown</h2>
               <div className="flex-1 min-h-0">
                 <PlatformBreakdownChart mentions={filteredMentions} />
               </div>
             </div>
             <div className="card flex-1 flex flex-col min-h-0">
-              <h2 className="text-sm font-semibold text-darktext mb-4 flex-shrink-0">Keyword Comparison</h2>
+              <h2 className="text-[16px] font-semibold text-ink dark:text-on-dark tracking-tight mb-4 flex-shrink-0">Keyword Comparison</h2>
               <div className="flex-1 min-h-0">
                 <KeywordComparisonChart mentions={filteredMentions} />
               </div>
@@ -171,18 +215,18 @@ export default function Overview() {
           {/* absolute fill so this panel never expands the grid row */}
           <div className="absolute inset-0 flex flex-col pt-5 px-5 pb-0 overflow-hidden">
             <div className="flex items-center justify-between mb-4 flex-shrink-0">
-              <h2 className="text-sm font-semibold text-darktext">Recent Negative Mentions</h2>
-              <span className="text-xs text-gray-400">{kpis.atRiskCount} total at risk</span>
+              <h2 className="text-[16px] font-semibold text-ink dark:text-on-dark tracking-tight">Recent Negative Mentions</h2>
+              <span className="text-xs text-muted dark:text-on-dark-soft">{kpis.atRiskCount} total at risk</span>
             </div>
             {highRiskMentions.length === 0 ? (
-              <div className="text-center py-8 text-sm text-gray-400">No at-risk mentions</div>
+              <div className="text-center py-8 text-sm text-muted dark:text-on-dark-soft">No at-risk mentions</div>
             ) : (
               <div className="relative flex-1 min-h-0">
                 {riskScrolled && (
-                  <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white to-transparent z-10 pointer-events-none" />
+                  <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-canvas dark:from-surface-dark-elevated to-transparent z-10 pointer-events-none" />
                 )}
                 {!riskScrolledToBottom && (
-                  <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-white to-transparent z-10 pointer-events-none" />
+                  <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-canvas dark:from-surface-dark-elevated to-transparent z-10 pointer-events-none" />
                 )}
                 <div
                   ref={riskListRef}

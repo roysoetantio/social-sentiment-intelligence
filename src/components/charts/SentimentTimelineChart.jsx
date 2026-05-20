@@ -15,19 +15,19 @@ const CustomTooltip = ({ active, payload, label, granularity }) => {
     : 'Click to explore this day'
   return (
     <div className="chart-tooltip min-w-[160px]">
-      <p className="font-semibold text-gray-700 mb-2">{label}</p>
+      <p className="font-semibold text-ink dark:text-on-dark mb-2">{label}</p>
       {payload.map(p => (
         <div key={p.dataKey} className="flex items-center justify-between gap-4 mb-1">
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: p.color }} />
-            <span className="capitalize text-gray-600">{p.dataKey}</span>
+            <span className="capitalize text-body dark:text-on-dark-soft">{p.dataKey}</span>
           </div>
-          <span className="font-medium text-gray-800">{p.value}</span>
+          <span className="font-medium text-ink dark:text-on-dark">{p.value}</span>
         </div>
       ))}
-      <div className="mt-1.5 pt-1.5 border-t border-gray-100 flex justify-between">
-        <span className="text-gray-500">Total</span>
-        <span className="font-semibold">{total}</span>
+      <div className="mt-1.5 pt-1.5 border-t border-hairline dark:border-white/8 flex justify-between">
+        <span className="text-body dark:text-on-dark-soft">Total</span>
+        <span className="font-semibold dark:text-on-dark">{total}</span>
       </div>
       <p className="mt-2 text-[10px] text-blue-400 italic">{hint}</p>
     </div>
@@ -39,7 +39,7 @@ export default function SentimentTimelineChart({ mentions, days = 30, granularit
 
   if (!mentions?.length) {
     return (
-      <div className="flex items-center justify-center h-64 text-sm text-gray-400">
+      <div className="flex items-center justify-center h-64 text-sm text-muted">
         No data for selected period
       </div>
     )

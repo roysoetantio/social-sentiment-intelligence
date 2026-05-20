@@ -3,23 +3,15 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    --color-primary: #2940BE;
-    --color-primary-light: #3d55d4;
-    --color-primary-dark: #1a2a8a;
-    --color-primary-darker: #0d1a6e;
-    --color-sky: #1490EA;
-    --color-purple: #732BCC;
-    --color-teal: #19C9A5;
-    --color-orange: #E97132;
-    --color-dark-text: #313231;
-    --color-bg: #f2f2f2;
+  html {
+    font-family: 'Inter', sans-serif;
+    background-color: #fafafa;
+    color: #171717;
   }
 
-  html {
-    font-family: 'DM Sans', sans-serif;
-    background-color: #f2f2f2;
-    color: #313231;
+  html.dark {
+    background-color: #171717;
+    color: #ffffff;
   }
 
   * {
@@ -32,16 +24,16 @@
   }
 
   ::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: #fafafa;
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #d1d5db;
+    background: #E6E6E8;
     border-radius: 3px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: #9ca3af;
+    background: #999999;
   }
 }
 
@@ -54,84 +46,158 @@
     display: none;
   }
 
+  /* Card — white bg, 12px radius, hairline-strong border, hover shadow */
   .card {
-    @apply bg-white rounded-xl shadow-sm border border-gray-100 p-5;
+    @apply bg-canvas rounded-lg border border-hairline-strong p-5 transition-shadow duration-200 hover:shadow-card;
   }
 
-  .btn-primary {
-    @apply bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-light transition-colors;
+  /* Dark card */
+  .card-dark {
+    @apply bg-surface-dark-elevated rounded-lg border border-white/8 p-5 text-on-dark;
   }
 
-  .btn-secondary {
-    @apply bg-white text-primary border border-primary px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/5 transition-colors;
+  /* Badge pill */
+  .badge-pill {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-normal;
   }
 
-  .btn-ghost {
-    @apply text-gray-600 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors;
-  }
-
-  .nav-item {
-    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors cursor-pointer;
-  }
-
-  .nav-item-active {
-    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-primary bg-primary/10 border-primary transition-colors cursor-pointer;
-  }
-
-  .kpi-number {
-    font-family: 'Playfair Display', serif;
-  }
-
+  /* Sentiment badges using muted tones */
   .badge-positive {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal/10 text-teal;
+    @apply badge-pill bg-teal/10 text-teal border border-teal/30;
   }
 
   .badge-negative {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange/10 text-orange;
+    @apply badge-pill bg-orange/10 text-orange border border-orange/30;
   }
 
   .badge-neutral {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-sky/10 text-sky;
+    @apply badge-pill bg-sky/10 text-sky border border-sky/30;
   }
 
   .badge-mixed {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple/10 text-purple;
+    @apply badge-pill bg-purple/10 text-purple border border-purple/30;
   }
 
-  /* Repeated section subheading inside cards/panels */
+  /* Buttons */
+  .btn-primary {
+    @apply bg-primary text-on-dark px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-active transition-colors;
+  }
+
+  .btn-secondary {
+    @apply bg-canvas text-ink border border-hairline-strong px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-strong transition-colors;
+  }
+
+  .btn-ghost {
+    @apply text-body px-3 py-2 rounded-md text-sm font-medium hover:bg-surface-strong transition-colors;
+  }
+
+  /* Nav items */
+  .nav-item {
+    @apply flex items-center gap-3 px-3 py-2 rounded-md text-[14px] font-medium hover:bg-surface-strong transition-colors cursor-pointer;
+    color: #5B5B64;
+  }
+
+  .nav-item-active {
+    @apply flex items-center gap-3 px-3 py-2 rounded-md text-[14px] font-medium bg-surface-strong transition-colors cursor-pointer;
+    color: #1C1C1D;
+  }
+
+  /* Section label — 11px Inter 600 muted */
   .section-label {
-    @apply text-[10px] font-semibold text-gray-400 uppercase tracking-wide;
+    @apply text-[11px] font-semibold text-muted;
   }
 
-  /* Sidebar nav group heading */
+  /* Nav group heading */
   .nav-section-label {
-    @apply text-[10px] font-semibold text-gray-400 uppercase tracking-wider;
+    @apply text-[11px] font-semibold text-muted;
   }
 
-  /* Dynamic-color pill/chip — add inline style for color/bg/border */
+  /* Tag chip */
   .tag-chip {
     @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border;
   }
 
-  /* Standard text input / select */
+  /* Form inputs */
   .form-input {
-    @apply w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary bg-white transition-colors;
+    @apply w-full px-3 h-11 text-sm border border-hairline-strong rounded-md focus:outline-none focus:border-ink bg-canvas transition-colors;
   }
 
-  /* Textarea variant */
   .form-textarea {
-    @apply w-full px-3 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-primary bg-gray-50 text-gray-700 placeholder-gray-300 resize-none;
+    @apply w-full px-3 py-2 text-xs border border-hairline-strong rounded-md focus:outline-none focus:border-ink bg-surface-strong text-body placeholder-muted-soft resize-none;
   }
 
-  /* Shared chart tooltip container */
+  /* Chart tooltip */
   .chart-tooltip {
-    @apply bg-white rounded-xl shadow-lg border border-gray-100 p-3 text-xs;
+    @apply bg-canvas rounded-lg shadow-card border border-hairline-strong p-3 text-xs;
   }
 
-  /* Shared chart empty state — pair with a height utility (e.g. h-48) */
   .chart-empty {
-    @apply flex items-center justify-center text-sm text-gray-400;
+    @apply flex items-center justify-center text-sm text-muted;
   }
+
+  /* Sky gradient wash for hero areas */
+  .bg-sky-wash {
+    background: linear-gradient(135deg, #cfe7ff 0%, #a8c8e8 50%, #ffffff 100%);
+  }
+
+  /* KPI number style */
+  .kpi-number {
+    font-feature-settings: 'tnum';
+  }
+}
+
+/* Dark mode overrides for component classes */
+html.dark .card {
+  background-color: #1a1a1a;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+html.dark .nav-item {
+  color: #b0b4ba;
+}
+html.dark .nav-item:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+html.dark .nav-item-active {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+html.dark .section-label,
+html.dark .nav-section-label {
+  color: #b0b4ba;
+}
+
+html.dark .form-input {
+  background-color: #171717;
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+html.dark .form-input::placeholder {
+  color: #b0b4ba;
+}
+html.dark .form-input:focus {
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+html.dark .form-textarea {
+  background-color: #171717;
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #b0b4ba;
+}
+html.dark .form-textarea::placeholder {
+  color: #b0b4ba;
+}
+html.dark .form-textarea:focus {
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+html.dark .chart-tooltip {
+  background-color: #1a1a1a;
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
 }
 
 /* Animated counter */

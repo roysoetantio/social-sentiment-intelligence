@@ -28,7 +28,8 @@ function NetSentimentGauge({ score }) {
         <path
           d={`M 20 100 A 80 80 0 0 1 180 100`}
           fill="none"
-          stroke="#f3f4f6"
+          stroke="currentColor"
+          className="text-surface-strong dark:text-white/8"
           strokeWidth="16"
           strokeLinecap="round"
         />
@@ -47,8 +48,8 @@ function NetSentimentGauge({ score }) {
         <span className="text-4xl font-bold" style={{ color }}>
           {clamped >= 0 ? '+' : ''}{clamped.toFixed(1)}
         </span>
-        <p className="text-sm text-gray-500 mt-1">Net Sentiment Score</p>
-        <p className="text-xs text-gray-400">(Positive − Negative) / Total × 100</p>
+        <p className="text-sm text-body dark:text-on-dark-soft mt-1">Net Sentiment Score</p>
+        <p className="text-xs text-muted dark:text-on-dark-soft">(Positive − Negative) / Total × 100</p>
       </div>
     </div>
   )
@@ -84,19 +85,19 @@ export default function SentimentAnalytics() {
     const total = payload.reduce((s, p) => s + (p.value || 0), 0)
     return (
       <div className="chart-tooltip">
-        <p className="font-semibold mb-1.5">{label}</p>
+        <p className="font-semibold dark:text-on-dark mb-1.5">{label}</p>
         {payload.filter(p => p.value > 0).map(p => (
           <div key={p.dataKey} className="flex items-center justify-between gap-3 mb-1">
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.fill }} />
-              <span className="capitalize text-gray-600">{p.dataKey}</span>
+              <span className="capitalize text-body dark:text-on-dark-soft">{p.dataKey}</span>
             </div>
-            <span className="font-medium">{p.value}</span>
+            <span className="font-medium dark:text-on-dark">{p.value}</span>
           </div>
         ))}
-        <div className="mt-1.5 pt-1.5 border-t border-gray-100 flex justify-between">
-          <span className="text-gray-500">Total</span>
-          <span className="font-semibold">{total}</span>
+        <div className="mt-1.5 pt-1.5 border-t border-hairline dark:border-white/8 flex justify-between">
+          <span className="text-body dark:text-on-dark-soft">Total</span>
+          <span className="font-semibold dark:text-on-dark">{total}</span>
         </div>
       </div>
     )
@@ -107,7 +108,7 @@ export default function SentimentAnalytics() {
       {/* Hero net sentiment + Timeline side by side */}
       <div className="grid grid-cols-2 gap-4">
         <div className="card flex flex-col">
-          <h2 className="text-sm font-semibold text-darktext mb-4">Net Sentiment Score</h2>
+          <h2 className="text-[16px] font-semibold text-ink dark:text-on-dark tracking-tight mb-4">Net Sentiment Score</h2>
           <div className="grid grid-cols-5 gap-4 items-stretch flex-1">
             <div className="col-span-3 flex items-center justify-center">
               <NetSentimentGauge score={kpis.netSentimentScore} />
@@ -118,14 +119,14 @@ export default function SentimentAnalytics() {
                 { label: 'Negative', value: kpis.negativeCount, pct: kpis.negativePercent, color: SENTIMENT_COLORS.negative },
                 { label: 'Neutral', value: kpis.neutralCount, pct: kpis.neutralPercent, color: SENTIMENT_COLORS.neutral },
               ].map(s => (
-                <div key={s.label} className="bg-gray-50 rounded-lg px-3 flex-1 flex items-center gap-3">
+                <div key={s.label} className="bg-surface-strong dark:bg-white/8 rounded-md px-3 flex-1 flex items-center gap-3">
                   <div className="text-xl font-bold leading-none" style={{ color: s.color }}>{s.value}</div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-medium text-gray-600">{s.label}</span>
-                      <span className="text-xs text-gray-400">{s.pct}%</span>
+                      <span className="text-xs font-medium text-body dark:text-on-dark-soft">{s.label}</span>
+                      <span className="text-xs text-muted dark:text-on-dark-soft">{s.pct}%</span>
                     </div>
-                    <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
+                    <div className="h-1 bg-surface-strong dark:bg-white/8 rounded-full overflow-hidden">
                       <div className="h-full rounded-full" style={{ width: `${s.pct}%`, backgroundColor: s.color }} />
                     </div>
                   </div>
@@ -136,7 +137,7 @@ export default function SentimentAnalytics() {
         </div>
 
         <div className="card">
-          <h2 className="text-sm font-semibold text-darktext mb-4">Sentiment Over Time</h2>
+          <h2 className="text-[16px] font-semibold text-ink dark:text-on-dark tracking-tight mb-4">Sentiment Over Time</h2>
           <SentimentTimelineChart mentions={filteredMentions} days={90} height={240} />
         </div>
       </div>
@@ -144,13 +145,13 @@ export default function SentimentAnalytics() {
       {/* Platform & Group breakdown */}
       <div className="grid grid-cols-2 gap-4">
         <div className="card">
-          <h2 className="text-sm font-semibold text-darktext mb-4">Sentiment by Platform</h2>
+          <h2 className="text-[16px] font-semibold text-ink dark:text-on-dark tracking-tight mb-4">Sentiment by Platform</h2>
           {!filteredMentions.length ? (
-            <div className="flex items-center justify-center h-48 text-sm text-gray-400">No data</div>
+            <div className="flex items-center justify-center h-48 text-xs text-muted">No data</div>
           ) : (
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={platformData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f3" />
                 <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#9ca3af' }} tickLine={false} axisLine={{ stroke: '#e5e7eb' }} />
                 <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} tickLine={false} axisLine={false} />
                 <Tooltip content={<CustomPlatformTooltip />} />
@@ -164,13 +165,13 @@ export default function SentimentAnalytics() {
         </div>
 
         <div className="card">
-          <h2 className="text-sm font-semibold text-darktext mb-4">Sentiment by Keyword Group</h2>
+          <h2 className="text-[16px] font-semibold text-ink dark:text-on-dark tracking-tight mb-4">Sentiment by Keyword Group</h2>
           {!filteredMentions.length ? (
-            <div className="flex items-center justify-center h-48 text-sm text-gray-400">No data</div>
+            <div className="flex items-center justify-center h-48 text-xs text-muted">No data</div>
           ) : (
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={groupBarData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f3" />
                 <XAxis dataKey="name" tick={{ fontSize: 9, fill: '#9ca3af' }} tickLine={false} axisLine={{ stroke: '#e5e7eb' }} interval={0} />
                 <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} tickLine={false} axisLine={false} />
                 <Tooltip content={<CustomPlatformTooltip />} />
@@ -186,17 +187,17 @@ export default function SentimentAnalytics() {
 
       {/* Heatmap */}
       <div className="card">
-        <h2 className="text-sm font-semibold text-darktext mb-4">Mention Heatmap — Day × Hour</h2>
-        <p className="text-xs text-gray-400 mb-4">Color intensity shows negative sentiment concentration. Darker red = higher negative rate at that time slot.</p>
+        <h2 className="text-[16px] font-semibold text-ink dark:text-on-dark tracking-tight mb-4">Mention Heatmap — Day × Hour</h2>
+        <p className="text-xs text-muted dark:text-on-dark-soft mb-4">Color intensity shows negative sentiment concentration. Darker red = higher negative rate at that time slot.</p>
         <SentimentHeatmap mentions={filteredMentions} />
       </div>
 
       {/* Emotions + Crisis side by side */}
       <div className="grid grid-cols-2 gap-4">
         <div className="card">
-          <h2 className="text-sm font-semibold text-darktext mb-4">Top Emotions Detected</h2>
+          <h2 className="text-[16px] font-semibold text-ink dark:text-on-dark tracking-tight mb-4">Top Emotions Detected</h2>
           {topEmotions.length === 0 ? (
-            <div className="flex items-center justify-center h-32 text-sm text-gray-400">No emotion data</div>
+            <div className="flex items-center justify-center h-32 text-xs text-muted">No emotion data</div>
           ) : (
             <div className="space-y-2.5">
               {topEmotions.slice(0, 8).map(e => (
@@ -207,7 +208,7 @@ export default function SentimentAnalytics() {
                   >
                     {e.name}
                   </span>
-                  <div className="flex-1 h-5 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="flex-1 h-5 bg-surface-strong dark:bg-white/8 rounded-full overflow-hidden">
                     <div
                       className="h-full rounded-full transition-all duration-700"
                       style={{
@@ -217,7 +218,7 @@ export default function SentimentAnalytics() {
                       }}
                     />
                   </div>
-                  <span className="text-xs font-medium text-gray-600 w-10 text-right">{e.count}</span>
+                  <span className="text-xs font-medium text-body dark:text-on-dark-soft w-10 text-right">{e.count}</span>
                 </div>
               ))}
             </div>
@@ -225,10 +226,10 @@ export default function SentimentAnalytics() {
         </div>
 
         <div className="card">
-          <h2 className="text-sm font-semibold text-darktext mb-4">Crisis Risk Timeline</h2>
-          <p className="text-xs text-gray-400 mb-3">Negative rate per day — spikes above 40% indicate elevated risk periods.</p>
+          <h2 className="text-[16px] font-semibold text-ink dark:text-on-dark tracking-tight mb-4">Crisis Risk Timeline</h2>
+          <p className="text-xs text-muted dark:text-on-dark-soft mb-3">Negative rate per day — spikes above 40% indicate elevated risk periods.</p>
           {!crisisData.length ? (
-            <div className="flex items-center justify-center h-40 text-sm text-gray-400">No data</div>
+            <div className="flex items-center justify-center h-40 text-xs text-muted">No data</div>
           ) : (
             <ResponsiveContainer width="100%" height={160}>
               <AreaChart data={crisisData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
@@ -238,7 +239,7 @@ export default function SentimentAnalytics() {
                     <stop offset="95%" stopColor={SENTIMENT_COLORS.negative} stopOpacity={0.02} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f3" />
                 <XAxis dataKey="displayDate" tick={{ fontSize: 10, fill: '#9ca3af' }} tickLine={false} axisLine={{ stroke: '#e5e7eb' }} interval="preserveStartEnd" />
                 <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} tickLine={false} axisLine={false} domain={[0, 100]} tickFormatter={v => `${v}%`} />
                 <Tooltip formatter={(v) => [`${v}%`, 'Negative rate']} labelStyle={{ fontSize: 11 }} contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid #f3f4f6' }} />
@@ -255,11 +256,11 @@ export default function SentimentAnalytics() {
       </div>
 
       {/* AI Disclaimer */}
-      <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 flex items-start gap-3">
-        <Info size={16} className="text-primary mt-0.5 flex-shrink-0" />
+      <div className="rounded-lg border border-hairline-strong dark:border-white/8 bg-surface-strong dark:bg-white/8 p-4 flex items-start gap-3">
+        <Info size={16} className="text-body mt-0.5 flex-shrink-0" />
         <div>
-          <p className="text-sm font-semibold text-primary mb-1">About Automated Sentiment Analysis</p>
-          <p className="text-xs text-primary/80 leading-relaxed">
+          <p className="text-sm font-semibold text-ink dark:text-on-dark mb-1">About Automated Sentiment Analysis</p>
+          <p className="text-xs text-body dark:text-on-dark-soft leading-relaxed">
             Automated sentiment analysis may be imperfect for sarcasm, mixed-language content, and local dialects —
             including Malaysian English (Manglish), Bahasa Malaysia, and code-switching contexts.
             The confidence scores provided indicate the model's certainty but are not guarantees of accuracy.

@@ -31,7 +31,7 @@ export default function KeywordComparisonChart({ mentions, height = '100%' }) {
   }, [topKeywords])
 
   if (!mentions?.length) {
-    return <div className="flex items-center justify-center h-48 text-sm text-gray-400">No data</div>
+    return <div className="flex items-center justify-center h-48 text-sm text-muted">No data</div>
   }
 
   return (

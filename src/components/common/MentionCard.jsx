@@ -17,7 +17,7 @@ const PlatformIcon = ({ platform }) => {
     case 'YouTube': return <Youtube size={14} className={clsx(cls, 'text-red-500')} />
     case 'LinkedIn': return <Linkedin size={14} className={clsx(cls, 'text-blue-600')} />
     case 'Reddit': return <MessageCircle size={14} className={clsx(cls, 'text-orange-500')} />
-    default: return <Globe size={14} className={clsx(cls, 'text-gray-400')} />
+    default: return <Globe size={14} className={clsx(cls, 'text-muted')} />
   }
 }
 
@@ -29,8 +29,10 @@ export default function MentionCard({ mention, onClick, selected }) {
     <div
       onClick={() => onClick?.(mention)}
       className={clsx(
-        'bg-white rounded-xl border cursor-pointer transition-all hover:shadow-md',
-        selected ? 'border-primary shadow-sm ring-1 ring-primary/20' : 'border-gray-100 shadow-sm hover:border-gray-200'
+        'bg-canvas dark:bg-surface-dark-elevated rounded-lg border cursor-pointer transition-all',
+        selected
+          ? 'border-ink dark:border-on-dark shadow-card ring-1 ring-ink/10'
+          : 'border-hairline-strong dark:border-white/8 hover:shadow-card hover:border-ink/20'
       )}
     >
       <div className="p-4">
@@ -38,8 +40,8 @@ export default function MentionCard({ mention, onClick, selected }) {
         <div className="flex items-start justify-between gap-2 mb-2">
           <div className="flex items-center gap-2 min-w-0">
             <PlatformIcon platform={mention.platform} />
-            <span className="text-xs font-medium text-gray-700 truncate">{mention.author.name}</span>
-            <span className="text-xs text-gray-400 truncate">@{mention.author.handle}</span>
+            <span className="text-[14px] font-semibold text-ink dark:text-on-dark truncate">{mention.author.name}</span>
+            <span className="text-[13px] text-muted truncate">@{mention.author.handle}</span>
             {mention.author.verified && (
               <span className="text-[10px] bg-sky/10 text-sky px-1.5 py-0.5 rounded font-medium">✓</span>
             )}
@@ -47,18 +49,18 @@ export default function MentionCard({ mention, onClick, selected }) {
           <div className="flex items-center gap-1.5 flex-shrink-0">
             {(mention.riskFlag || mention.sentiment?.label === 'negative') && (
               <AlertTriangle size={13} className={clsx(
-                mention.riskLevel === 'high' ? 'text-red-500' :
-                mention.sentiment?.label === 'negative' ? 'text-orange' : 'text-yellow-500'
+                mention.riskLevel === 'high' ? 'text-error' :
+                mention.sentiment?.label === 'negative' ? 'text-orange' : 'text-warning'
               )} />
             )}
-            <span className="text-[11px] text-gray-400">
+            <span className="text-[13px] text-muted">
               {formatDistanceToNow(parseISO(mention.publishedAt), { addSuffix: true })}
             </span>
           </div>
         </div>
 
         {/* Text */}
-        <p className="text-sm text-gray-700 leading-relaxed line-clamp-2 mb-3">
+        <p className="text-[14px] text-body dark:text-on-dark-soft leading-relaxed line-clamp-2 mb-3">
           {mention.text}
         </p>
 
@@ -68,20 +70,20 @@ export default function MentionCard({ mention, onClick, selected }) {
             <SentimentBadge label={mention.sentiment.label} overridden={!!mention.sentiment.originalLabel} />
             {group && (
               <span
-                className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border"
+                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-normal border"
                 style={{ color: group.color, borderColor: `${group.color}30`, backgroundColor: `${group.color}10` }}
               >
                 {group.name}
               </span>
             )}
             {mention.mentionType === 'crisis' && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-50 text-red-600 border border-red-200">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-normal bg-error/10 text-error border border-error/30">
                 Crisis
               </span>
             )}
           </div>
 
-          <div className="flex items-center gap-3 text-[11px] text-gray-400">
+          <div className="flex items-center gap-3 text-[13px] text-muted">
             {mention.engagement.likes > 0 && (
               <span className="flex items-center gap-0.5">
                 <Heart size={11} /> {formatNum(mention.engagement.likes)}
