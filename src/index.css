@@ -1,0 +1,194 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-primary: #2940BE;
+    --color-primary-light: #3d55d4;
+    --color-primary-dark: #1a2a8a;
+    --color-primary-darker: #0d1a6e;
+    --color-sky: #1490EA;
+    --color-purple: #732BCC;
+    --color-teal: #19C9A5;
+    --color-orange: #E97132;
+    --color-dark-text: #313231;
+    --color-bg: #f2f2f2;
+  }
+
+  html {
+    font-family: 'DM Sans', sans-serif;
+    background-color: #f2f2f2;
+    color: #313231;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+  }
+}
+
+@layer components {
+  .scrollbar-hide {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .card {
+    @apply bg-white rounded-xl shadow-sm border border-gray-100 p-5;
+  }
+
+  .btn-primary {
+    @apply bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-light transition-colors;
+  }
+
+  .btn-secondary {
+    @apply bg-white text-primary border border-primary px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/5 transition-colors;
+  }
+
+  .btn-ghost {
+    @apply text-gray-600 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors;
+  }
+
+  .nav-item {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors cursor-pointer;
+  }
+
+  .nav-item-active {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-primary bg-primary/10 border-primary transition-colors cursor-pointer;
+  }
+
+  .kpi-number {
+    font-family: 'Playfair Display', serif;
+  }
+
+  .badge-positive {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal/10 text-teal;
+  }
+
+  .badge-negative {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange/10 text-orange;
+  }
+
+  .badge-neutral {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-sky/10 text-sky;
+  }
+
+  .badge-mixed {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple/10 text-purple;
+  }
+
+  /* Repeated section subheading inside cards/panels */
+  .section-label {
+    @apply text-[10px] font-semibold text-gray-400 uppercase tracking-wide;
+  }
+
+  /* Sidebar nav group heading */
+  .nav-section-label {
+    @apply text-[10px] font-semibold text-gray-400 uppercase tracking-wider;
+  }
+
+  /* Dynamic-color pill/chip — add inline style for color/bg/border */
+  .tag-chip {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border;
+  }
+
+  /* Standard text input / select */
+  .form-input {
+    @apply w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary bg-white transition-colors;
+  }
+
+  /* Textarea variant */
+  .form-textarea {
+    @apply w-full px-3 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-primary bg-gray-50 text-gray-700 placeholder-gray-300 resize-none;
+  }
+
+  /* Shared chart tooltip container */
+  .chart-tooltip {
+    @apply bg-white rounded-xl shadow-lg border border-gray-100 p-3 text-xs;
+  }
+
+  /* Shared chart empty state — pair with a height utility (e.g. h-48) */
+  .chart-empty {
+    @apply flex items-center justify-center text-sm text-gray-400;
+  }
+}
+
+/* Animated counter */
+@keyframes countUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-count {
+  animation: countUp 0.4s ease-out forwards;
+}
+
+/* Heatmap cell hover */
+.heatmap-cell {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.heatmap-cell:hover {
+  opacity: 0.85;
+  transform: scale(1.1);
+  z-index: 10;
+  position: relative;
+}
+
+/* Slide-in panel */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+.slide-in-right {
+  animation: slideInRight 0.25s ease-out forwards;
+}
+
+/* Fade in */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
