@@ -85,7 +85,7 @@
 
   /* Badge pill */
   .badge-pill {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-normal;
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-[0.6875rem] font-normal;
   }
 
   /* Sentiment badges using muted tones */
@@ -141,13 +141,13 @@
 
   /* Nav items */
   .nav-item {
-    @apply flex items-center gap-3 px-3 py-2 rounded-md text-[14px] font-medium transition-colors cursor-pointer;
+    @apply flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer;
     color: #5B5B64;
   }
   .nav-item:hover { background-color: #f0f0f3; }
 
   .nav-item-active {
-    @apply flex items-center gap-3 px-3 py-2 rounded-md text-[14px] font-medium transition-colors cursor-pointer;
+    @apply flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer;
     background-color: #f0f0f3;
     color: #1C1C1D;
   }

@@ -25,7 +25,7 @@ export default function SentimentHeatmap({ mentions }) {
         {/* Day labels */}
         <div className="flex flex-col justify-around pr-2" style={{ minWidth: 32 }}>
           {DAYS.map(d => (
-            <div key={d} className="text-[10px] text-muted text-right leading-none" style={{ height: 16 }}>{d}</div>
+            <div key={d} className="text-[0.625rem] text-muted text-right leading-none" style={{ height: 16 }}>{d}</div>
           ))}
         </div>
 
@@ -70,7 +70,7 @@ export default function SentimentHeatmap({ mentions }) {
           <div className="flex mt-1.5">
             <div className="flex gap-0.5" style={{ flex: 1 }}>
               {Array.from({ length: 24 }, (_, h) => (
-                <div key={h} className="text-[9px] text-muted text-center" style={{ flex: '1 1 0' }}>
+                <div key={h} className="text-[0.5625rem] text-muted text-center" style={{ flex: '1 1 0' }}>
                   {h % 6 === 0 ? `${h}h` : ''}
                 </div>
               ))}
@@ -81,13 +81,13 @@ export default function SentimentHeatmap({ mentions }) {
 
       {/* Legend */}
       <div className="flex items-center gap-2 mt-3">
-        <span className="text-[10px] text-muted">Less negative</span>
+        <span className="text-[0.625rem] text-muted">Less negative</span>
         <div className="flex gap-0.5">
           {['#19C9A5', '#74dcc3', '#fbbf24', '#f97316', '#ef4444', '#dc2626'].map((c, i) => (
             <div key={i} className="w-4 h-3 rounded-sm" style={{ backgroundColor: c }} />
           ))}
         </div>
-        <span className="text-[10px] text-muted">More negative</span>
+        <span className="text-[0.625rem] text-muted">More negative</span>
       </div>
 
       {/* Tooltip */}

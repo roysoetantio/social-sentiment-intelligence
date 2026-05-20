@@ -108,7 +108,7 @@ export default function SentimentAnalytics() {
       {/* Hero net sentiment + Timeline side by side */}
       <div className="grid grid-cols-2 gap-4">
         <div className="card flex flex-col">
-          <h2 className="text-[16px] font-semibold text-ink dark:text-on-dark tracking-tight mb-4">Net Sentiment Score</h2>
+          <h2 className="text-base font-semibold text-ink dark:text-on-dark tracking-tight mb-4">Net Sentiment Score</h2>
           <div className="grid grid-cols-5 gap-4 items-stretch flex-1">
             <div className="col-span-3 flex items-center justify-center">
               <NetSentimentGauge score={kpis.netSentimentScore} />
@@ -137,7 +137,7 @@ export default function SentimentAnalytics() {
         </div>
 
         <div className="card">
-          <h2 className="text-[16px] font-semibold text-ink dark:text-on-dark tracking-tight mb-4">Sentiment Over Time</h2>
+          <h2 className="text-base font-semibold text-ink dark:text-on-dark tracking-tight mb-4">Sentiment Over Time</h2>
           <SentimentTimelineChart mentions={filteredMentions} days={90} height={240} />
         </div>
       </div>
@@ -145,7 +145,7 @@ export default function SentimentAnalytics() {
       {/* Platform & Group breakdown */}
       <div className="grid grid-cols-2 gap-4">
         <div className="card">
-          <h2 className="text-[16px] font-semibold text-ink dark:text-on-dark tracking-tight mb-4">Sentiment by Platform</h2>
+          <h2 className="text-base font-semibold text-ink dark:text-on-dark tracking-tight mb-4">Sentiment by Platform</h2>
           {!filteredMentions.length ? (
             <div className="flex items-center justify-center h-48 text-xs text-muted">No data</div>
           ) : (
@@ -165,7 +165,7 @@ export default function SentimentAnalytics() {
         </div>
 
         <div className="card">
-          <h2 className="text-[16px] font-semibold text-ink dark:text-on-dark tracking-tight mb-4">Sentiment by Keyword Group</h2>
+          <h2 className="text-base font-semibold text-ink dark:text-on-dark tracking-tight mb-4">Sentiment by Keyword Group</h2>
           {!filteredMentions.length ? (
             <div className="flex items-center justify-center h-48 text-xs text-muted">No data</div>
           ) : (
@@ -187,7 +187,7 @@ export default function SentimentAnalytics() {
 
       {/* Heatmap */}
       <div className="card">
-        <h2 className="text-[16px] font-semibold text-ink dark:text-on-dark tracking-tight mb-4">Mention Heatmap — Day × Hour</h2>
+        <h2 className="text-base font-semibold text-ink dark:text-on-dark tracking-tight mb-4">Mention Heatmap — Day × Hour</h2>
         <p className="text-xs text-muted dark:text-on-dark-soft mb-4">Color intensity shows negative sentiment concentration. Darker red = higher negative rate at that time slot.</p>
         <SentimentHeatmap mentions={filteredMentions} />
       </div>
@@ -195,7 +195,7 @@ export default function SentimentAnalytics() {
       {/* Emotions + Crisis side by side */}
       <div className="grid grid-cols-2 gap-4">
         <div className="card">
-          <h2 className="text-[16px] font-semibold text-ink dark:text-on-dark tracking-tight mb-4">Top Emotions Detected</h2>
+          <h2 className="text-base font-semibold text-ink dark:text-on-dark tracking-tight mb-4">Top Emotions Detected</h2>
           {topEmotions.length === 0 ? (
             <div className="flex items-center justify-center h-32 text-xs text-muted">No emotion data</div>
           ) : (
@@ -226,7 +226,7 @@ export default function SentimentAnalytics() {
         </div>
 
         <div className="card">
-          <h2 className="text-[16px] font-semibold text-ink dark:text-on-dark tracking-tight mb-4">Crisis Risk Timeline</h2>
+          <h2 className="text-base font-semibold text-ink dark:text-on-dark tracking-tight mb-4">Crisis Risk Timeline</h2>
           <p className="text-xs text-muted dark:text-on-dark-soft mb-3">Negative rate per day — spikes above 40% indicate elevated risk periods.</p>
           {!crisisData.length ? (
             <div className="flex items-center justify-center h-40 text-xs text-muted">No data</div>

@@ -36,7 +36,7 @@ export default function KeywordFilterPanel() {
               <button
                 onClick={e => { e.stopPropagation(); toggleGroup(g.id) }}
                 className={clsx(
-                  'text-[10px] px-2 py-0.5 rounded border font-medium transition-all',
+                  'text-[0.625rem] px-2 py-0.5 rounded border font-medium transition-all',
                   groupSelected ? 'text-white border-transparent' : 'text-muted dark:text-on-dark-soft border-hairline-strong dark:border-white/8 hover:border-hairline-strong dark:hover:border-white/20'
                 )}
                 style={groupSelected ? { backgroundColor: g.color } : {}}

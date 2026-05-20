@@ -39,7 +39,7 @@ function AfinnTooltip({ text, fullText }) {
       <div className="flex items-center gap-3 mb-3">
         <div className="text-center">
           <p className="text-lg font-bold text-ink dark:text-on-dark">{result.score}</p>
-          <p className="text-[10px] text-muted dark:text-on-dark-soft">Raw score</p>
+          <p className="text-[0.625rem] text-muted dark:text-on-dark-soft">Raw score</p>
         </div>
         <div className="flex-1 text-xs text-body dark:text-on-dark-soft leading-relaxed">
           Each matched word has a value from −5 to +5. Scores are summed, then divided by 10 and clamped to [−1, 1].
@@ -47,20 +47,20 @@ function AfinnTooltip({ text, fullText }) {
       </div>
       {result.positive.length > 0 && (
         <div className="mb-2">
-          <p className="text-[10px] font-semibold text-teal mb-1">Positive words</p>
+          <p className="text-[0.625rem] font-semibold text-teal mb-1">Positive words</p>
           <div className="flex flex-wrap gap-1">
             {result.positive.map(w => (
-              <span key={w} className="px-1.5 py-0.5 bg-teal/10 text-teal rounded text-[10px] font-medium">{w}</span>
+              <span key={w} className="px-1.5 py-0.5 bg-teal/10 text-teal rounded text-[0.625rem] font-medium">{w}</span>
             ))}
           </div>
         </div>
       )}
       {result.negative.length > 0 && (
         <div className="mb-2">
-          <p className="text-[10px] font-semibold text-orange mb-1">Negative words</p>
+          <p className="text-[0.625rem] font-semibold text-orange mb-1">Negative words</p>
           <div className="flex flex-wrap gap-1">
             {result.negative.map(w => (
-              <span key={w} className="px-1.5 py-0.5 bg-orange/10 text-orange rounded text-[10px] font-medium">{w}</span>
+              <span key={w} className="px-1.5 py-0.5 bg-orange/10 text-orange rounded text-[0.625rem] font-medium">{w}</span>
             ))}
           </div>
         </div>
@@ -68,7 +68,7 @@ function AfinnTooltip({ text, fullText }) {
       {result.positive.length === 0 && result.negative.length === 0 && (
         <p className="text-xs text-muted">No AFINN-recognised words found in this text.</p>
       )}
-      <p className="text-[10px] text-gray-300 dark:text-white/30 mt-2 border-t border-hairline dark:border-white/8 pt-2">
+      <p className="text-[0.625rem] text-gray-300 dark:text-white/30 mt-2 border-t border-hairline dark:border-white/8 pt-2">
         Threshold: &gt;+0.05 = Positive · &lt;−0.05 = Negative · else Neutral
       </p>
     </div>
@@ -178,11 +178,11 @@ function DetailPanel({ mention, onClose, onSaved }) {
           <div>
             <p className="text-sm font-semibold text-ink dark:text-on-dark">{mention.author.name}</p>
             <p className="text-xs text-muted dark:text-on-dark-soft">@{mention.author.handle}</p>
-            {mention.author.verified && <span className="text-[10px] text-sky font-medium">✓ Verified</span>}
+            {mention.author.verified && <span className="text-[0.625rem] text-sky font-medium">✓ Verified</span>}
           </div>
           <div className="text-right">
             <p className="text-xs text-muted dark:text-on-dark-soft">{mention.platform}</p>
-            <p className="text-[10px] text-muted dark:text-on-dark-soft">{format(parseISO(mention.publishedAt), 'MMM d, yyyy HH:mm')}</p>
+            <p className="text-[0.625rem] text-muted dark:text-on-dark-soft">{format(parseISO(mention.publishedAt), 'MMM d, yyyy HH:mm')}</p>
           </div>
         </div>
 
@@ -206,7 +206,7 @@ function DetailPanel({ mention, onClose, onSaved }) {
             </div>
             <span className="text-xs text-muted dark:text-on-dark-soft">Confidence: {Math.round(mention.sentiment.confidence * 100)}%</span>
             {displayFlag && (
-              <span className="text-[10px] text-muted italic">
+              <span className="text-[0.625rem] text-muted italic">
                 was <span className="font-medium">{mention.sentiment.originalLabel || mention.sentiment.label}</span>
               </span>
             )}
@@ -296,7 +296,7 @@ function DetailPanel({ mention, onClose, onSaved }) {
               <div key={label} className="bg-surface-strong dark:bg-white/8 rounded-lg p-2.5 flex items-center gap-2">
                 <Icon size={13} className="text-muted dark:text-on-dark-soft" />
                 <div>
-                  <p className="text-[10px] text-muted dark:text-on-dark-soft">{label}</p>
+                  <p className="text-[0.625rem] text-muted dark:text-on-dark-soft">{label}</p>
                   <p className="text-xs font-semibold text-ink dark:text-on-dark">{formatNum(value)}</p>
                 </div>
               </div>
@@ -342,7 +342,7 @@ function DetailPanel({ mention, onClose, onSaved }) {
           <div className="flex items-center justify-between">
             <p className="section-label">Analyst Review</p>
             {reviewed && (
-              <span className="text-[10px] text-teal font-medium flex items-center gap-1">
+              <span className="text-[0.625rem] text-teal font-medium flex items-center gap-1">
                 <CheckSquare size={11} /> Reviewed
               </span>
             )}
@@ -376,7 +376,7 @@ function DetailPanel({ mention, onClose, onSaved }) {
 
           {/* Override sentiment buttons */}
           <div>
-            <p className="text-[10px] text-muted dark:text-on-dark-soft mb-1.5">Override sentiment</p>
+            <p className="text-[0.625rem] text-muted dark:text-on-dark-soft mb-1.5">Override sentiment</p>
             <div className="flex gap-1.5">
               {SENTIMENT_OPTIONS.map(opt => (
                 <button
@@ -400,7 +400,7 @@ function DetailPanel({ mention, onClose, onSaved }) {
 
           {/* Reason */}
           <div>
-            <p className="text-[10px] text-muted dark:text-on-dark-soft mb-1.5">Reason <span className="text-gray-300 dark:text-white/30">(optional)</span></p>
+            <p className="text-[0.625rem] text-muted dark:text-on-dark-soft mb-1.5">Reason <span className="text-gray-300 dark:text-white/30">(optional)</span></p>
             <textarea
               value={reason}
               onChange={e => setReason(e.target.value)}
@@ -429,7 +429,7 @@ function DetailPanel({ mention, onClose, onSaved }) {
               <p className={clsx('text-xs font-semibold', excluded ? 'text-red-600' : 'text-body')}>
                 {excluded ? '⊘ This post is excluded' : 'Exclude this post'}
               </p>
-              <p className="text-[10px] text-muted mt-0.5">
+              <p className="text-[0.625rem] text-muted mt-0.5">
                 {excluded ? 'Hidden from all lists, charts & scores' : 'Remove from all lists, charts & calculations'}
               </p>
             </div>

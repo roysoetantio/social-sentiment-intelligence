@@ -32,7 +32,7 @@ export default function Layout({ children }) {
 
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <TopBar title={title} onMenuClick={openSidebar} />
-        <main className="flex-1 overflow-y-auto p-3 md:p-4 flex flex-col bg-canvas">
+        <main className="flex-1 overflow-y-auto p-3 pb-16 md:p-4 flex flex-col bg-canvas">
           <div className="w-full max-w-[2000px] mx-auto flex flex-col flex-1">
             {children}
           </div>

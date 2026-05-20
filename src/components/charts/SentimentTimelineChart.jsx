@@ -29,7 +29,7 @@ const CustomTooltip = ({ active, payload, label, granularity }) => {
         <span className="text-body dark:text-on-dark-soft">Total</span>
         <span className="font-semibold dark:text-on-dark">{total}</span>
       </div>
-      <p className="mt-2 text-[10px] text-blue-400 italic">{hint}</p>
+      <p className="mt-2 text-[0.625rem] text-blue-400 italic">{hint}</p>
     </div>
   )
 }

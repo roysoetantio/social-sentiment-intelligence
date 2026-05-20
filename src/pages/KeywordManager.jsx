@@ -28,7 +28,7 @@ function KeywordMiniBar({ positive, negative, neutral, total }) {
         <div style={{ width: `${neuPct}%`, backgroundColor: SENTIMENT_COLORS.neutral }} />
         <div style={{ width: `${negPct}%`, backgroundColor: SENTIMENT_COLORS.negative }} />
       </div>
-      <div className="flex gap-2 text-[10px] text-muted">
+      <div className="flex gap-2 text-[0.625rem] text-muted">
         <span className="text-teal">{posPct}%+</span>
         <span className="text-orange">{negPct}%-</span>
         <span className="text-muted">{total} total</span>
@@ -100,7 +100,7 @@ function IngestLogPanel({ logs, onClose }) {
           <X size={13} className="text-muted" />
         </button>
       </div>
-      <div className="h-48 overflow-y-auto px-4 py-3 space-y-0.5 font-mono text-[11px]">
+      <div className="h-48 overflow-y-auto px-4 py-3 space-y-0.5 font-mono text-[0.6875rem]">
         {logs.length === 0 && <p className="text-body">Starting...</p>}
         {logs.map((l, i) => (
           <p key={i} className={l.error ? 'text-red-400' : 'text-gray-300'}>{l.text}</p>
@@ -506,7 +506,7 @@ export default function KeywordManager() {
               {false && <button
                 onClick={() => { setShowLog(true); runIngest() }}
                 disabled={running}
-                className="flex items-center gap-1 text-[10px] text-ink dark:text-on-dark font-medium px-2 py-1 rounded-md hover:bg-surface-strong dark:hover:bg-white/8 transition-colors disabled:opacity-40"
+                className="flex items-center gap-1 text-[0.625rem] text-ink dark:text-on-dark font-medium px-2 py-1 rounded-md hover:bg-surface-strong dark:hover:bg-white/8 transition-colors disabled:opacity-40"
                 title="Fetch all keywords"
               >
                 {running && fetchingIds.length === 0 ? <Loader size={11} className="animate-spin" /> : <Download size={11} />}
@@ -535,7 +535,7 @@ export default function KeywordManager() {
                   <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: g.color }} />
                   <span className={clsx('text-xs font-semibold truncate text-ink dark:text-on-dark')}>{g.name}</span>
                 </span>
-                <span className="text-[10px] text-muted dark:text-on-dark-soft flex-shrink-0">({g.keywords.length})</span>
+                <span className="text-[0.625rem] text-muted dark:text-on-dark-soft flex-shrink-0">({g.keywords.length})</span>
               </button>
             )
           })}
@@ -604,7 +604,7 @@ export default function KeywordManager() {
                   ].map(stat => (
                     <div key={stat.label} className="bg-surface-strong dark:bg-[#171717] rounded-lg p-3 text-center border border-transparent dark:border-white/8">
                       <div className="kpi-number text-xl font-bold" style={{ color: stat.color }}>{stat.value}</div>
-                      <div className="text-[10px] text-body dark:text-on-dark-soft mt-0.5">{stat.label}</div>
+                      <div className="text-[0.625rem] text-body dark:text-on-dark-soft mt-0.5">{stat.label}</div>
                     </div>
                   ))
                 })()}

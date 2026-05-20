@@ -40,10 +40,10 @@ export default function MentionCard({ mention, onClick, selected }) {
         <div className="flex items-start justify-between gap-2 mb-2">
           <div className="flex items-center gap-2 min-w-0">
             <PlatformIcon platform={mention.platform} />
-            <span className="text-[14px] font-semibold text-ink dark:text-on-dark truncate">{mention.author.name}</span>
-            <span className="text-[13px] text-muted truncate">@{mention.author.handle}</span>
+            <span className="text-sm font-semibold text-ink dark:text-on-dark truncate">{mention.author.name}</span>
+            <span className="text-[0.8125rem] text-muted truncate">@{mention.author.handle}</span>
             {mention.author.verified && (
-              <span className="text-[10px] bg-sky/10 text-sky px-1.5 py-0.5 rounded font-medium">✓</span>
+              <span className="text-[0.625rem] bg-sky/10 text-sky px-1.5 py-0.5 rounded font-medium">✓</span>
             )}
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -53,14 +53,14 @@ export default function MentionCard({ mention, onClick, selected }) {
                 mention.sentiment?.label === 'negative' ? 'text-orange' : 'text-warning'
               )} />
             )}
-            <span className="text-[13px] text-muted">
+            <span className="text-[0.8125rem] text-muted">
               {formatDistanceToNow(parseISO(mention.publishedAt), { addSuffix: true })}
             </span>
           </div>
         </div>
 
         {/* Text */}
-        <p className="text-[14px] text-body dark:text-on-dark-soft leading-relaxed line-clamp-2 mb-3">
+        <p className="text-sm text-body dark:text-on-dark-soft leading-relaxed line-clamp-2 mb-3">
           {mention.text}
         </p>
 
@@ -70,20 +70,20 @@ export default function MentionCard({ mention, onClick, selected }) {
             <SentimentBadge label={mention.sentiment.label} overridden={!!mention.sentiment.originalLabel} />
             {group && (
               <span
-                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-normal border"
+                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[0.6875rem] font-normal border"
                 style={{ color: group.color, borderColor: `${group.color}30`, backgroundColor: `${group.color}10` }}
               >
                 {group.name}
               </span>
             )}
             {mention.mentionType === 'crisis' && (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-normal bg-error/10 text-error border border-error/30">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[0.6875rem] font-normal bg-error/10 text-error border border-error/30">
                 Crisis
               </span>
             )}
           </div>
 
-          <div className="flex items-center gap-3 text-[13px] text-muted">
+          <div className="flex items-center gap-3 text-[0.8125rem] text-muted">
             {mention.engagement.likes > 0 && (
               <span className="flex items-center gap-0.5">
                 <Heart size={11} /> {formatNum(mention.engagement.likes)}

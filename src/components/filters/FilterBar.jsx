@@ -88,7 +88,7 @@ export default function FilterBar() {
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-ink dark:text-on-dark">Filters</span>
             {activeFilterCount > 0 && (
-              <span className="px-1.5 py-0.5 text-[10px] font-bold bg-ink text-on-dark rounded-full">
+              <span className="px-1.5 py-0.5 text-[0.625rem] font-bold bg-ink text-on-dark rounded-full">
                 {activeFilterCount}
               </span>
             )}
@@ -201,7 +201,7 @@ export default function FilterBar() {
                           <span>{meta.icon}</span>
                           <span>{meta.label}</span>
                         </span>
-                        <span className={clsx('text-[10px] font-semibold rounded-full px-1.5 py-0.5', active ? 'bg-white/20 text-on-dark' : 'bg-canvas dark:bg-white/8 border border-hairline-strong dark:border-white/8 text-muted dark:text-on-dark-soft')}>
+                        <span className={clsx('text-[0.625rem] font-semibold rounded-full px-1.5 py-0.5', active ? 'bg-white/20 text-on-dark' : 'bg-canvas dark:bg-white/8 border border-hairline-strong dark:border-white/8 text-muted dark:text-on-dark-soft')}>
                           {count}
                         </span>
                       </button>

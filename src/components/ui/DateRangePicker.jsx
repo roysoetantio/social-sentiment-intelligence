@@ -15,7 +15,7 @@ function CalendarMonth({ month, startDate, endDate, hoverDate, onDayClick, onDay
   const startPad = getDay(startOfMonth(month))
   const rangeEnd = hoverDate && selectingEnd ? hoverDate : endDate
 
-  const cellSize = large ? 'h-10 w-10 text-sm' : 'h-7 w-7 text-[11px]'
+  const cellSize = large ? 'h-10 w-10 text-sm' : 'h-7 w-7 text-[0.6875rem]'
 
   return (
     <div className={large ? 'w-full' : 'w-56'}>
@@ -24,7 +24,7 @@ function CalendarMonth({ month, startDate, endDate, hoverDate, onDayClick, onDay
       </p>
       <div className="grid grid-cols-7 mb-1">
         {DAYS.map(d => (
-          <div key={d} className="text-[10px] text-muted text-center font-medium py-0.5">{d}</div>
+          <div key={d} className="text-[0.625rem] text-muted text-center font-medium py-0.5">{d}</div>
         ))}
       </div>
       <div className="grid grid-cols-7 content-start" style={large ? { height: 240 } : undefined}>

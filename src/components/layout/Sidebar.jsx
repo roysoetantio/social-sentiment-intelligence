@@ -26,7 +26,7 @@ const Logo = ({ onClose }) => (
         alt="UEM Edgenta"
         className="h-7 w-auto object-contain object-left flex-shrink-0"
       />
-      <div className="text-[12px] font-semibold text-body dark:text-on-dark-soft leading-tight">Social Sentiment<br />Intelligence</div>
+      <div className="text-xs font-semibold text-body dark:text-on-dark-soft leading-tight">Social Sentiment<br />Intelligence</div>
     </div>
     {onClose && (
       <button onClick={onClose} className="lg:hidden ml-2 p-1 rounded-md hover:bg-surface-strong text-muted">
@@ -54,7 +54,7 @@ export default function Sidebar({ isOpen, onClose }) {
   return (
     <aside
       className={clsx(
-        'w-[220px] h-full bg-canvas-soft dark:bg-surface-dark border-r border-hairline dark:border-white/8 flex flex-col flex-shrink-0 overflow-y-auto',
+        'w-[300px] lg:w-[220px] h-full bg-canvas-soft dark:bg-surface-dark border-r border-hairline dark:border-white/8 flex flex-col flex-shrink-0 overflow-y-auto',
         // On mobile/tablet: fixed drawer overlay
         'fixed inset-y-0 left-0 z-30 transition-transform duration-250 ease-in-out lg:relative lg:translate-x-0 lg:z-auto',
         isOpen ? 'translate-x-0' : '-translate-x-full'
@@ -94,7 +94,7 @@ export default function Sidebar({ isOpen, onClose }) {
           </div>
           <div>
             <div className="text-xs font-medium text-ink dark:text-on-dark">{ANALYST_NAME}</div>
-            <div className="text-[10px] text-muted dark:text-on-dark-soft">Analyst</div>
+            <div className="text-[0.625rem] text-muted dark:text-on-dark-soft">Analyst</div>
           </div>
         </div>
       </div>

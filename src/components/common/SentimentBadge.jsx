@@ -11,7 +11,7 @@ const config = {
 export default function SentimentBadge({ label, score, showScore = false, size = 'sm', overridden = false }) {
   const c = config[label] || config.neutral
   return (
-    <span className={clsx(c.className, 'inline-flex items-center gap-1', size === 'xs' && 'text-[10px] px-2 py-0.5')}>
+    <span className={clsx(c.className, 'inline-flex items-center gap-1', size === 'xs' && 'text-[0.625rem] px-2 py-0.5')}>
       {c.label}
       {showScore && score !== undefined && (
         <span className="opacity-70">

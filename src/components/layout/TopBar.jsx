@@ -80,7 +80,7 @@ export default function TopBar({ title, onMenuClick }) {
         </button>
 
         <div className="flex-1">
-          <h1 className="text-[18px] font-semibold text-ink dark:text-on-dark tracking-tight">{title}</h1>
+          <h1 className="text-lg font-semibold text-ink dark:text-on-dark tracking-tight">{title}</h1>
         </div>
 
         {/* Search — desktop only */}
@@ -173,7 +173,7 @@ export default function TopBar({ title, onMenuClick }) {
         <button className="relative p-2 rounded-md hover:bg-surface-strong dark:hover:bg-surface-dark-elevated transition-colors">
           <Bell size={17} className="text-body dark:text-on-dark-soft" />
           {riskCount > 0 && (
-            <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-error text-white text-[9px] font-bold flex items-center justify-center">
+            <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-error text-white text-[0.5625rem] font-bold flex items-center justify-center">
               {riskCount > 9 ? '9+' : riskCount}
             </span>
           )}

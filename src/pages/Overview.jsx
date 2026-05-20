@@ -88,15 +88,15 @@ export default function Overview() {
   })()
 
   return (
-    <div className="flex flex-col h-full gap-2 lg:gap-4">
+    <div className="flex flex-col h-full gap-3 lg:gap-4">
 
       {/* Greeting + AI Digest */}
-      <div className="grid grid-cols-1 sm:grid-cols-6 gap-2 lg:gap-4 items-stretch">
+      <div className="grid grid-cols-1 sm:grid-cols-6 gap-3 lg:gap-4 items-stretch">
 
         {/* Left — Greeting */}
         <div className="sm:col-span-2 flex flex-col justify-start mb-4 sm:mb-0">
-          <p className="text-[13px] text-muted mb-0.5">{greeting},</p>
-          <p className="text-[28px] font-semibold text-ink leading-tight">{ANALYST_NAME}</p>
+          <p className="text-sm text-muted mb-0.5">{greeting},</p>
+          <p className="text-[1.75rem] font-semibold text-ink leading-tight">{ANALYST_NAME}</p>
         </div>
 
         {/* Right — AI Digest */}
@@ -115,11 +115,11 @@ export default function Overview() {
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-1">
               <Sparkles size={12} style={{ color: '#2940BE' }} />
-              <span className="text-[11px] font-semibold" style={{ color: '#2940BE' }}>AI Digest</span>
+              <span className="text-xs font-semibold" style={{ color: '#2940BE' }}>AI Digest</span>
             </div>
-            <span className="text-[10px] text-muted">Updated 8:00 AM</span>
+            <span className="text-xs text-muted">Updated 8:00 AM</span>
           </div>
-          <p className="text-[12px] text-body leading-snug">
+          <p className="text-sm text-body leading-snug">
             Sentiment remained broadly positive over the past 30 days, with <span className="font-medium text-ink">UEM Edgenta</span> generating the highest share of coverage across 6 outlets. Infrastructure and ESG topics dominated positive mentions. <span className="font-medium text-ink">1 risk item</span> flagged from The Edge Malaysia warrants monitoring — a report on quarterly impairments published yesterday.
           </p>
         </div>
@@ -128,7 +128,7 @@ export default function Overview() {
       </div>
 
       {/* KPI Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 lg:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 lg:gap-4">
         <KPICard
           title="Total Mentions"
           value={kpis.totalMentions}
@@ -182,27 +182,27 @@ export default function Overview() {
       </div>
 
       {/* Row 2+3 — Left column (Timeline + Platform + Keyword) | Right column (High-Risk tall) */}
-      <div className="grid grid-cols-1 lg:grid-cols-6 gap-2 lg:gap-4 items-stretch flex-1 min-h-0">
+      <div className="grid grid-cols-1 lg:grid-cols-6 gap-3 lg:gap-4 items-stretch flex-1 min-h-0">
         {/* Left: stacked — spans 4 of 6 columns */}
-        <div className="lg:col-span-4 flex flex-col gap-2 lg:gap-4 min-h-0">
+        <div className="lg:col-span-4 flex flex-col gap-3 lg:gap-4 min-h-0">
           <div className="card h-[320px] lg:flex-1 lg:h-auto lg:min-h-[300px] lg:max-h-[600px] flex flex-col">
             <div className="flex items-center justify-between mb-4 flex-shrink-0">
-              <h2 className="text-[16px] font-semibold text-ink dark:text-on-dark tracking-tight">Sentiment Timeline</h2>
+              <h2 className="text-base font-semibold text-ink dark:text-on-dark tracking-tight">Sentiment Timeline</h2>
               <span className="text-xs text-muted dark:text-on-dark-soft">{filteredMentions.length} mentions in period</span>
             </div>
             <div className="flex-1 min-h-0">
               <SentimentTimelineChart mentions={filteredMentions} days={days} granularity={granularity} onPointClick={handleTimelineClick} />
             </div>
           </div>
-          <div className="flex flex-col sm:flex-row gap-2 lg:gap-4 lg:flex-1 lg:min-h-[300px] lg:max-h-[600px]">
+          <div className="flex flex-col sm:flex-row gap-3 lg:gap-4 lg:flex-1 lg:min-h-[300px] lg:max-h-[600px]">
             <div className="card h-[320px] sm:h-auto sm:flex-1 flex flex-col min-h-0">
-              <h2 className="text-[16px] font-semibold text-ink dark:text-on-dark tracking-tight mb-4 flex-shrink-0">Platform Breakdown</h2>
+              <h2 className="text-base font-semibold text-ink dark:text-on-dark tracking-tight mb-4 flex-shrink-0">Platform Breakdown</h2>
               <div className="flex-1 min-h-0">
                 <PlatformBreakdownChart mentions={filteredMentions} />
               </div>
             </div>
             <div className="card h-[320px] sm:h-auto sm:flex-1 flex flex-col min-h-0">
-              <h2 className="text-[16px] font-semibold text-ink dark:text-on-dark tracking-tight mb-4 flex-shrink-0">Keyword Comparison</h2>
+              <h2 className="text-base font-semibold text-ink dark:text-on-dark tracking-tight mb-4 flex-shrink-0">Keyword Comparison</h2>
               <div className="flex-1 min-h-0">
                 <KeywordComparisonChart mentions={filteredMentions} />
               </div>
@@ -216,7 +216,7 @@ export default function Overview() {
           {/* Desktop inner absolute fill */}
           <div className="lg:absolute lg:inset-0 flex flex-col lg:pt-5 lg:px-5 lg:pb-0 lg:overflow-hidden">
             <div className="flex items-center justify-between mb-4 flex-shrink-0">
-              <h2 className="text-[16px] font-semibold text-ink dark:text-on-dark tracking-tight">Recent Negative Mentions</h2>
+              <h2 className="text-base font-semibold text-ink dark:text-on-dark tracking-tight">Recent Negative Mentions</h2>
               <span className="text-xs text-muted dark:text-on-dark-soft">{kpis.atRiskCount} total at risk</span>
             </div>
             {highRiskMentions.length === 0 ? (

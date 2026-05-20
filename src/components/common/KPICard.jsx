@@ -59,7 +59,7 @@ export default function KPICard({
       <div className="flex items-start justify-between mb-1.5">
         <div className="flex-1 min-w-0">
           <p className={clsx(
-            'text-[11px] font-semibold mb-1 truncate',
+            'text-xs font-semibold mb-1 truncate',
             dark ? 'text-on-dark-soft' : 'text-muted dark:text-on-dark-soft'
           )}>
             {title}
@@ -67,7 +67,7 @@ export default function KPICard({
           <div className="flex items-baseline gap-1">
             {prefix && <span className={clsx('text-sm font-medium', dark ? 'text-on-dark-soft' : 'text-muted dark:text-on-dark-soft')}>{prefix}</span>}
             <span
-              className={clsx('kpi-number font-semibold leading-none tracking-tight dark:text-on-dark', compact ? 'text-[20px]' : 'text-[26px]')}
+              className={clsx('kpi-number font-semibold leading-none tracking-tight dark:text-on-dark', compact ? 'text-xl' : 'text-3xl')}
               style={{ color: valueColor || (dark ? '#ffffff' : '#171717') }}
             >
               {displayValue}
