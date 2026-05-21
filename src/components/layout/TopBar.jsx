@@ -247,26 +247,35 @@ export default function TopBar({ title, onMenuClick }) {
         </button>
       </div>
 
-      {/* Mobile search expand row */}
+      {/* Mobile search — full screen overlay */}
       {mobileSearchOpen && (
-        <div className="md:hidden px-4 pb-3">
-          <div className="relative">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+        <div className="md:hidden fixed inset-0 z-50 bg-white dark:bg-[#111111] flex flex-col">
+          {/* Search bar */}
+          <div className="flex items-center gap-3 px-4 h-14 border-b border-hairline dark:border-white/8 flex-shrink-0">
+            <Search size={16} className="text-muted flex-shrink-0" />
             <input
               ref={mobileSearchRef}
               type="text"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder="Search mentions..."
-              className="w-full h-9 pl-8 pr-9 text-sm bg-canvas dark:bg-surface-dark-elevated border border-ink dark:border-on-dark rounded-md focus:outline-none transition-colors text-ink dark:text-on-dark placeholder-muted"
+              className="flex-1 h-full text-sm bg-transparent focus:outline-none text-ink dark:text-on-dark placeholder-muted"
             />
             <button
               onClick={() => { setMobileSearchOpen(false); setSearchQuery('') }}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-ink"
+              className="flex-shrink-0 text-sm font-medium text-[#2940BE] dark:text-[#6B80FF]"
             >
-              <X size={14} />
+              Cancel
             </button>
           </div>
+
+          {/* Empty state hint */}
+          {!searchQuery && (
+            <div className="flex-1 flex flex-col items-center justify-center gap-2 text-muted pb-20">
+              <Search size={32} strokeWidth={1.2} />
+              <p className="text-sm">Type to search mentions</p>
+            </div>
+          )}
         </div>
       )}
     </header>
