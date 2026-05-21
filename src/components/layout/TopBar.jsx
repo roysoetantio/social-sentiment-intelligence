@@ -70,10 +70,10 @@ export default function TopBar({ title, onMenuClick }) {
     <header className="bg-canvas dark:bg-surface-dark border-b border-hairline dark:border-white/8 flex-shrink-0 md:h-16">
       {/* Main row */}
       <div className="h-16 flex items-center px-4 gap-4">
-        {/* Burger menu — mobile only */}
+        {/* Burger menu — tablet only (bottom nav handles mobile) */}
         <button
           onClick={onMenuClick}
-          className="lg:hidden p-2 -ml-1 rounded-md hover:bg-surface-strong text-body"
+          className="hidden md:flex lg:hidden p-2 -ml-1 rounded-md hover:bg-surface-strong text-body"
           aria-label="Open menu"
         >
           <Menu size={20} />
