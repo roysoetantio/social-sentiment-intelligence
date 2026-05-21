@@ -47,7 +47,7 @@ function useDarkMode() {
 
 function StatRow({ icon: Icon, label, value, color }) {
   return (
-    <div className="flex items-center gap-3 py-3 border-b border-hairline dark:border-white/8 last:border-0">
+    <div className="flex items-center gap-3 py-4 px-1 border-b border-hairline dark:border-white/8 last:border-0">
       <div className="w-8 h-8 rounded-md flex items-center justify-center" style={{ backgroundColor: `${color}18` }}>
         <Icon size={15} style={{ color }} />
       </div>
