@@ -237,7 +237,7 @@ export default function TopBar({ title, onMenuClick }) {
         )}
 
         {/* Notifications — both */}
-        <button className="relative p-2 rounded-md hover:bg-surface-strong dark:hover:bg-surface-dark-elevated transition-colors flex-shrink-0">
+        <button className="relative h-9 w-9 flex items-center justify-center rounded-md border border-hairline-strong dark:border-white/8 hover:border-ink/30 dark:hover:border-white/20 hover:bg-surface-strong dark:hover:bg-surface-dark-elevated transition-colors flex-shrink-0">
           <Bell size={17} className="text-body dark:text-on-dark-soft" />
           {riskCount > 0 && (
             <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-error text-white text-[0.5625rem] font-bold flex items-center justify-center">
