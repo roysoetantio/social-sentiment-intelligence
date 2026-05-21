@@ -171,8 +171,9 @@ function DetailPanel({ mention, onClose, onSaved, onPrev, onNext, hasPrev, hasNe
 
   return (
     <div className={`fixed inset-0 z-50 md:top-16 md:inset-x-auto md:right-0 md:bottom-0 md:w-96 md:z-30 bg-canvas dark:bg-surface-dark-elevated border-l border-hairline-strong dark:border-white/8 flex flex-col shadow-xl ${closing ? 'slide-out-right' : 'slide-in-right'}`}>
-      <div className="flex items-center gap-3 px-4 border-b border-hairline dark:border-white/8 h-14 flex-shrink-0">
-        <button onClick={handleClose} className="p-1 text-muted hover:text-ink dark:hover:text-on-dark transition-colors flex-shrink-0">
+      <div className="flex items-center gap-2 px-4 border-b border-hairline dark:border-white/8 h-14 flex-shrink-0">
+        {/* Back — mobile only */}
+        <button onClick={handleClose} className="md:hidden p-1 text-muted hover:text-ink dark:hover:text-on-dark transition-colors flex-shrink-0">
           <ArrowLeft size={18} />
         </button>
         <h3 className="flex-1 text-base md:text-lg font-semibold text-ink dark:text-on-dark tracking-tight truncate">Mention Detail</h3>
@@ -180,7 +181,7 @@ function DetailPanel({ mention, onClose, onSaved, onPrev, onNext, hasPrev, hasNe
           <button
             onClick={onPrev}
             disabled={!hasPrev}
-            className="p-1.5 rounded-md hover:bg-surface-strong dark:hover:bg-white/8 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            className="md:hidden p-1.5 rounded-md hover:bg-surface-strong dark:hover:bg-white/8 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             title="Previous mention"
           >
             <ChevronUp size={16} className="text-body dark:text-on-dark-soft" />
@@ -188,10 +189,18 @@ function DetailPanel({ mention, onClose, onSaved, onPrev, onNext, hasPrev, hasNe
           <button
             onClick={onNext}
             disabled={!hasNext}
-            className="p-1.5 rounded-md hover:bg-surface-strong dark:hover:bg-white/8 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            className="md:hidden p-1.5 rounded-md hover:bg-surface-strong dark:hover:bg-white/8 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             title="Next mention"
           >
             <ChevronDown size={16} className="text-body dark:text-on-dark-soft" />
+          </button>
+          {/* Close — desktop only */}
+          <button
+            onClick={handleClose}
+            className="hidden md:flex p-1.5 rounded-md hover:bg-surface-strong dark:hover:bg-white/8 transition-colors text-muted hover:text-ink dark:hover:text-on-dark ml-1"
+            title="Close"
+          >
+            <X size={16} />
           </button>
         </div>
       </div>
@@ -286,7 +295,6 @@ function DetailPanel({ mention, onClose, onSaved, onPrev, onNext, hasPrev, hasNe
                 <span
                   key={kw.id}
                   className="tag-chip"
-                  style={{ color: kw.groupColor, borderColor: `${kw.groupColor}40`, backgroundColor: `${kw.groupColor}10` }}
                 >
                   {kw.term}
                 </span>
@@ -494,9 +502,12 @@ export default function MentionsExplorer() {
   const [selectedMention, setSelectedMention] = useState(null)
   const [sortBy, setSortBy] = useState('recent')
   const [page, setPage] = useState(1)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [listCanScrollDown, setListCanScrollDown] = useState(false)
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false)
   const listRef = useRef(null)
+  const loaderRef = useRef(null)
   const PAGE_SIZE = 20
   const didHandleNav = useRef(false)
 
@@ -518,6 +529,7 @@ export default function MentionsExplorer() {
   useEffect(() => {
     if (!selectedMention) return
     const handleKey = (e) => {
+      if (e.key === 'Escape') { setSelectedMention(null); return }
       if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return
       e.preventDefault()
       const idx = sorted.findIndex(m => m.id === selectedMention.id)
@@ -544,10 +556,39 @@ export default function MentionsExplorer() {
     if (card) card.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
   }, [selectedMention])
 
+  // Init scroll-down indicator
+  useEffect(() => {
+    const el = listRef.current
+    if (!el) return
+    const check = () => setListCanScrollDown(el.scrollTop + el.clientHeight < el.scrollHeight - 4)
+    check()
+    const ro = new ResizeObserver(check)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
+  // Infinite scroll — observe sentinel at bottom of list
+  useEffect(() => {
+    const sentinel = loaderRef.current
+    if (!sentinel) return
+    const observer = new IntersectionObserver(entries => {
+      if (!entries[0].isIntersecting) return
+      if (loadingMore) return
+      if (page * PAGE_SIZE >= sorted.length) return
+      setLoadingMore(true)
+      setTimeout(() => {
+        setPage(p => p + 1)
+        setLoadingMore(false)
+      }, 600)
+    }, { threshold: 0.1 })
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [loadingMore, page, sorted.length])
+
   return (
-    <div className="flex gap-4 h-[calc(100vh-5rem)] -mb-6">
+    <div className="flex gap-4 h-[calc(100vh-5rem)] -mb-4">
       {/* Left sidebar filters — desktop only */}
-      <div className="hidden md:block w-64 flex-shrink-0 overflow-y-auto">
+      <div className="hidden md:block w-64 flex-shrink-0 h-full">
         <FilterBar />
       </div>
 
@@ -620,8 +661,12 @@ export default function MentionsExplorer() {
         <div className="relative flex-1 min-h-0">
           <div
             ref={listRef}
-            className="h-full overflow-y-auto space-y-2 pb-6 scroll-pb-2 scroll-pt-8"
-            onScroll={e => setScrolled(e.currentTarget.scrollTop > 10)}
+            className="h-full overflow-y-auto space-y-2 pb-4 scroll-pb-2 scroll-pt-8"
+            onScroll={e => {
+              const el = e.currentTarget
+              setScrolled(el.scrollTop > 10)
+              setListCanScrollDown(el.scrollTop + el.clientHeight < el.scrollHeight - 4)
+            }}
           >
           {paginated.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 text-muted">
@@ -639,17 +684,23 @@ export default function MentionsExplorer() {
                   />
                 </div>
               ))}
-              {paginated.length < sorted.length && (
-                <button
-                  onClick={() => setPage(p => p + 1)}
-                  className="w-full py-3 text-sm text-ink dark:text-on-dark font-medium hover:bg-surface-strong dark:hover:bg-white/8 rounded-lg border border-hairline-strong dark:border-white/8 transition-colors"
-                >
-                  Load more ({sorted.length - paginated.length} remaining)
-                </button>
-              )}
+              <div ref={loaderRef} className="flex justify-center py-4">
+                {loadingMore && (
+                  <svg className="animate-spin h-5 w-5 text-[#2940BE]" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                  </svg>
+                )}
+              </div>
             </>
           )}
           </div>
+          {scrolled && (
+            <div className="absolute top-0 left-0 right-0 h-12 bg-gradient-to-b from-canvas dark:from-surface-dark to-transparent pointer-events-none" />
+          )}
+          {listCanScrollDown && (
+            <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-canvas dark:from-surface-dark to-transparent pointer-events-none" />
+          )}
         </div>
       </div>
 

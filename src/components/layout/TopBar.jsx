@@ -28,6 +28,7 @@ export default function TopBar({ title, onMenuClick }) {
   const pickerRef = useRef(null)
   const presetDropdownRef = useRef(null)
   const mobileSearchRef = useRef(null)
+  const desktopSearchRef = useRef(null)
 
   useEffect(() => {
     const handler = (e) => {
@@ -36,6 +37,18 @@ export default function TopBar({ title, onMenuClick }) {
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        desktopSearchRef.current?.focus()
+        desktopSearchRef.current?.select()
+      }
+    }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
   }, [])
 
   // Auto-focus search input when expanded
@@ -52,9 +65,9 @@ export default function TopBar({ title, onMenuClick }) {
   const riskCount = allMentions.filter(m => m.riskFlag && m.riskLevel === 'high').length
 
   return (
-    <header className="bg-canvas dark:bg-surface-dark border-b border-hairline dark:border-white/8 flex-shrink-0">
+    <header className="bg-canvas dark:bg-surface-dark flex-shrink-0">
       {/* Main row */}
-      <div className="h-14 md:h-16 flex items-center px-4 gap-2 md:gap-4">
+      <div className="h-14 md:h-16 flex items-center px-4 gap-2 md:gap-4 border-b border-hairline dark:border-white/8">
         {/* Burger — tablet only */}
         <button
           onClick={onMenuClick}
@@ -157,16 +170,21 @@ export default function TopBar({ title, onMenuClick }) {
         <div className="relative w-64 hidden md:block">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
           <input
+            ref={desktopSearchRef}
             type="text"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             placeholder="Search mentions..."
-            className="w-full h-9 pl-8 pr-4 text-sm bg-canvas dark:bg-surface-dark-elevated border border-hairline-strong dark:border-white/8 rounded-md focus:outline-none focus:border-ink dark:focus:border-white/30 transition-colors text-ink dark:text-on-dark placeholder-muted"
+            className="w-full h-9 pl-8 pr-14 text-sm bg-canvas dark:bg-surface-dark-elevated border border-hairline-strong dark:border-white/8 rounded-md focus:outline-none focus:border-ink dark:focus:border-white/30 transition-colors text-ink dark:text-on-dark placeholder-muted"
           />
-          {searchQuery && (
+          {searchQuery ? (
             <button onClick={() => setSearchQuery('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-ink">
               <X size={12} />
             </button>
+          ) : (
+            <kbd className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5 px-1 py-0 rounded border border-hairline-strong dark:border-white/8 bg-surface-strong dark:bg-white/8 text-xs text-muted dark:text-on-dark-soft pointer-events-none">
+              <span className="text-sm">⌘</span><span className="text-[0.65rem]">K</span>
+            </kbd>
           )}
         </div>
 

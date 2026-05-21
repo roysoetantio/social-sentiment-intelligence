@@ -31,7 +31,7 @@ export default function MentionCard({ mention, onClick, selected }) {
       className={clsx(
         'bg-canvas dark:bg-surface-dark-elevated rounded-lg border cursor-pointer transition-all',
         selected
-          ? 'border-ink dark:border-on-dark shadow-card ring-1 ring-ink/10'
+          ? 'border-[#2940BE] shadow-card ring-1 ring-[#2940BE]/20'
           : 'border-hairline-strong dark:border-white/8 hover:shadow-card hover:border-ink/20'
       )}
     >

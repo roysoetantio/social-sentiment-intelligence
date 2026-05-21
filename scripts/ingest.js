@@ -55,15 +55,27 @@ const loadKeywordsFromDB = async () => {
 
   const competitorGroupId = groups?.find(g => g.name.toLowerCase().includes('compet'))?.id || 'competitors'
 
-  const searches = keywords.map(k => ({
-    query: k.term,
-    keywordId: k.id,
-    group: k.group_id,
-    isCompetitor: k.group_id === competitorGroupId,
-  }))
+  const searches = keywords.flatMap(k => {
+    const base = { keywordId: k.id, group: k.group_id, isCompetitor: k.group_id === competitorGroupId }
+    const aliases = Array.isArray(k.aliases) ? k.aliases.filter(Boolean) : []
+    return [
+      { query: k.term, ...base },
+      ...aliases.map(alias => ({ query: alias, ...base })),
+    ]
+  })
 
-  console.log(`[Ingest] Loaded ${searches.length} keywords from Supabase`)
+  console.log(`[Ingest] Loaded ${searches.length} search queries from Supabase (including aliases)`)
   return { searches }
+}
+
+// ── Query matching ────────────────────────────────────────────────────────────
+// Words in ALL CAPS (e.g. "PLUS") are matched case-sensitively.
+// Mixed/lowercase words are matched case-insensitively.
+const queryMatchesText = (query, text) => {
+  return query.split(' ').every(word => {
+    const isAllCaps = word.length > 1 && word === word.toUpperCase() && /[A-Z]/.test(word)
+    return isAllCaps ? text.includes(word) : text.toLowerCase().includes(word.toLowerCase())
+  })
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -153,8 +165,8 @@ const fetchTwitter135 = async ({ query, keywordId, group, isCompetitor }) => {
             const tweetUrl    = `https://twitter.com/${handle}/status/${tweetId}`
             const text        = tweetLegacy.full_text || ''
 
-            // Skip if keyword not in tweet text
-            if (!query.toLowerCase().split(' ').every(w => text.toLowerCase().includes(w))) continue
+            // Skip if keyword not in tweet text (ALL CAPS words matched case-sensitively)
+            if (!queryMatchesText(query, text)) continue
 
             const sent = analyzeSentiment(text)
             results.push({
@@ -307,13 +319,29 @@ const BLACKLIST = [
   'site:insage.com.my',
   'site:wikipedia.org',
   'site:hiredly.com',
-  'site:klsescreener.com/v2/announcements',
+  'site:klsescreener.com',
   'site:tradingview.com',
   'site:oraclecloud.com',
   'site:bebee.com',
   'site:pikom.org.my',
   'site:marketscreener.com/insider',
+  'site:prosple.com',
+  'site:trabajo.org',
 ].map(s => `-${s}`).join(' ')
+
+// Domains blocked across ALL sources (not just Serper query strings)
+const BLACKLIST_DOMAINS = [
+  'klsescreener.com', 'tradingview.com', 'bebee.com', 'prosple.com',
+  'trabajo.org', 'hiredly.com', 'wikipedia.org', 'insage.com.my',
+  'oraclecloud.com', 'marketscreener.com',
+]
+
+const isBlacklisted = (url) => {
+  try {
+    const host = new URL(url).hostname.replace('www.', '')
+    return BLACKLIST_DOMAINS.some(d => host === d || host.endsWith('.' + d))
+  } catch { return false }
+}
 
 // ── LinkedIn post scraper ─────────────────────────────────────────────────────
 const scrapeLinkedInPost = async (url) => {
@@ -553,7 +581,7 @@ const fetchGoogleNews = async ({ query, keywordId, group, isCompetitor }) => {
     const data = await res.json()
     const items = Array.isArray(data?.items) ? data.items : []
 
-    return items.map(item => {
+    return items.filter(item => !isBlacklisted(item.url || item.link || '')).map(item => {
       const text = `${item.title} ${item.snippet || ''}`.trim()
       const sent = analyzeSentiment(text)
       const pubDate = (() => {
@@ -620,7 +648,7 @@ const fetchWorldNews = async ({ query, keywordId, group, isCompetitor }) => {
     const data = await res.json()
     const articles = data.news || []
 
-    return articles.map(article => {
+    return articles.filter(article => !isBlacklisted(article.url || '')).map(article => {
       const text = `${article.title} ${article.text || article.summary || ''}`
       const sent = analyzeSentiment(text)
       return {
@@ -664,7 +692,7 @@ const fetchWorldNews = async ({ query, keywordId, group, isCompetitor }) => {
 
 const fetchRSS = async (searches) => {
   const results = []
-  const keywords = searches.map(s => ({ terms: s.query.toLowerCase().split(' '), search: s }))
+  const keywords = searches.map(s => ({ query: s.query, search: s }))
 
   for (const feed of MY_RSS_FEEDS) {
     try {
@@ -691,11 +719,12 @@ const fetchRSS = async (searches) => {
         if (!title || !link) continue
 
         // Check if any keyword matches
-        const matched = keywords.find(k => k.terms.every(t => text.toLowerCase().includes(t)))
+        const matched = keywords.find(k => queryMatchesText(k.query, text))
         if (!matched) continue
 
-        // Skip own domains
+        // Skip own domains + global blacklist
         if (BLACKLIST.split(' ').some(b => b.startsWith('-site:') && link.includes(b.replace('-site:', '')))) continue
+        if (isBlacklisted(link)) continue
 
         const sent = analyzeSentiment(text)
         results.push({
