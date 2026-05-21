@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import {
-  Plus, Edit2, Trash2, Tag,
+  Plus, Edit2, Trash2, Tag, ArrowLeft, ChevronDown,
   CheckCircle, AlertCircle, XCircle, Activity, Save, X, RefreshCw, Loader, FolderInput,
   Settings, Pause, Play, Download, Terminal,
 } from 'lucide-react'
@@ -255,12 +255,15 @@ function GearPopover({ keyword, onDelete, onClose }) {
 
 function KeywordForm({ keyword, groupColor, onSave, onCancel, saving }) {
   const [term, setTerm] = useState(keyword?.term || '')
+  const [aliases, setAliases] = useState((keyword?.aliases || []).join(', '))
 
   const handleSave = () => {
     if (!term.trim()) return
+    const parsedAliases = aliases.split(',').map(a => a.trim()).filter(Boolean)
     onSave({
       id: keyword?.id || `kw-${Date.now()}`,
       term: term.trim(),
+      aliases: parsedAliases,
     })
   }
 
@@ -273,9 +276,21 @@ function KeywordForm({ keyword, groupColor, onSave, onCancel, saving }) {
           value={term}
           onChange={e => setTerm(e.target.value)}
           className="form-input mt-1"
-          placeholder="Enter keyword..."
+          placeholder="e.g. PLUS Expressways"
           onKeyDown={e => e.key === 'Enter' && handleSave()}
         />
+        <p className="text-[0.625rem] text-muted mt-1">Words in ALL CAPS (e.g. <span className="font-medium text-ink">PLUS</span>) are matched case-sensitively during ingest.</p>
+      </div>
+      <div>
+        <label className="section-label">Aliases <span className="font-normal text-muted">(comma-separated, optional)</span></label>
+        <input
+          type="text"
+          value={aliases}
+          onChange={e => setAliases(e.target.value)}
+          className="form-input mt-1"
+          placeholder="e.g. PLUS Malaysia, PLUS Berhad"
+        />
+        <p className="text-[0.625rem] text-muted mt-1">Each alias will be searched separately but grouped under this keyword.</p>
       </div>
       <div className="flex gap-2 pt-1">
         <button
@@ -296,13 +311,14 @@ function KeywordForm({ keyword, groupColor, onSave, onCancel, saving }) {
 }
 
 export default function KeywordManager() {
-  const { filteredMentions, updateMentionGroups, reloadMentions } = useDashboard()
+  const { globalFilteredMentions: filteredMentions, updateMentionGroups, reloadMentions } = useDashboard()
   const { running, logs, fetchingIds, run: runIngest } = useIngest({ onDone: reloadMentions })
   const [showLog, setShowLog] = useState(false)
   const [groups, setGroups] = useState([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [selectedGroup, setSelectedGroup] = useState(null)
+  const [groupSheetOpen, setGroupSheetOpen] = useState(false)
   const [editingKeyword, setEditingKeyword] = useState(null)
   const [addingToGroup, setAddingToGroup] = useState(null)
   const [movingKeyword, setMovingKeyword] = useState(null)
@@ -367,7 +383,7 @@ export default function KeywordManager() {
       id: isNew ? crypto.randomUUID() : kwData.id,
       group_id: groupId,
       term: kwData.term,
-      aliases: [],
+      aliases: kwData.aliases || [],
       match_type: 'exact',
       is_active: true,
     }
@@ -473,7 +489,7 @@ export default function KeywordManager() {
   }
 
   return (
-    <div className="flex gap-4 h-[calc(100vh-7rem)] relative">
+    <div className="flex gap-4 h-[calc(100vh-7rem)] relative overflow-hidden">
       {(showLog || running) && (
         <IngestLogPanel logs={logs} onClose={() => setShowLog(false)} />
       )}
@@ -497,8 +513,54 @@ export default function KeywordManager() {
         </div>
       )}
 
-      {/* Left: Group list */}
-      <div className="w-64 flex-shrink-0 overflow-y-auto">
+      {/* Mobile group selector sheet backdrop */}
+      {groupSheetOpen && (
+        <div className="md:hidden fixed inset-0 z-40 bg-black/40" onClick={() => setGroupSheetOpen(false)} />
+      )}
+
+      {/* Mobile group selector sheet */}
+      <div className={clsx(
+        'md:hidden fixed inset-x-0 bottom-0 z-50 bg-canvas dark:bg-surface-dark rounded-t-2xl shadow-2xl transition-transform duration-300 ease-out',
+        groupSheetOpen ? 'translate-y-0' : 'translate-y-full'
+      )}>
+        <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-hairline dark:border-white/8">
+          <div className="absolute left-1/2 -translate-x-1/2 top-3 w-10 h-1 rounded-full bg-hairline-strong dark:bg-white/20" />
+          <span className="text-sm font-semibold text-ink dark:text-on-dark">Keyword Groups</span>
+          <button onClick={() => setGroupSheetOpen(false)} className="p-1.5 rounded-md hover:bg-surface-strong text-muted">
+            <X size={16} />
+          </button>
+        </div>
+        <div className="px-5 py-3 pb-8 space-y-2">
+          {groups.map(g => (
+            <button
+              key={g.id}
+              onClick={() => { setSelectedGroup(g); setGroupSheetOpen(false) }}
+              className={clsx(
+                'w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-colors text-left',
+                selectedGroup?.id === g.id
+                  ? 'border-transparent text-white'
+                  : 'border-hairline dark:border-white/8 hover:bg-surface-strong dark:hover:bg-white/8'
+              )}
+              style={selectedGroup?.id === g.id ? { backgroundColor: g.color } : {}}
+            >
+              <div className="flex items-center gap-3">
+                <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: selectedGroup?.id === g.id ? 'rgba(255,255,255,0.7)' : g.color }} />
+                <span className="text-sm font-medium">{g.name}</span>
+              </div>
+              <span className={clsx('text-xs', selectedGroup?.id === g.id ? 'text-white/70' : 'text-muted')}>{g.keywords.length} keywords</span>
+            </button>
+          ))}
+          <button
+            onClick={() => { handleAddGroup(); setGroupSheetOpen(false) }}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-dashed border-hairline-strong dark:border-white/8 text-sm text-ink dark:text-on-dark hover:bg-surface-strong dark:hover:bg-white/8 transition-colors mt-1"
+          >
+            <Plus size={14} /> New Group
+          </button>
+        </div>
+      </div>
+
+      {/* Left: Group list — desktop only */}
+      <div className="hidden md:block w-64 flex-shrink-0 overflow-y-auto">
         <div className="card space-y-2">
           <div className="flex items-center justify-between mb-1">
             <h3 className="text-sm font-semibold text-ink dark:text-on-dark">Keyword Groups</h3>
@@ -551,6 +613,23 @@ export default function KeywordManager() {
 
       {/* Right: Group detail */}
       <div className="flex-1 overflow-y-auto">
+        {/* Mobile group selector bar */}
+        <button
+          onClick={() => setGroupSheetOpen(true)}
+          className="md:hidden w-full flex items-center justify-between px-4 py-3 mb-3 rounded-xl border border-hairline dark:border-white/8 bg-canvas dark:bg-surface-dark hover:bg-surface-strong dark:hover:bg-white/8 transition-colors"
+        >
+          <div className="flex items-center gap-2.5">
+            {selectedGroupData
+              ? <>
+                  <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: selectedGroupData.color }} />
+                  <span className="text-sm font-semibold text-ink dark:text-on-dark">{selectedGroupData.name}</span>
+                </>
+              : <span className="text-sm text-muted">Select a group…</span>
+            }
+          </div>
+          <ChevronDown size={15} className="text-muted" />
+        </button>
+
         {selectedGroupData && (
           <div className="space-y-4">
             {/* Group header */}
@@ -593,7 +672,7 @@ export default function KeywordManager() {
               </div>
 
               {/* Group stats */}
-              <div className="grid grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {(() => {
                   const s = groupStats[selectedGroupData.id] || { total: 0, positive: 0, negative: 0, neutral: 0 }
                   return [
@@ -628,8 +707,7 @@ export default function KeywordManager() {
                   </button>}
                   <button
                     onClick={() => setAddingToGroup(selectedGroupData.id)}
-                    className="flex items-center gap-1.5 text-xs text-white px-3 py-1.5 rounded-lg transition-colors"
-                    style={{ backgroundColor: selectedGroupData.color }}
+                    className="flex items-center gap-1.5 text-xs text-white px-3 py-1.5 rounded-lg transition-colors bg-ink dark:bg-on-dark dark:text-ink hover:bg-ink/80"
                   >
                     <Plus size={13} /> Add Keyword
                   </button>
@@ -675,6 +753,15 @@ export default function KeywordManager() {
                                 <HealthIcon size={14} style={{ color: health.color }} />
                                 <span className="text-sm font-semibold text-ink dark:text-on-dark">{kw.term}</span>
                               </div>
+                              {kw.aliases?.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-1 ml-5">
+                                  {kw.aliases.map(alias => (
+                                    <span key={alias} className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-surface-strong dark:bg-white/8 text-[0.625rem] text-muted dark:text-on-dark-soft border border-hairline dark:border-white/8">
+                                      {alias}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                             <div className="flex items-center gap-1.5">
                               {movingKeyword === kw.id ? (

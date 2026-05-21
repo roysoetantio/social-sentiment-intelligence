@@ -43,7 +43,7 @@ const ToggleButton = ({ active, onClick, children, color }) => (
   </button>
 )
 
-export default function FilterBar() {
+export default function FilterBar({ inline = false }) {
   const {
     selectedPlatforms, togglePlatform,
     selectedSentiments, toggleSentiment,
@@ -81,9 +81,9 @@ export default function FilterBar() {
     return counts
   }, [mentionsWithoutSourceFilter])
 
-  return (
-    <div className="bg-canvas dark:bg-surface-dark-elevated rounded-lg border border-hairline-strong dark:border-white/8">
-      <div className="p-4 pb-6">
+  const content = (
+    <>
+      {!inline && (
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-ink dark:text-on-dark">Filters</span>
@@ -99,6 +99,7 @@ export default function FilterBar() {
             </button>
           )}
         </div>
+      )}
 
         {/* Sentiment */}
         <div className="mb-5">
@@ -272,7 +273,16 @@ export default function FilterBar() {
             </div>
           </div>
         )}
-      </div>
+    </>
+  )
+
+  if (inline) {
+    return <div>{content}</div>
+  }
+
+  return (
+    <div className="bg-canvas dark:bg-surface-dark-elevated rounded-lg border border-hairline-strong dark:border-white/8">
+      <div className="p-4 pb-6">{content}</div>
     </div>
   )
 }

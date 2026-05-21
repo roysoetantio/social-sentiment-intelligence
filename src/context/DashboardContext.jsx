@@ -81,6 +81,7 @@ export function DashboardProvider({ children }) {
     })
   }, [allMentionsData, dateRange, selectedKeywords, selectedGroups, selectedPlatforms, selectedSentiments, selectedLanguages, searchQuery, selectedMentionTypes, riskOnly, showExcluded])
 
+  // All filters — used only by Mentions Explorer
   const filteredMentions = useMemo(() => {
     return filterMentions(allMentionsData, {
       dateRange, selectedKeywords, selectedGroups, selectedPlatforms,
@@ -88,6 +89,13 @@ export function DashboardProvider({ children }) {
       selectedSources, riskOnly, showExcluded,
     })
   }, [allMentionsData, dateRange, selectedKeywords, selectedGroups, selectedPlatforms, selectedSentiments, selectedLanguages, searchQuery, selectedMentionTypes, selectedSources, riskOnly, showExcluded])
+
+  // Global filters only (date range + search) — used by Overview, Analytics, Keywords
+  const globalFilteredMentions = useMemo(() => {
+    return filterMentions(allMentionsData, {
+      dateRange, searchQuery,
+    })
+  }, [allMentionsData, dateRange, searchQuery])
 
   const updateMentionSentiment = useCallback((mentionId, newLabel) => {
     setAllMentionsData(prev => prev.map(m =>
@@ -226,6 +234,7 @@ export function DashboardProvider({ children }) {
     showExcluded, setShowExcluded,
     // Derived
     filteredMentions,
+    globalFilteredMentions,
     mentionsWithoutSourceFilter,
     allMentions: allMentionsData,
     isLoading,

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Search, Bell, Calendar, Filter, X, Menu, ChevronDown } from 'lucide-react'
+import { Search, Bell, Calendar, X, Menu, ChevronDown } from 'lucide-react'
 import { format } from 'date-fns'
 import { useDashboard } from '../../context/DashboardContext'
 import DateRangePicker from '../ui/DateRangePicker'
@@ -19,8 +19,6 @@ export default function TopBar({ title, onMenuClick }) {
     dateRange, setDateRange,
     setDatePreset,
     activePreset, setActivePreset,
-    activeFilterCount,
-    resetFilters,
     allMentions,
   } = useDashboard()
 
@@ -223,18 +221,6 @@ export default function TopBar({ title, onMenuClick }) {
             />
           )}
         </div>
-
-        {/* Filter count — both */}
-        {activeFilterCount > 0 && (
-          <button
-            onClick={resetFilters}
-            className="flex items-center gap-1.5 h-9 text-xs text-orange font-medium bg-orange/10 border border-orange/20 rounded-md px-2.5 md:px-3 hover:bg-orange/20 transition-colors flex-shrink-0"
-          >
-            <Filter size={13} />
-            <span className="hidden sm:inline">{activeFilterCount} active</span>
-            <X size={12} />
-          </button>
-        )}
 
         {/* Notifications — both */}
         <button className="relative h-9 w-9 flex items-center justify-center rounded-md border border-hairline-strong dark:border-white/8 hover:border-ink/30 dark:hover:border-white/20 hover:bg-surface-strong dark:hover:bg-surface-dark-elevated transition-colors flex-shrink-0">

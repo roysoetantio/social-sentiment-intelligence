@@ -23,7 +23,7 @@ const PRESET_CHART = {
 }
 
 export default function Overview() {
-  const { filteredMentions, activePreset, setDateRange } = useDashboard()
+  const { globalFilteredMentions: filteredMentions, activePreset, setDateRange } = useDashboard()
   const navigate = useNavigate()
   const { days, granularity } = PRESET_CHART[activePreset] || PRESET_CHART['1m']
 

@@ -6,6 +6,7 @@ import Overview from './pages/Overview'
 import MentionsExplorer from './pages/MentionsExplorer'
 import SentimentAnalytics from './pages/SentimentAnalytics'
 import KeywordManager from './pages/KeywordManager'
+import More from './pages/More'
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
             <Route path="/mentions" element={<MentionsExplorer />} />
             <Route path="/analytics" element={<SentimentAnalytics />} />
             <Route path="/keywords" element={<KeywordManager />} />
+            <Route path="/more" element={<More />} />
           </Routes>
         </Layout>
       </DashboardProvider>

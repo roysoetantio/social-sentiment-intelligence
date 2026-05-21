@@ -9,6 +9,7 @@ const pageTitles = {
   '/mentions': 'Mentions Explorer',
   '/analytics': 'Sentiment Analytics',
   '/keywords': 'Keyword Manager',
+  '/more': 'More',
 }
 
 export default function Layout({ children }) {

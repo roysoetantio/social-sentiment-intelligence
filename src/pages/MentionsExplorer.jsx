@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
-import { X, ExternalLink, Heart, Share2, MessageCircle, Eye, Globe, ChevronDown, CheckSquare, Save, Loader, Trash2 } from 'lucide-react'
+import { X, ExternalLink, Heart, Share2, MessageCircle, Eye, Globe, ChevronDown, CheckSquare, Save, Loader, Trash2, SlidersHorizontal, ArrowLeft, ChevronUp } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { useDashboard } from '../context/DashboardContext'
 import { sortMentions } from '../services/filterService'
@@ -75,9 +75,15 @@ function AfinnTooltip({ text, fullText }) {
   )
 }
 
-function DetailPanel({ mention, onClose, onSaved }) {
+function DetailPanel({ mention, onClose, onSaved, onPrev, onNext, hasPrev, hasNext }) {
   const { updateMentionSentiment, clearMentionOverride, toggleExcludeMention } = useDashboard()
   const [excluded, setExcluded] = useState(mention.excluded || false)
+  const [closing, setClosing] = useState(false)
+
+  const handleClose = () => {
+    setClosing(true)
+    setTimeout(onClose, 240)
+  }
   const matchedKeywords = mention.keywordMatched.map(id => getKeywordById(id)).filter(Boolean)
 
   const [showAfinn, setShowAfinn] = useState(false)
@@ -164,15 +170,33 @@ function DetailPanel({ mention, onClose, onSaved }) {
   }
 
   return (
-    <div className="fixed top-16 right-0 bottom-0 w-96 bg-canvas dark:bg-surface-dark-elevated border-l border-hairline-strong dark:border-white/8 flex flex-col slide-in-right z-30 shadow-xl">
-      <div className="flex items-center justify-between p-4 border-b border-hairline dark:border-white/8">
-        <h3 className="text-sm font-semibold text-ink dark:text-on-dark">Mention Detail</h3>
-        <button onClick={onClose} className="p-1 rounded-lg hover:bg-surface-strong dark:hover:bg-white/8 transition-colors">
-          <X size={16} className="text-body dark:text-on-dark-soft" />
+    <div className={`fixed inset-0 z-50 md:top-16 md:inset-x-auto md:right-0 md:bottom-0 md:w-96 md:z-30 bg-canvas dark:bg-surface-dark-elevated border-l border-hairline-strong dark:border-white/8 flex flex-col shadow-xl ${closing ? 'slide-out-right' : 'slide-in-right'}`}>
+      <div className="flex items-center gap-3 px-4 border-b border-hairline dark:border-white/8 h-14 flex-shrink-0">
+        <button onClick={handleClose} className="p-1 text-muted hover:text-ink dark:hover:text-on-dark transition-colors flex-shrink-0">
+          <ArrowLeft size={18} />
         </button>
+        <h3 className="flex-1 text-base md:text-lg font-semibold text-ink dark:text-on-dark tracking-tight truncate">Mention Detail</h3>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <button
+            onClick={onPrev}
+            disabled={!hasPrev}
+            className="p-1.5 rounded-md hover:bg-surface-strong dark:hover:bg-white/8 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            title="Previous mention"
+          >
+            <ChevronUp size={16} className="text-body dark:text-on-dark-soft" />
+          </button>
+          <button
+            onClick={onNext}
+            disabled={!hasNext}
+            className="p-1.5 rounded-md hover:bg-surface-strong dark:hover:bg-white/8 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            title="Next mention"
+          >
+            <ChevronDown size={16} className="text-body dark:text-on-dark-soft" />
+          </button>
+        </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 pb-8 space-y-4">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
@@ -465,12 +489,13 @@ function DetailPanel({ mention, onClose, onSaved }) {
 }
 
 export default function MentionsExplorer() {
-  const { filteredMentions, allMentions, selectedSentiments, toggleSentiment } = useDashboard()
+  const { filteredMentions, allMentions, selectedSentiments, toggleSentiment, activeFilterCount } = useDashboard()
   const location = useLocation()
   const [selectedMention, setSelectedMention] = useState(null)
   const [sortBy, setSortBy] = useState('recent')
   const [page, setPage] = useState(1)
   const [scrolled, setScrolled] = useState(false)
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false)
   const listRef = useRef(null)
   const PAGE_SIZE = 20
   const didHandleNav = useRef(false)
@@ -521,17 +546,61 @@ export default function MentionsExplorer() {
 
   return (
     <div className="flex gap-4 h-[calc(100vh-5rem)] -mb-6">
-      {/* Left sidebar filters */}
-      <div className="w-64 flex-shrink-0 overflow-y-auto">
+      {/* Left sidebar filters — desktop only */}
+      <div className="hidden md:block w-64 flex-shrink-0 overflow-y-auto">
         <FilterBar />
       </div>
 
+      {/* Mobile filter drawer backdrop */}
+      {filterDrawerOpen && (
+        <div
+          className="md:hidden fixed inset-0 z-40 bg-black/40"
+          onClick={() => setFilterDrawerOpen(false)}
+        />
+      )}
+
+      {/* Mobile filter drawer — slides up from bottom */}
+      <div className={clsx(
+        'md:hidden fixed inset-x-0 bottom-0 z-50 bg-canvas dark:bg-surface-dark rounded-t-2xl shadow-2xl transition-transform duration-300 ease-out max-h-[85vh] flex flex-col',
+        filterDrawerOpen ? 'translate-y-0' : 'translate-y-full'
+      )}>
+        {/* Handle + header */}
+        <div className="flex items-center justify-between px-5 pb-3 border-b border-hairline dark:border-white/8 flex-shrink-0 pt-5">
+          <div className="absolute left-1/2 -translate-x-1/2 top-3 w-10 h-1 rounded-full bg-hairline-strong dark:bg-white/20" />
+          <span className="text-sm font-semibold text-ink dark:text-on-dark">Filters</span>
+          <button onClick={() => setFilterDrawerOpen(false)} className="p-1.5 rounded-md hover:bg-surface-strong text-muted">
+            <X size={16} />
+          </button>
+        </div>
+        <div className="overflow-y-auto px-5 py-4 pb-10">
+          <FilterBar inline />
+        </div>
+      </div>
+
       {/* Main feed */}
-      <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${selectedMention ? 'pr-96' : ''}`}>
-        {/* Feed header */}
-        <div className="flex items-center justify-between mb-3">
+      <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${selectedMention ? 'md:pr-96' : ''}`}>
+        {/* Feed header — sticky */}
+        <div className="flex items-center justify-between mb-3 sticky top-0 z-10 bg-canvas dark:bg-surface-dark py-2 -mt-2">
           <span className="text-xs text-muted dark:text-on-dark-soft">{filteredMentions.length} mentions</span>
           <div className="flex items-center gap-2">
+            {/* Filters button — mobile only */}
+            <button
+              onClick={() => setFilterDrawerOpen(true)}
+              className={clsx(
+                'md:hidden flex items-center gap-1.5 text-xs rounded-md px-3 py-1.5 transition-colors border',
+                activeFilterCount > 0
+                  ? 'border-[#2940BE] text-[#2940BE] bg-[#2940BE]/8 font-semibold'
+                  : 'border-hairline-strong dark:border-white/8 bg-canvas dark:bg-surface-dark-elevated text-body dark:text-on-dark-soft hover:border-ink/30'
+              )}
+            >
+              <SlidersHorizontal size={12} />
+              Filters
+              {activeFilterCount > 0 && (
+                <span className="w-4 h-4 rounded-full bg-[#2940BE] text-white text-[0.5625rem] font-bold flex items-center justify-center">
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
             <div className="relative">
               <select
                 value={sortBy}
@@ -549,9 +618,6 @@ export default function MentionsExplorer() {
 
         {/* Mentions list */}
         <div className="relative flex-1 min-h-0">
-          {scrolled && (
-            <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-canvas-soft dark:from-surface-dark to-transparent z-10 pointer-events-none" />
-          )}
           <div
             ref={listRef}
             className="h-full overflow-y-auto space-y-2 pb-6 scroll-pb-2 scroll-pt-8"
@@ -593,6 +659,19 @@ export default function MentionsExplorer() {
           mention={selectedMention}
           onClose={() => setSelectedMention(null)}
           onSaved={(updated) => setSelectedMention(m => ({ ...m, analystReview: { ...m.analystReview, ...updated } }))}
+          hasPrev={sorted.findIndex(m => m.id === selectedMention.id) > 0}
+          hasNext={sorted.findIndex(m => m.id === selectedMention.id) < sorted.length - 1}
+          onPrev={() => {
+            const idx = sorted.findIndex(m => m.id === selectedMention.id)
+            if (idx > 0) setSelectedMention(sorted[idx - 1])
+          }}
+          onNext={() => {
+            const idx = sorted.findIndex(m => m.id === selectedMention.id)
+            if (idx < sorted.length - 1) {
+              if (idx === paginated.length - 1) setPage(p => p + 1)
+              setSelectedMention(sorted[idx + 1])
+            }
+          }}
         />
       )}
     </div>

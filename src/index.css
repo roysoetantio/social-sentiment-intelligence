@@ -311,6 +311,19 @@ html.dark .chart-tooltip {
   animation: slideInRight 0.25s ease-out forwards;
 }
 
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.slide-out-right {
+  animation: slideOutRight 0.25s ease-in forwards;
+}
+
 /* Fade in */
 @keyframes fadeIn {
   from {

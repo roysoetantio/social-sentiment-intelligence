@@ -44,7 +44,7 @@ const StatPill = ({ label, value, color }) => (
 )
 
 export default function Sidebar({ isOpen, onClose }) {
-  const { filteredMentions } = useDashboard()
+  const { globalFilteredMentions: filteredMentions } = useDashboard()
 
   const riskCount = filteredMentions.filter(m => m.riskFlag).length
   const positiveCount = filteredMentions.filter(m => m.sentiment.label === 'positive').length

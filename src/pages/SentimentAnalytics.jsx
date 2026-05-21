@@ -56,7 +56,7 @@ function NetSentimentGauge({ score }) {
 }
 
 export default function SentimentAnalytics() {
-  const { filteredMentions } = useDashboard()
+  const { globalFilteredMentions: filteredMentions } = useDashboard()
   const kpis = useMemo(() => getKPIs(filteredMentions), [filteredMentions])
   const platformData = useMemo(() => getPlatformBreakdown(filteredMentions), [filteredMentions])
   const groupStats = useMemo(() => getKeywordGroupStats(filteredMentions), [filteredMentions])
@@ -106,7 +106,7 @@ export default function SentimentAnalytics() {
   return (
     <div className="space-y-4">
       {/* Hero net sentiment + Timeline side by side */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="card flex flex-col">
           <h2 className="text-base font-semibold text-ink dark:text-on-dark tracking-tight mb-4">Net Sentiment Score</h2>
           <div className="grid grid-cols-5 gap-4 items-stretch flex-1">
@@ -143,7 +143,7 @@ export default function SentimentAnalytics() {
       </div>
 
       {/* Platform & Group breakdown */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="card">
           <h2 className="text-base font-semibold text-ink dark:text-on-dark tracking-tight mb-4">Sentiment by Platform</h2>
           {!filteredMentions.length ? (
@@ -193,7 +193,7 @@ export default function SentimentAnalytics() {
       </div>
 
       {/* Emotions + Crisis side by side */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="card">
           <h2 className="text-base font-semibold text-ink dark:text-on-dark tracking-tight mb-4">Top Emotions Detected</h2>
           {topEmotions.length === 0 ? (
