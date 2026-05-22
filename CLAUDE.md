@@ -34,7 +34,7 @@ Each source has a `fetch*()` function that returns rows matching the Supabase sc
 | `google_cse` | `fetchGoogleCSE` | Google Custom Search |
 | `rss_my` | `fetchRSS` | Hardcoded Malaysian news RSS feeds |
 | `worldnews` | `fetchWorldNews` | World News API — global news search |
-| `claude_search` | `fetchAnthropicSearch` | Claude web search via Anthropic API |
+| `claude_search` | Claude WebSearch tool (agent step) | Claude searches the web for each keyword and saves results directly to Supabase — run as part of Step 1 in post-ingest workflow |
 
 **Rule:** When adding a new ingest source, always update both:
 - `src/components/filters/FilterBar.jsx` → `SOURCE_LABELS` (icon + label for filter sidebar)
@@ -51,7 +51,6 @@ Each source has a `fetch*()` function that returns rows matching the Supabase sc
 | `VITE_GOOGLE_CSE_KEY` + `VITE_GOOGLE_CSE_CX` | Ingest (Google CSE) |
 | `SERPER_API_KEY` | Ingest (Serper) |
 | `WORLDNEWS_API_KEY` | Ingest (World News API) |
-| `ANTHROPIC_API_KEY` | Ingest (Claude web search) |
 
 ### Key design decisions
 - **Sentiment scoring** uses the `sentiment` npm package (AFINN lexicon). Score is normalized to [-1, 1] and thresholded at ±0.05 for label. Confidence is hardcoded at 0.75 for all ingest sources.
@@ -69,6 +68,7 @@ Each source has a `fetch*()` function that returns rows matching the Supabase sc
 npm run ingest
 node scripts/ingest-google-alerts.js   # if running Google Alerts too
 ```
+Then Claude searches the web for each active keyword using the WebSearch tool and saves results directly to Supabase as `claude_search` source.
 
 **Step 2 — Fix dates (dry run first, then apply)**
 `fix-dates.js` targets rows where `date_fixed != true`. When ingest can't get a real date from the source API, it falls back to `new Date()` (the ingest timestamp) — those are the rows that need crawling. The script extracts real article dates from meta tags, JSON-LD, `<time>` elements, and URL paths. Twitter/X URLs are skipped (API date is reliable).

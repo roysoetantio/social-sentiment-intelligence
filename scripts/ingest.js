@@ -8,7 +8,6 @@
 import { createClient } from '@supabase/supabase-js'
 import Sentiment from 'sentiment'
 import ws from 'ws'
-import Anthropic from '@anthropic-ai/sdk'
 
 // ── Config ────────────────────────────────────────────────────────────────────
 const SUPABASE_URL  = process.env.VITE_SUPABASE_URL
@@ -18,7 +17,6 @@ const TWITTER135_API_KEY  = process.env.VITE_TWITTER135_API_KEY || RAPIDAPI_KEY
 const SERPER_KEY          = process.env.SERPER_API_KEY
 const GOOGLE_NEWS_KEY     = process.env.VITE_RAPIDAPI_KEY
 const WORLDNEWS_API_KEY   = process.env.WORLDNEWS_API_KEY
-const ANTHROPIC_API_KEY   = process.env.ANTHROPIC_API_KEY
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
   console.error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY')
@@ -802,94 +800,6 @@ const saveToSupabase = async (mentions) => {
   return { saved: data?.length || 0, skipped: mentions.length - (data?.length || 0) }
 }
 
-// ── Anthropic Web Search ──────────────────────────────────────────────────────
-const fetchAnthropicSearch = async ({ query, keywordId, group, isCompetitor }) => {
-  if (!ANTHROPIC_API_KEY) {
-    console.warn(`[AnthropicSearch] Skipping "${query}" — ANTHROPIC_API_KEY not configured`)
-    return []
-  }
-
-  const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY })
-
-  try {
-    const response = await client.messages.create({
-      model: 'claude-opus-4-5',
-      max_tokens: 4096,
-      tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-      messages: [{
-        role: 'user',
-        content: `Search for recent news articles about "${query}" from the past 30 days. Focus on Malaysian news sources. Return results as a JSON array with this exact structure, nothing else:
-[
-  {
-    "title": "article title",
-    "url": "full url",
-    "source": "publication name",
-    "snippet": "brief summary",
-    "date": "ISO date string or empty string if unknown"
-  }
-]
-Only include results where "${query}" (exact phrase) appears in the content. Aim for 10 results.`,
-      }],
-    })
-
-    // Extract text content from the final response
-    const textBlock = response.content.find(b => b.type === 'text')
-    if (!textBlock) return []
-
-    // Parse JSON from the response
-    const jsonMatch = textBlock.text.match(/\[[\s\S]*\]/)
-    if (!jsonMatch) return []
-
-    const articles = JSON.parse(jsonMatch[0])
-
-    return articles
-      .filter(a => a.url && a.title)
-      .filter(a => !isBlacklisted(a.url))
-      .filter(a => queryMatchesText(query, `${a.title} ${a.snippet} ${a.url}`))
-      .map(a => {
-        const text = `${a.title} ${a.snippet || ''}`
-        const sent = analyzeSentiment(text)
-        const parsedDate = a.date ? new Date(a.date) : null
-        const published = parsedDate && !isNaN(parsedDate) ? parsedDate.toISOString() : new Date().toISOString()
-        return {
-          text: a.title,
-          full_text: a.snippet || '',
-          platform: 'News',
-          url: a.url,
-          author_name: a.source || 'Unknown',
-          author_handle: (a.source || 'unknown').toLowerCase().replace(/\s+/g, ''),
-          author_followers: 0,
-          author_verified: false,
-          published_at: published,
-          _rawDate: a.date || null,
-          keyword_matched: [keywordId],
-          keyword_group: group,
-          sentiment_label: sent.label,
-          sentiment_score: sent.score,
-          sentiment_confidence: sent.confidence,
-          emotions: [],
-          engagement_likes: 0,
-          engagement_shares: 0,
-          engagement_comments: 0,
-          engagement_reach: 0,
-          geography_country: 'Malaysia',
-          geography_region: 'Malaysia',
-          language: detectLanguage(text),
-          mention_type: guessMentionType(text),
-          risk_flag: sent.label === 'negative' && sent.confidence > 0.7,
-          risk_level: sent.label === 'negative' ? 'medium' : null,
-          topics: extractTopics(text),
-          is_competitor: isCompetitor || false,
-          source: 'claude_search',
-          status: 'new',
-        }
-      })
-  } catch (e) {
-    console.warn(`[AnthropicSearch] Failed for "${query}":`, e.message)
-    return []
-  }
-}
-
 // ── Main ──────────────────────────────────────────────────────────────────────
 const run = async () => {
   console.log(`\n[Ingest] Starting at ${new Date().toISOString()}`)
@@ -951,15 +861,6 @@ const run = async () => {
     console.log(`[WorldNews] Got ${results.length} results`)
     allMentions.push(...results)
     await new Promise(r => setTimeout(r, 500))
-  }
-
-  // Fetch from Anthropic Web Search (Claude)
-  for (const search of searches) {
-    console.log(`[AnthropicSearch] Fetching: "${search.query}"`)
-    const results = await fetchAnthropicSearch(search)
-    console.log(`[AnthropicSearch] Got ${results.length} results`)
-    allMentions.push(...results)
-    await new Promise(r => setTimeout(r, 1000))
   }
 
   // Fetch from Reddit
