@@ -34,6 +34,7 @@ Each source has a `fetch*()` function that returns rows matching the Supabase sc
 | `google_cse` | `fetchGoogleCSE` | Google Custom Search |
 | `rss_my` | `fetchRSS` | Hardcoded Malaysian news RSS feeds |
 | `worldnews` | `fetchWorldNews` | World News API — global news search |
+| `claude_search` | `fetchAnthropicSearch` | Claude web search via Anthropic API |
 
 **Rule:** When adding a new ingest source, always update both:
 - `src/components/filters/FilterBar.jsx` → `SOURCE_LABELS` (icon + label for filter sidebar)
@@ -50,6 +51,7 @@ Each source has a `fetch*()` function that returns rows matching the Supabase sc
 | `VITE_GOOGLE_CSE_KEY` + `VITE_GOOGLE_CSE_CX` | Ingest (Google CSE) |
 | `SERPER_API_KEY` | Ingest (Serper) |
 | `WORLDNEWS_API_KEY` | Ingest (World News API) |
+| `ANTHROPIC_API_KEY` | Ingest (Claude web search) |
 
 ### Key design decisions
 - **Sentiment scoring** uses the `sentiment` npm package (AFINN lexicon). Score is normalized to [-1, 1] and thresholded at ±0.05 for label. Confidence is hardcoded at 0.75 for all ingest sources.
@@ -57,6 +59,32 @@ Each source has a `fetch*()` function that returns rows matching the Supabase sc
 - **Keyword validation** — after fetching, ingest drops any result where the keyword terms don't appear in `text + full_text + url`. This prevents false positives from API relevance ranking.
 - **BLACKLIST** in ingest — a constant list of UEM Edgenta's own domains/accounts excluded from Serper searches so owned content doesn't pollute external mention counts.
 - **Keywords** are loaded dynamically from Supabase (`keyword_groups` + `keywords` tables). If the DB is empty, a hardcoded fallback list is used (UEM Edgenta, Edgenta NXT, Shaiful Subhan, Chua Yong Howe).
+
+## Post-ingest workflow
+
+**Every time after running ingest, follow ALL five steps in order — never stop at step 1.**
+
+**Step 1 — Run ingest**
+```bash
+npm run ingest
+node scripts/ingest-google-alerts.js   # if running Google Alerts too
+```
+
+**Step 2 — Fix dates (dry run first, then apply)**
+`fix-dates.js` targets rows where `date_fixed != true`. When ingest can't get a real date from the source API, it falls back to `new Date()` (the ingest timestamp) — those are the rows that need crawling. The script extracts real article dates from meta tags, JSON-LD, `<time>` elements, and URL paths. Twitter/X URLs are skipped (API date is reliable).
+```bash
+node scripts/fix-dates.js              # dry run — review output first
+node scripts/fix-dates.js --apply      # write corrected dates to Supabase
+```
+
+**Step 3 — Send unfixed URLs to user**
+After `--apply`, collect all URLs that still couldn't be dated (403s, JS-rendered, paywalled). Present the full list to the user — they provide correct dates, then apply them manually via Supabase UPDATE.
+
+**Step 4 — Delete junk mentions**
+Open Mentions Explorer in the dashboard. Delete rows that are off-topic despite passing keyword validation, duplicate stories with different URLs, or have garbled/truncated text.
+
+**Step 5 — Reload the dashboard**
+Refresh the browser — the app reads fresh from Supabase on load.
 
 ### Brand colours
 | Role | Hex |

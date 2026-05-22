@@ -10,6 +10,7 @@
     "ingest": "node --env-file=.env scripts/ingest.js"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.98.0",
     "@supabase/supabase-js": "^2.105.4",
     "clsx": "^2.1.0",
     "date-fns": "^3.3.1",

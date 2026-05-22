@@ -15,6 +15,7 @@ const SOURCE_LABELS = {
   reddit:               { label: 'Reddit',           Icon: MessageSquare },
   google_news_rapidapi: { label: 'Google News',      Icon: Newspaper },
   worldnews:            { label: 'World News API',   Icon: Globe },
+  claude_search:        { label: 'Claude Search',    Icon: Globe },
 }
 
 const PLATFORMS = ['Twitter', 'LinkedIn', 'YouTube', 'News', 'Blog', 'Forum']

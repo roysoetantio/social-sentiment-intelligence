@@ -363,6 +363,7 @@ function DetailPanel({ mention, onClose, onSaved, onPrev, onNext, hasPrev, hasNe
                   reddit:               '🔴 Reddit',
                   google_news_rapidapi: '📰 Google News',
                   worldnews:            '🌐 World News API',
+                  claude_search:        '🤖 Claude Search',
                 }[mention.source] || `🔗 ${mention.source}`}
               </span>
             </div>
