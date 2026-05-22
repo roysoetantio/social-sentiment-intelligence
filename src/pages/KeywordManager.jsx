@@ -16,6 +16,37 @@ const getHealthStatus = (total, positive, negative) => {
   return { level: 'active', color: STATUS_COLORS.active, label: 'Active', icon: CheckCircle }
 }
 
+function Modal({ title, onClose, children, width = 'max-w-md' }) {
+  useEffect(() => {
+    const handler = (e) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [onClose])
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex justify-center bg-black/40 px-4 animate-fade-in"
+      style={{ alignItems: 'flex-start', paddingTop: '8vh' }}
+      onClick={onClose}
+    >
+      <div
+        className={clsx('bg-white dark:bg-surface-dark-elevated rounded-2xl shadow-2xl w-full border border-transparent dark:border-white/8 overflow-hidden animate-modal-in', width)}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-5 py-4 border-b border-hairline dark:border-white/8">
+          <h3 className="text-sm font-semibold text-ink dark:text-on-dark">{title}</h3>
+          <button onClick={onClose} className="p-1 rounded-md hover:bg-surface-strong dark:hover:bg-white/8 transition-colors">
+            <X size={14} className="text-muted" />
+          </button>
+        </div>
+        <div className="p-5 pb-[1.65rem]">
+          {children}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function KeywordMiniBar({ positive, negative, neutral, total }) {
   if (!total) return <div className="text-xs text-muted">No data</div>
   const posPct = Math.round(positive / total * 100)
@@ -23,15 +54,16 @@ function KeywordMiniBar({ positive, negative, neutral, total }) {
   const neuPct = 100 - posPct - negPct
   return (
     <div className="space-y-1">
-      <div className="flex gap-0.5 h-2 rounded-full overflow-hidden">
+      <div className="flex h-3 rounded-full overflow-hidden">
         <div style={{ width: `${posPct}%`, backgroundColor: SENTIMENT_COLORS.positive }} />
         <div style={{ width: `${neuPct}%`, backgroundColor: SENTIMENT_COLORS.neutral }} />
         <div style={{ width: `${negPct}%`, backgroundColor: SENTIMENT_COLORS.negative }} />
       </div>
-      <div className="flex gap-2 text-[0.625rem] text-muted">
-        <span className="text-teal">{posPct}%+</span>
-        <span className="text-orange">{negPct}%-</span>
-        <span className="text-muted">{total} total</span>
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
+        <span className="text-teal">{posPct}% positive</span>
+        <span style={{ color: SENTIMENT_COLORS.neutral }}>{neuPct}% neutral</span>
+        <span className="text-orange">{negPct}% negative</span>
+        <span className="text-muted">{total} mentions</span>
       </div>
     </div>
   )
@@ -114,17 +146,25 @@ function IngestLogPanel({ logs, onClose }) {
 function GroupNameEditor({ group, onSave, onCancel }) {
   const [name, setName] = useState(group.name)
   return (
-    <div className="flex items-center gap-1.5 px-2 py-1.5">
-      <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: group.color }} />
-      <input
-        autoFocus
-        value={name}
-        onChange={e => setName(e.target.value)}
-        onKeyDown={e => { if (e.key === 'Enter') onSave(name); if (e.key === 'Escape') onCancel() }}
-        className="flex-1 text-xs border border-ink dark:border-white/20 rounded px-2 py-1 focus:outline-none min-w-0 bg-canvas dark:bg-[#171717] text-ink dark:text-on-dark"
-      />
-      <button onClick={() => onSave(name)} className="p-1 rounded hover:bg-surface-strong dark:hover:bg-white/8"><Save size={11} className="text-ink dark:text-on-dark" /></button>
-      <button onClick={onCancel} className="p-1 rounded hover:bg-surface-strong dark:hover:bg-white/8"><X size={11} className="text-muted dark:text-on-dark-soft" /></button>
+    <div className="space-y-3">
+      <div>
+        <label className="section-label">Group Name</label>
+        <input
+          autoFocus
+          value={name}
+          onChange={e => setName(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') onSave(name); if (e.key === 'Escape') onCancel() }}
+          className="form-input mt-1"
+        />
+      </div>
+      <div className="flex gap-2 pt-1">
+        <button onClick={onCancel} className="flex-1 py-2 text-xs font-medium text-body dark:text-on-dark-soft border border-hairline-strong dark:border-white/8 rounded-lg hover:bg-surface-strong dark:hover:bg-white/8 transition-colors">
+          Cancel
+        </button>
+        <button onClick={() => onSave(name)} disabled={!name.trim()} className="flex-1 py-2 text-xs font-medium text-white bg-[#2940BE] rounded-lg hover:bg-[#2940BE]/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+          Save
+        </button>
+      </div>
     </div>
   )
 }
@@ -133,8 +173,8 @@ function DeleteKeywordModal({ keyword, mentionCount, onConfirm, onCancel, saving
   const [choice, setChoice] = useState(null)
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white dark:bg-surface-dark-elevated rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden border border-transparent dark:border-white/8">
+    <div className="fixed inset-0 z-50 flex justify-center bg-black/40 px-4 animate-fade-in" style={{ alignItems: 'flex-start', paddingTop: '8vh' }}>
+      <div className="bg-white dark:bg-surface-dark-elevated rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-transparent dark:border-white/8 animate-modal-in">
         <div className="p-5 border-b border-hairline dark:border-white/8">
           <h3 className="text-sm font-semibold text-ink dark:text-on-dark">Delete "{keyword.term}"</h3>
           <p className="text-xs text-muted dark:text-on-dark-soft mt-0.5">
@@ -191,7 +231,7 @@ function DeleteKeywordModal({ keyword, mentionCount, onConfirm, onCancel, saving
             onClick={() => onConfirm(choice)}
             disabled={!choice || saving}
             className={clsx(
-              'flex-1 py-2 text-xs font-medium text-on-dark rounded-md transition-colors flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed',
+              'flex-1 py-2 text-xs font-medium text-on-dark rounded-lg transition-colors flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed',
               choice === 'delete' ? 'bg-red-500 hover:bg-red-600' : 'bg-ink hover:bg-primary-active'
             )}
           >
@@ -268,7 +308,7 @@ function KeywordForm({ keyword, groupColor, onSave, onCancel, saving }) {
   }
 
   return (
-    <div className="border border-hairline-strong dark:border-white/8 rounded-lg p-3 bg-surface-strong dark:bg-white/8 space-y-2.5">
+    <div className="space-y-2.5">
       <div>
         <label className="section-label">Keyword</label>
         <input
@@ -276,10 +316,10 @@ function KeywordForm({ keyword, groupColor, onSave, onCancel, saving }) {
           value={term}
           onChange={e => setTerm(e.target.value)}
           className="form-input mt-1"
-          placeholder="e.g. PLUS Expressways"
+          placeholder="e.g. UEM Edgenta"
           onKeyDown={e => e.key === 'Enter' && handleSave()}
         />
-        <p className="text-[0.625rem] text-muted mt-1">Words in ALL CAPS (e.g. <span className="font-medium text-ink">PLUS</span>) are matched case-sensitively during ingest.</p>
+        <p className="text-[0.625rem] text-muted mt-1">Words in ALL CAPS are matched case-sensitively. Mixed case words match case-insensitively.</p>
       </div>
       <div>
         <label className="section-label">Aliases <span className="font-normal text-muted">(comma-separated, optional)</span></label>
@@ -288,22 +328,21 @@ function KeywordForm({ keyword, groupColor, onSave, onCancel, saving }) {
           value={aliases}
           onChange={e => setAliases(e.target.value)}
           className="form-input mt-1"
-          placeholder="e.g. PLUS Malaysia, PLUS Berhad"
+          placeholder="e.g. UEM Edgenta Berhad, Edgenta"
         />
         <p className="text-[0.625rem] text-muted mt-1">Each alias will be searched separately but grouped under this keyword.</p>
       </div>
       <div className="flex gap-2 pt-1">
+        <button onClick={onCancel} className="flex-1 py-2 text-xs font-medium text-body dark:text-on-dark-soft border border-hairline-strong dark:border-white/8 rounded-lg hover:bg-surface-strong dark:hover:bg-white/8 transition-colors">
+          Cancel
+        </button>
         <button
           onClick={handleSave}
-          disabled={saving}
-          className="flex items-center gap-1.5 text-xs font-medium text-white px-3 py-1.5 rounded-lg transition-colors disabled:opacity-60"
-          style={{ backgroundColor: groupColor }}
+          disabled={!term.trim() || saving}
+          className="flex-1 py-2 flex items-center justify-center gap-1.5 text-xs font-medium text-white bg-[#2940BE] rounded-lg hover:bg-[#2940BE]/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          {saving ? <Loader size={12} className="animate-spin" /> : <Save size={12} />}
+          {saving ? <Loader size={12} className="animate-spin" /> : null}
           {saving ? 'Saving...' : 'Save'}
-        </button>
-        <button onClick={onCancel} className="flex items-center gap-1.5 text-xs font-medium text-body dark:text-on-dark-soft px-3 py-1.5 rounded-lg border border-hairline-strong dark:border-white/8 hover:bg-surface-strong dark:hover:bg-white/8 transition-colors">
-          <X size={12} /> Cancel
         </button>
       </div>
     </div>
@@ -326,6 +365,9 @@ export default function KeywordManager() {
   const [deleteModal, setDeleteModal] = useState(null)
   const [editingGroup, setEditingGroup] = useState(null)
   const [toast, setToast] = useState(null)
+  const [groupDeleteAlert, setGroupDeleteAlert] = useState(false)
+  const [addGroupModal, setAddGroupModal] = useState(false)
+  const [newGroupName, setNewGroupName] = useState('')
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type })
@@ -462,17 +504,23 @@ export default function KeywordManager() {
     }
   }
 
-  const handleAddGroup = async () => {
-    const name = prompt('Group name:')
-    if (!name?.trim()) return
+  const handleAddGroup = () => {
+    setNewGroupName('')
+    setAddGroupModal(true)
+  }
+
+  const handleCreateGroup = async () => {
+    if (!newGroupName.trim()) return
+    const name = newGroupName.trim()
     const id = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
     const colors = ['#2940BE', '#1490EA', '#732BCC', '#E97132', '#19C9A5', '#F59E0B', '#EF4444']
     const color = colors[groups.length % colors.length]
-    const { error } = await supabase.from('keyword_groups').insert({ id, name: name.trim(), color })
+    const { error } = await supabase.from('keyword_groups').insert({ id, name, color })
     if (error) {
       showToast('Failed to create group', 'error')
     } else {
       showToast(`Group "${name}" created`)
+      setAddGroupModal(false)
       await loadKeywords()
     }
   }
@@ -502,6 +550,93 @@ export default function KeywordManager() {
           onCancel={() => setDeleteModal(null)}
         />
       )}
+
+      {/* Rename group modal */}
+      {editingGroup === selectedGroupData?.id && (
+        <Modal title="Rename Group" onClose={() => setEditingGroup(null)}>
+          <GroupNameEditor
+            group={selectedGroupData}
+            onSave={(name) => handleRenameGroup(selectedGroupData.id, name)}
+            onCancel={() => setEditingGroup(null)}
+          />
+        </Modal>
+      )}
+
+      {/* Delete group alert modal */}
+      {groupDeleteAlert && (
+        <Modal title="Cannot Delete Group" onClose={() => setGroupDeleteAlert(false)}>
+          <p className="text-sm text-body dark:text-on-dark-soft mb-4">
+            This group still has <span className="font-semibold text-ink dark:text-on-dark">{selectedGroupData?.keywords.length} keyword{selectedGroupData?.keywords.length !== 1 ? 's' : ''}</span> inside. Please delete all keywords within the group before deleting the group itself.
+          </p>
+          <button
+            onClick={() => setGroupDeleteAlert(false)}
+            className="w-full py-2 text-xs font-medium text-white bg-[#2940BE] rounded-lg hover:bg-[#2940BE]/90 transition-colors"
+          >
+            OK
+          </button>
+        </Modal>
+      )}
+
+      {/* Add keyword modal */}
+      {addingToGroup === selectedGroupData?.id && (
+        <Modal title="Add Keyword" onClose={() => setAddingToGroup(null)}>
+          <KeywordForm
+            groupColor={selectedGroupData.color}
+            saving={saving}
+            onSave={(kw) => handleSaveKeyword(selectedGroupData.id, kw)}
+            onCancel={() => setAddingToGroup(null)}
+          />
+        </Modal>
+      )}
+
+      {/* Edit keyword modal */}
+      {editingKeyword && (
+        <Modal title={`Edit "${editingKeyword.kw.term}"`} onClose={() => setEditingKeyword(null)}>
+          <KeywordForm
+            keyword={editingKeyword.kw}
+            groupColor={selectedGroupData?.color}
+            saving={saving}
+            onSave={(kwData) => handleSaveKeyword(editingKeyword.groupId, kwData)}
+            onCancel={() => setEditingKeyword(null)}
+          />
+        </Modal>
+      )}
+
+      {/* New group modal */}
+      {addGroupModal && (
+        <Modal title="New Keyword Group" onClose={() => setAddGroupModal(false)}>
+          <div className="space-y-3">
+            <div>
+              <label className="section-label">Group Name</label>
+              <input
+                autoFocus
+                type="text"
+                value={newGroupName}
+                onChange={e => setNewGroupName(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleCreateGroup() }}
+                className="form-input mt-1"
+                placeholder="e.g. Executives, Products, Competitors"
+              />
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={() => setAddGroupModal(false)}
+                className="flex-1 py-2 text-xs font-medium text-body dark:text-on-dark-soft border border-hairline-strong dark:border-white/8 rounded-lg hover:bg-surface-strong dark:hover:bg-white/8 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateGroup}
+                disabled={!newGroupName.trim() || saving}
+                className="flex-1 py-2 text-xs font-medium text-white bg-[#2940BE] rounded-lg hover:bg-[#2940BE]/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Create Group
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
       {/* Toast */}
       {toast && (
         <div className={clsx(
@@ -523,11 +658,11 @@ export default function KeywordManager() {
         'md:hidden fixed inset-x-0 bottom-0 z-50 bg-canvas dark:bg-surface-dark rounded-t-2xl shadow-2xl transition-transform duration-300 ease-out',
         groupSheetOpen ? 'translate-y-0' : 'translate-y-full'
       )}>
-        <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-hairline dark:border-white/8">
+        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-hairline dark:border-white/8">
           <div className="absolute left-1/2 -translate-x-1/2 top-3 w-10 h-1 rounded-full bg-hairline-strong dark:bg-white/20" />
-          <span className="text-sm font-semibold text-ink dark:text-on-dark">Keyword Groups</span>
+          <p className="text-base font-bold text-ink dark:text-on-dark">Keyword Groups</p>
           <button onClick={() => setGroupSheetOpen(false)} className="p-1.5 rounded-md hover:bg-surface-strong text-muted">
-            <X size={16} />
+            <X size={18} />
           </button>
         </div>
         <div className="px-5 py-3 pb-8 space-y-2">
@@ -536,25 +671,26 @@ export default function KeywordManager() {
               key={g.id}
               onClick={() => { setSelectedGroup(g); setGroupSheetOpen(false) }}
               className={clsx(
-                'w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-colors text-left',
+                'w-full flex items-center justify-between px-4 h-14 rounded-xl border text-sm font-medium transition-all text-left',
                 selectedGroup?.id === g.id
-                  ? 'border-transparent text-white'
-                  : 'border-hairline dark:border-white/8 hover:bg-surface-strong dark:hover:bg-white/8'
+                  ? 'bg-[#2940BE] border-[#2940BE] text-white'
+                  : 'bg-canvas dark:bg-white/8 text-ink dark:text-on-dark border-hairline-strong dark:border-white/8 hover:border-ink/30 dark:hover:border-white/20'
               )}
-              style={selectedGroup?.id === g.id ? { backgroundColor: g.color } : {}}
             >
-              <div className="flex items-center gap-3">
-                <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: selectedGroup?.id === g.id ? 'rgba(255,255,255,0.7)' : g.color }} />
-                <span className="text-sm font-medium">{g.name}</span>
-              </div>
-              <span className={clsx('text-xs', selectedGroup?.id === g.id ? 'text-white/70' : 'text-muted')}>{g.keywords.length} keywords</span>
+              <span>{g.name}</span>
+              <span className={clsx(
+                'text-xs font-bold rounded-full w-7 h-7 flex items-center justify-center flex-shrink-0',
+                selectedGroup?.id === g.id
+                  ? 'bg-white/20 text-white'
+                  : 'border border-hairline-strong dark:border-white/8 text-muted dark:text-on-dark-soft'
+              )}>{g.keywords.length}</span>
             </button>
           ))}
           <button
             onClick={() => { handleAddGroup(); setGroupSheetOpen(false) }}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-dashed border-hairline-strong dark:border-white/8 text-sm text-ink dark:text-on-dark hover:bg-surface-strong dark:hover:bg-white/8 transition-colors mt-1"
+            className="w-full flex items-center justify-center gap-2 px-4 h-14 rounded-xl border border-dashed border-hairline-strong dark:border-white/8 text-sm font-medium text-ink dark:text-on-dark hover:bg-surface-strong dark:hover:bg-white/8 transition-colors"
           >
-            <Plus size={14} /> New Group
+            <Plus size={15} /> New Group
           </button>
         </div>
       </div>
@@ -563,7 +699,7 @@ export default function KeywordManager() {
       <div className="hidden md:block w-64 flex-shrink-0 overflow-y-auto">
         <div className="card space-y-2">
           <div className="flex items-center justify-between mb-1">
-            <h3 className="text-sm font-semibold text-ink dark:text-on-dark">Keyword Groups</h3>
+            <p className="section-label">Keyword Groups</p>
             <div className="flex items-center gap-1">
               {false && <button
                 onClick={() => { setShowLog(true); runIngest() }}
@@ -588,16 +724,22 @@ export default function KeywordManager() {
               <button
                 key={g.id}
                 className={clsx(
-                  'w-full flex items-center justify-between px-3 py-2.5 rounded-xl border text-left transition-all',
-                  isSelected ? 'bg-surface-strong dark:bg-white/8 border-ink dark:border-white/20 shadow-sm' : 'border-hairline dark:border-white/8 hover:border-hairline-strong dark:hover:border-white/20 hover:bg-surface-strong dark:hover:bg-white/8'
+                  'w-full flex items-center justify-between px-2.5 py-1.5 rounded-md border text-xs font-medium transition-all text-left',
+                  isSelected
+                    ? 'bg-[#2940BE] text-white border-[#2940BE]'
+                    : 'bg-canvas dark:bg-white/8 text-body dark:text-on-dark-soft border-hairline-strong dark:border-white/8 hover:border-ink/30 dark:hover:border-white/20'
                 )}
                 onClick={() => setSelectedGroup(g)}
               >
-                <span className="flex items-center gap-2 min-w-0">
-                  <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: g.color }} />
-                  <span className={clsx('text-xs font-semibold truncate text-ink dark:text-on-dark')}>{g.name}</span>
+                <span className="text-xs truncate">{g.name}</span>
+                <span className={clsx(
+                  'ml-auto text-[0.625rem] font-semibold rounded-full px-1.5 py-0.5',
+                  isSelected
+                    ? 'bg-white/20 text-on-dark border border-transparent'
+                    : 'bg-canvas dark:bg-white/8 border border-hairline-strong dark:border-white/8 text-muted dark:text-on-dark-soft'
+                )}>
+                  {g.keywords.length}
                 </span>
-                <span className="text-[0.625rem] text-muted dark:text-on-dark-soft flex-shrink-0">({g.keywords.length})</span>
               </button>
             )
           })}
@@ -616,39 +758,23 @@ export default function KeywordManager() {
         {/* Mobile group selector bar */}
         <button
           onClick={() => setGroupSheetOpen(true)}
-          className="md:hidden w-full flex items-center justify-between px-4 py-3 mb-3 rounded-xl border border-hairline dark:border-white/8 bg-canvas dark:bg-surface-dark hover:bg-surface-strong dark:hover:bg-white/8 transition-colors"
+          className="md:hidden w-full flex items-center justify-between px-4 h-14 mb-3 rounded-xl border text-sm font-medium border-hairline-strong dark:border-white/8 bg-canvas dark:bg-surface-dark hover:bg-surface-strong dark:hover:bg-white/8 transition-colors"
         >
-          <div className="flex items-center gap-2.5">
-            {selectedGroupData
-              ? <>
-                  <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: selectedGroupData.color }} />
-                  <span className="text-sm font-semibold text-ink dark:text-on-dark">{selectedGroupData.name}</span>
-                </>
-              : <span className="text-sm text-muted">Select a group…</span>
-            }
-          </div>
-          <ChevronDown size={15} className="text-muted" />
+          {selectedGroupData
+            ? <span className="font-semibold text-ink dark:text-on-dark">{selectedGroupData.name}</span>
+            : <span className="text-muted">Select a group…</span>
+          }
+          <ChevronDown size={16} className="text-muted" />
         </button>
 
         {selectedGroupData && (
           <div className="space-y-4">
             {/* Group header */}
             <div className="card">
-              <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${selectedGroupData.color}15` }}>
-                    <Tag size={18} style={{ color: selectedGroupData.color }} />
-                  </div>
                   <div>
-                    {editingGroup === selectedGroupData.id ? (
-                      <GroupNameEditor
-                        group={selectedGroupData}
-                        onSave={(name) => handleRenameGroup(selectedGroupData.id, name)}
-                        onCancel={() => setEditingGroup(null)}
-                      />
-                    ) : (
-                      <h2 className="text-base font-semibold text-ink dark:text-on-dark">{selectedGroupData.name}</h2>
-                    )}
+                    <h2 className="hidden md:block text-base font-semibold text-ink dark:text-on-dark">{selectedGroupData.name}</h2>
                     <p className="text-xs text-muted dark:text-on-dark-soft">{selectedGroupData.keywords.length} keywords tracked</p>
                   </div>
                 </div>
@@ -661,12 +787,17 @@ export default function KeywordManager() {
                     <Edit2 size={13} className="text-muted" />
                   </button>
                   <button
-                    onClick={() => handleDeleteGroup(selectedGroupData.id, selectedGroupData.name)}
-                    disabled={selectedGroupData.keywords.length > 0}
-                    className={clsx('p-1.5 rounded-lg transition-colors', selectedGroupData.keywords.length === 0 ? 'hover:bg-red-50' : 'cursor-not-allowed opacity-30')}
-                    title={selectedGroupData.keywords.length === 0 ? 'Delete group' : 'Remove all keywords first'}
+                    onClick={() => {
+                      if (selectedGroupData.keywords.length > 0) {
+                        setGroupDeleteAlert(true)
+                      } else {
+                        handleDeleteGroup(selectedGroupData.id, selectedGroupData.name)
+                      }
+                    }}
+                    className="p-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                    title="Delete group"
                   >
-                    <Trash2 size={13} className={selectedGroupData.keywords.length === 0 ? 'text-red-400' : 'text-gray-300'} />
+                    <Trash2 size={13} className="text-red-400" />
                   </button>
                 </div>
               </div>
@@ -714,132 +845,110 @@ export default function KeywordManager() {
                 </div>
               </div>
 
-              {addingToGroup === selectedGroupData.id && (
-                <div className="mb-4">
-                  <KeywordForm
-                    groupColor={selectedGroupData.color}
-                    saving={saving}
-                    onSave={(kw) => handleSaveKeyword(selectedGroupData.id, kw)}
-                    onCancel={() => setAddingToGroup(null)}
-                  />
-                </div>
-              )}
-
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {selectedGroupData.keywords.length === 0 && (
-                  <p className="text-sm text-muted dark:text-on-dark-soft text-center py-6">No keywords yet. Add one above.</p>
+                  <p className="text-sm text-muted dark:text-on-dark-soft text-center py-6 col-span-2">No keywords yet. Add one above.</p>
                 )}
                 {selectedGroupData.keywords.map(kw => {
                   const ks = getKeywordStats(kw.id)
                   const health = getHealthStatus(ks.total, ks.positive, ks.negative)
                   const HealthIcon = health.icon
-                  const isEditing = editingKeyword?.kw.id === kw.id
 
                   return (
                     <div key={kw.id} className="border border-hairline dark:border-white/8 rounded-xl p-4">
-                      {isEditing ? (
-                        <KeywordForm
-                          keyword={kw}
-                          groupColor={selectedGroupData.color}
-                          saving={saving}
-                          onSave={(kwData) => handleSaveKeyword(selectedGroupData.id, kwData)}
-                          onCancel={() => setEditingKeyword(null)}
-                        />
-                      ) : (
-                        <>
-                          <div className="flex items-start justify-between mb-3">
-                            <div>
-                              <div className="flex items-center gap-2 mb-1">
-                                <HealthIcon size={14} style={{ color: health.color }} />
-                                <span className="text-sm font-semibold text-ink dark:text-on-dark">{kw.term}</span>
-                              </div>
-                              {kw.aliases?.length > 0 && (
-                                <div className="flex flex-wrap gap-1 mt-1 ml-5">
-                                  {kw.aliases.map(alias => (
-                                    <span key={alias} className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-surface-strong dark:bg-white/8 text-[0.625rem] text-muted dark:text-on-dark-soft border border-hairline dark:border-white/8">
-                                      {alias}
-                                    </span>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              {movingKeyword === kw.id ? (
-                                <div className="flex items-center gap-1.5">
-                                  <select
-                                    autoFocus
-                                    className="text-xs border border-hairline-strong dark:border-white/8 rounded-lg px-2 py-1 bg-white dark:bg-surface-dark-elevated dark:text-on-dark focus:outline-none focus:border-ink dark:focus:border-white/30"
-                                    defaultValue=""
-                                    onChange={e => {
-                                      if (e.target.value) {
-                                        handleMoveKeyword(kw.id, kw.term, e.target.value)
-                                        setMovingKeyword(null)
-                                      }
-                                    }}
-                                  >
-                                    <option value="" disabled>Move to…</option>
-                                    {groups.filter(g => g.id !== selectedGroupData.id).map(g => (
-                                      <option key={g.id} value={g.id}>{g.name}</option>
-                                    ))}
-                                  </select>
-                                  <button onClick={() => setMovingKeyword(null)} className="p-1 rounded hover:bg-surface-strong">
-                                    <X size={12} className="text-muted" />
-                                  </button>
-                                </div>
-                              ) : (
-                                <>
-                                  {false && <button
-                                    onClick={() => { setShowLog(true); runIngest([kw.id]) }}
-                                    disabled={running}
-                                    className="p-1.5 rounded-lg hover:bg-surface-strong dark:hover:bg-white/8 transition-colors disabled:opacity-40"
-                                    title="Fetch mentions for this keyword"
-                                  >
-                                    {running && fetchingIds.includes(kw.id)
-                                      ? <Loader size={13} className="animate-spin text-ink" />
-                                      : <Download size={13} className="text-muted" />}
-                                  </button>}
-                                  <button
-                                    onClick={() => setMovingKeyword(kw.id)}
-                                    className="p-1.5 rounded-lg hover:bg-surface-strong dark:hover:bg-white/8 transition-colors"
-                                    title="Move to group"
-                                  >
-                                    <FolderInput size={13} className="text-muted" />
-                                  </button>
-                                  <button
-                                    onClick={() => setEditingKeyword({ groupId: selectedGroupData.id, kw })}
-                                    className="p-1.5 rounded-lg hover:bg-surface-strong dark:hover:bg-white/8 transition-colors"
-                                    title="Edit"
-                                  >
-                                    <Edit2 size={13} className="text-muted" />
-                                  </button>
-                                  <div className="relative">
-                                    <button
-                                      onClick={() => setGearOpen(gearOpen === kw.id ? null : kw.id)}
-                                      className="p-1.5 rounded-lg hover:bg-surface-strong dark:hover:bg-white/8 transition-colors"
-                                      title="More options"
-                                    >
-                                      <Settings size={13} className="text-muted" />
-                                    </button>
-                                    {gearOpen === kw.id && (
-                                      <GearPopover
-                                        keyword={kw}
-                                        onClose={() => setGearOpen(null)}
-                                        onDelete={() => setDeleteModal({ kwId: kw.id, kwTerm: kw.term, mentionCount: getKeywordStats(kw.id).total })}
-                                      />
-                                    )}
-                                  </div>
-                                </>
-                              )}
-                            </div>
+                      <div className="flex items-start gap-2 justify-between mb-3">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <HealthIcon size={14} style={{ color: health.color }} />
+                            <span className="text-sm font-semibold text-ink dark:text-on-dark break-words">{kw.term}</span>
                           </div>
-                          <div className="flex items-center gap-2 mb-2">
-                            <Activity size={12} className="text-muted" />
-                            <span className="text-xs text-body dark:text-on-dark-soft">{health.label}</span>
-                          </div>
-                          {ks.total === 0 ? null : (
-                            <KeywordMiniBar {...ks} />
+                          {kw.aliases?.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1 ml-5">
+                              {kw.aliases.map(alias => (
+                                <span key={alias} className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-surface-strong dark:bg-white/8 text-[0.625rem] text-muted dark:text-on-dark-soft border border-hairline dark:border-white/8">
+                                  {alias}
+                                </span>
+                              ))}
+                            </div>
                           )}
-                        </>
+                        </div>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          {movingKeyword === kw.id ? (
+                            <button onClick={() => setMovingKeyword(null)} className="p-1 rounded hover:bg-surface-strong">
+                              <X size={13} className="text-muted" />
+                            </button>
+                          ) : (
+                            <>
+                              {false && <button
+                                onClick={() => { setShowLog(true); runIngest([kw.id]) }}
+                                disabled={running}
+                                className="p-1.5 rounded-lg hover:bg-surface-strong dark:hover:bg-white/8 transition-colors disabled:opacity-40"
+                                title="Fetch mentions for this keyword"
+                              >
+                                {running && fetchingIds.includes(kw.id)
+                                  ? <Loader size={13} className="animate-spin text-ink" />
+                                  : <Download size={13} className="text-muted" />}
+                              </button>}
+                              <button
+                                onClick={() => setMovingKeyword(kw.id)}
+                                className="p-1.5 rounded-lg hover:bg-surface-strong dark:hover:bg-white/8 transition-colors"
+                                title="Move to group"
+                              >
+                                <FolderInput size={13} className="text-muted" />
+                              </button>
+                              <button
+                                onClick={() => setEditingKeyword({ groupId: selectedGroupData.id, kw })}
+                                className="p-1.5 rounded-lg hover:bg-surface-strong dark:hover:bg-white/8 transition-colors"
+                                title="Edit"
+                              >
+                                <Edit2 size={13} className="text-muted" />
+                              </button>
+                              <div className="relative">
+                                <button
+                                  onClick={() => setGearOpen(gearOpen === kw.id ? null : kw.id)}
+                                  className="p-1.5 rounded-lg hover:bg-surface-strong dark:hover:bg-white/8 transition-colors"
+                                  title="More options"
+                                >
+                                  <Settings size={13} className="text-muted" />
+                                </button>
+                                {gearOpen === kw.id && (
+                                  <GearPopover
+                                    keyword={kw}
+                                    onClose={() => setGearOpen(null)}
+                                    onDelete={() => setDeleteModal({ kwId: kw.id, kwTerm: kw.term, mentionCount: getKeywordStats(kw.id).total })}
+                                  />
+                                )}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      {movingKeyword === kw.id && (
+                        <div className="flex items-center gap-2 mb-3">
+                          <select
+                            autoFocus
+                            className="flex-1 text-xs border border-hairline-strong dark:border-white/8 rounded-lg px-2 py-1.5 bg-white dark:bg-surface-dark-elevated dark:text-on-dark focus:outline-none focus:border-ink dark:focus:border-white/30"
+                            defaultValue=""
+                            onChange={e => {
+                              if (e.target.value) {
+                                handleMoveKeyword(kw.id, kw.term, e.target.value)
+                                setMovingKeyword(null)
+                              }
+                            }}
+                          >
+                            <option value="" disabled>Move to group…</option>
+                            {groups.filter(g => g.id !== selectedGroupData.id).map(g => (
+                              <option key={g.id} value={g.id}>{g.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 mb-2">
+                        <Activity size={12} className="text-muted" />
+                        <span className="text-xs text-body dark:text-on-dark-soft">{health.label}</span>
+                      </div>
+                      {ks.total === 0 ? null : (
+                        <KeywordMiniBar {...ks} />
                       )}
                     </div>
                   )
