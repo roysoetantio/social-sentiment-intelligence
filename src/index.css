@@ -12,11 +12,9 @@
   to   { opacity: 1; }
 }
 
-/* Apply safe area padding to bottom nav only when running as installed PWA */
-@media (display-mode: standalone) {
-  .bottom-nav-safe {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
+/* Safe area padding for bottom nav — value is naturally 0px in Safari browser, ~34px in PWA */
+.bottom-nav-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 @layer base {
