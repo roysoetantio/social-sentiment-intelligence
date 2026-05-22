@@ -8,6 +8,7 @@ import SentimentBadge from './SentimentBadge'
 import RiskBadge from './RiskBadge'
 import { KEYWORD_GROUPS } from '../../data/mockKeywords'
 import { formatNum } from '../../utils/format'
+import { useDashboard } from '../../context/DashboardContext'
 import clsx from 'clsx'
 
 const PlatformIcon = ({ platform }) => {
@@ -23,7 +24,12 @@ const PlatformIcon = ({ platform }) => {
 
 
 export default function MentionCard({ mention, onClick, selected }) {
+  const { allKeywordsFlat } = useDashboard()
   const group = KEYWORD_GROUPS.find(g => g.id === mention.keywordGroup)
+
+  const keywordPills = (mention.keywordMatched || [])
+    .map(id => allKeywordsFlat.find(k => k.id === id))
+    .filter(Boolean)
 
   return (
     <div
@@ -68,13 +74,21 @@ export default function MentionCard({ mention, onClick, selected }) {
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-1.5 flex-wrap">
             <SentimentBadge label={mention.sentiment.label} overridden={!!mention.sentiment.originalLabel} />
-            {group && (
-              <span
-                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[0.6875rem] font-normal border border-hairline-strong dark:border-white/8 bg-surface-strong dark:bg-white/8 text-muted dark:text-on-dark-soft"
-              >
-                {group.name}
-              </span>
-            )}
+            {keywordPills.length > 0
+              ? keywordPills.map(kw => (
+                  <span
+                    key={kw.id}
+                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[0.6875rem] font-normal border border-hairline-strong dark:border-white/8 bg-surface-strong dark:bg-white/8 text-muted dark:text-on-dark-soft"
+                  >
+                    {kw.term}
+                  </span>
+                ))
+              : group && (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[0.6875rem] font-normal border border-hairline-strong dark:border-white/8 bg-surface-strong dark:bg-white/8 text-muted dark:text-on-dark-soft">
+                    {group.name}
+                  </span>
+                )
+            }
           </div>
 
           <div className="flex items-center gap-3 text-[0.8125rem] text-muted">

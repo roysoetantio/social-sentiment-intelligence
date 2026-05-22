@@ -68,7 +68,16 @@ Each source has a `fetch*()` function that returns rows matching the Supabase sc
 npm run ingest
 node scripts/ingest-google-alerts.js   # if running Google Alerts too
 ```
-Then Claude searches the web for each active keyword using the WebSearch tool and saves results directly to Supabase as `claude_search` source.
+Then Claude searches the web for each active keyword using the **WebSearch tool** and saves results directly to Supabase as `claude_search` source.
+
+**Claude Search rules (MUST follow):**
+- Always use the **WebSearch tool** — never plain HTTP fetch, Serper, or any other API
+- For each keyword (and all its aliases), run WebSearch queries to discover mentions
+- For enriching `full_text` on existing articles, search by article title using WebSearch — extract body content from search result snippets
+- WebSearch returns richer content than plain HTTP crawl and can handle JS-rendered/paywalled sites
+- After getting `full_text` from WebSearch, immediately write a `summary` (≤400 chars, 2-3 sentences) of the article and save it to the `summary` column in Supabase alongside `full_text`
+- The `summary` is displayed in the mention detail panel in the dashboard — make it concise and informative
+- After saving `claude_search` rows, run the multi-keyword backfill so articles mentioning multiple keywords get tagged correctly
 
 **Step 2 — Fix dates (dry run first, then apply)**
 `fix-dates.js` targets rows where `date_fixed != true`. When ingest can't get a real date from the source API, it falls back to `new Date()` (the ingest timestamp) — those are the rows that need crawling. The script extracts real article dates from meta tags, JSON-LD, `<time>` elements, and URL paths. Twitter/X URLs are skipped (API date is reliable).

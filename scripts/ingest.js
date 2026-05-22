@@ -80,6 +80,50 @@ const queryMatchesText = (query, text) => {
   })
 }
 
+// ── Full-text crawl ───────────────────────────────────────────────────────────
+const CRAWL_TIMEOUT_MS = 8000
+const SKIP_CRAWL_DOMAINS = ['twitter.com', 'x.com', 'linkedin.com', 'instagram.com', 'facebook.com', 'youtube.com']
+
+const crawlFullText = async (url) => {
+  try {
+    const host = new URL(url).hostname.replace('www.', '')
+    if (SKIP_CRAWL_DOMAINS.some(d => host === d || host.endsWith('.' + d))) return null
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), CRAWL_TIMEOUT_MS)
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; NewsBot/1.0)', 'Accept': 'text/html' },
+      redirect: 'follow',
+    })
+    clearTimeout(timer)
+    if (!res.ok) return null
+    const reader = res.body.getReader()
+    let html = ''
+    let bytes = 0
+    while (bytes < 150_000) {
+      const { done, value } = await reader.read()
+      if (done) break
+      html += new TextDecoder().decode(value)
+      bytes += value.length
+    }
+    reader.cancel()
+    // Extract meaningful text from common article containers
+    const bodyMatch = html.match(/<article[^>]*>([\s\S]*?)<\/article>/i)
+      || html.match(/<div[^>]+class="[^"]*(?:article|content|story|post|entry)[^"]*"[^>]*>([\s\S]*?)<\/div>/i)
+    const raw = bodyMatch ? bodyMatch[1] : html
+    const text = raw
+      .replace(/<script[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[\s\S]*?<\/style>/gi, '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 5000)
+    return text.length > 100 ? text : null
+  } catch {
+    return null
+  }
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const isValidDate = (dateStr) => {
   if (!dateStr) return false
@@ -301,6 +345,7 @@ const isOwnAccount = (handle = '', url = '') => {
 
 // Own domains/accounts to exclude from all searches
 const BLACKLIST = [
+  'site:asseto.ai',
   'site:edgenta.com',
   'site:edgentanxt.com',
   'site:uem.com.my',
@@ -335,6 +380,7 @@ const BLACKLIST = [
 
 // Domains blocked across ALL sources (not just Serper query strings)
 const BLACKLIST_DOMAINS = [
+  'asseto.ai',
   'klsescreener.com', 'tradingview.com', 'bebee.com', 'prosple.com',
   'trabajo.org', 'hiredly.com', 'wikipedia.org', 'insage.com.my',
   'oraclecloud.com', 'marketscreener.com', 'reveliolabs.com',
@@ -782,6 +828,51 @@ const fetchRSS = async (searches) => {
 }
 
 // ── Save to Supabase ──────────────────────────────────────────────────────────
+// ── Multi-keyword backfill ────────────────────────────────────────────────────
+// Scans recently ingested mentions (last 48h) and appends any additional keyword
+// IDs whose terms appear in the text but aren't already in keyword_matched.
+const backfillMultiKeywords = async (searches, savedIds = []) => {
+  const kwMap = new Map()
+  for (const s of searches) {
+    if (!kwMap.has(s.keywordId)) kwMap.set(s.keywordId, [])
+    kwMap.get(s.keywordId).push(s.query)
+  }
+
+  // Only scan: newly saved rows (by ID) + anything created in the last 48h
+  const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()
+  let allRows = []
+  let from = 0
+  while (true) {
+    const { data, error } = await supabase
+      .from('mentions')
+      .select('id, text, full_text, url, keyword_matched')
+      .gte('created_at', cutoff)
+      .range(from, from + 999)
+    if (error) { console.error('[MultiKw] Fetch error:', error.message); break }
+    if (!data || data.length === 0) break
+    allRows.push(...data)
+    if (data.length < 1000) break
+    from += 1000
+  }
+
+  let updated = 0
+  for (const row of allRows) {
+    const haystack = `${row.text || ''} ${row.full_text || ''} ${row.url || ''}`
+    const existing = new Set(row.keyword_matched || [])
+    const toAdd = []
+    for (const [kwId, queries] of kwMap) {
+      if (existing.has(kwId)) continue
+      if (queries.some(q => queryMatchesText(q, haystack))) toAdd.push(kwId)
+    }
+    if (toAdd.length === 0) continue
+    const { error } = await supabase.from('mentions').update({ keyword_matched: [...existing, ...toAdd] }).eq('id', row.id)
+    if (error) console.error(`[MultiKw] Update error for ${row.id}:`, error.message)
+    else updated++
+  }
+
+  console.log(`[MultiKw] Checked ${allRows.length} recent mentions — backfilled ${updated} with extra keyword tags`)
+}
+
 const saveToSupabase = async (mentions) => {
   if (mentions.length === 0) return { saved: 0, skipped: 0 }
 
@@ -799,139 +890,146 @@ const saveToSupabase = async (mentions) => {
   return { saved: data?.length || 0, skipped: mentions.length - (data?.length || 0) }
 }
 
+// ── Parallel fetch helper — runs fn for each item with max concurrency ────────
+const withConcurrency = async (items, fn, limit = 3) => {
+  const results = []
+  for (let i = 0; i < items.length; i += limit) {
+    const batch = items.slice(i, i + limit)
+    const batchResults = await Promise.all(batch.map(fn))
+    results.push(...batchResults.flat())
+  }
+  return results
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 const run = async () => {
+  const startTime = Date.now()
   console.log(`\n[Ingest] Starting at ${new Date().toISOString()}`)
 
   const { searches } = await loadKeywordsFromDB()
+  const sourceCounts = {}
   const allMentions = []
 
-  // Fetch from Twitter135
-  const twitterSearches = searches.filter(s => !s.query.startsWith('#'))
-  for (const search of twitterSearches) {
-    console.log(`[Twitter135] Fetching: "${search.query}"`)
-    const results = await fetchTwitter135(search)
-    console.log(`[Twitter135] Got ${results.length} results`)
+  const collect = (source, results) => {
+    sourceCounts[source] = (sourceCounts[source] || 0) + results.length
     allMentions.push(...results)
-    await new Promise(r => setTimeout(r, 1000))
   }
 
-  // Fetch from Real-Time News Data (RockAPIs), skip hashtag keywords
-  const rtnSearches = searches.filter(s => !s.query.startsWith('#'))
-  for (const search of rtnSearches) {
-    console.log(`[RealTimeNews] Fetching: "${search.query}"`)
-    const results = await fetchRealTimeNews(search)
-    console.log(`[RealTimeNews] Got ${results.length} results`)
-    allMentions.push(...results)
-    await new Promise(r => setTimeout(r, 1000))
-  }
+  // ── Phase 1: Parallel fetches (all sources run concurrently per keyword) ──
+  console.log('\n[Ingest] Phase 1 — Fetching from all sources in parallel...')
 
-  // Fetch from Serper News
+  const noHashtag = searches.filter(s => !s.query.startsWith('#'))
+
+  // Twitter135 — 3 concurrent, 1s gap between batches
+  const twitterResults = await withConcurrency(noHashtag, async (s) => {
+    const r = await fetchTwitter135(s); return r
+  }, 3)
+  collect('Twitter135', twitterResults)
+  await new Promise(r => setTimeout(r, 500))
+
+  // RealTimeNews — 3 concurrent
+  const rtnResults = await withConcurrency(noHashtag, async (s) => {
+    const r = await fetchRealTimeNews(s); return r
+  }, 3)
+  collect('RealTimeNews', rtnResults)
+  await new Promise(r => setTimeout(r, 500))
+
+  // Serper News — 3 concurrent
+  const serperNewsResults = await withConcurrency(searches, async (s) => {
+    const r = await fetchSerperNews(s); return r
+  }, 3)
+  collect('SerperNews', serperNewsResults)
+  await new Promise(r => setTimeout(r, 300))
+
+  // Serper Social — 3 concurrent
+  const serperSocialResults = await withConcurrency(searches, async (s) => {
+    const r = await fetchSerperSocial(s); return r
+  }, 3)
+  collect('SerperSocial', serperSocialResults)
+  await new Promise(r => setTimeout(r, 300))
+
+  // Google News — 3 concurrent
+  const googleNewsResults = await withConcurrency(searches, async (s) => {
+    const r = await fetchGoogleNews(s); return r
+  }, 3)
+  collect('GoogleNews', googleNewsResults)
+  await new Promise(r => setTimeout(r, 500))
+
+  // World News — 3 concurrent
+  const worldNewsResults = await withConcurrency(searches, async (s) => {
+    const r = await fetchWorldNews(s); return r
+  }, 3)
+  collect('WorldNews', worldNewsResults)
+  await new Promise(r => setTimeout(r, 500))
+
+  // Reddit — sequential only (strict rate limit)
   for (const search of searches) {
-    console.log(`[SerperNews] Fetching: "${search.query}"`)
-    const results = await fetchSerperNews(search)
-    console.log(`[SerperNews] Got ${results.length} results`)
-    allMentions.push(...results)
-    await new Promise(r => setTimeout(r, 300))
-  }
-
-  // Fetch from Serper Social (Twitter, LinkedIn, YouTube)
-  for (const search of searches) {
-    console.log(`[SerperSocial] Fetching: "${search.query}"`)
-    const results = await fetchSerperSocial(search)
-    console.log(`[SerperSocial] Got ${results.length} results`)
-    allMentions.push(...results)
-    await new Promise(r => setTimeout(r, 300))
-  }
-
-  // Fetch from Google News (RapidAPI)
-  for (const search of searches) {
-    console.log(`[GoogleNews] Fetching: "${search.query}"`)
-    const results = await fetchGoogleNews(search)
-    console.log(`[GoogleNews] Got ${results.length} results`)
-    allMentions.push(...results)
-    await new Promise(r => setTimeout(r, 500))
-  }
-
-  // Fetch from World News API
-  for (const search of searches) {
-    console.log(`[WorldNews] Fetching: "${search.query}"`)
-    const results = await fetchWorldNews(search)
-    console.log(`[WorldNews] Got ${results.length} results`)
-    allMentions.push(...results)
-    await new Promise(r => setTimeout(r, 500))
-  }
-
-  // Fetch from Reddit
-  for (const search of searches) {
-    console.log(`[Reddit] Fetching: "${search.query}"`)
     const results = await fetchReddit(search)
-    console.log(`[Reddit] Got ${results.length} results`)
-    allMentions.push(...results)
-    await new Promise(r => setTimeout(r, 2000)) // Reddit rate limit
+    collect('Reddit', results)
+    await new Promise(r => setTimeout(r, 2000))
   }
 
-  // Fetch from Malaysian RSS feeds
-  console.log(`\n[RSS] Scanning ${MY_RSS_FEEDS.length} Malaysian news feeds...`)
+  // RSS — single batch
   const rssResults = await fetchRSS(searches)
-  console.log(`[RSS] Got ${rssResults.length} matching mentions`)
-  allMentions.push(...rssResults)
+  collect('RSS', rssResults)
 
-  // Enrich LinkedIn mentions with real post content + engagement
-  const linkedInMentions = allMentions.filter(m => m.url.includes('linkedin.com/posts/'))
-  console.log(`\n[LinkedIn] Enriching ${linkedInMentions.length} LinkedIn posts...`)
-  for (const m of linkedInMentions) {
-    const scraped = await scrapeLinkedInPost(m.url)
-    if (scraped) {
-      if (scraped.body)    m.full_text = scraped.body
-      if (scraped.author)  { m.author_name = scraped.author; m.author_handle = scraped.author.toLowerCase().replace(/\s+/g, '') }
-      if (scraped.date)    m.published_at = new Date(scraped.date).toISOString()
-      if (scraped.likes)   m.engagement_likes = scraped.likes
-      if (scraped.comments) m.engagement_comments = scraped.comments
-      // Re-run sentiment on real text
-      const sent = analyzeSentiment(`${m.text} ${m.full_text}`)
-      m.sentiment_label = sent.label
-      m.sentiment_score = sent.score
-    }
-    await new Promise(r => setTimeout(r, 500))
-  }
+  console.log(`[Ingest] Phase 1 done — ${allMentions.length} raw mentions fetched`)
 
-  console.log(`[Ingest] Total fetched: ${allMentions.length}`)
-
-  // Validate — drop own accounts and mentions that don't contain the keyword
+  // ── Phase 2: Validate — drop own accounts + keyword mismatches ───────────
+  console.log('\n[Ingest] Phase 2 — Validating...')
   const validated = allMentions.filter(m => {
     if (isOwnAccount(m.author_handle, m.url)) return false
     const keyword = searches.find(s => s.keywordId === m.keyword_matched?.[0])?.query || ''
     if (!keyword) return false
-    const haystack = `${m.text} ${m.full_text} ${m.url}`
-    return queryMatchesText(keyword, haystack)
+    return queryMatchesText(keyword, `${m.text} ${m.full_text} ${m.url}`)
   })
-  const dropped = allMentions.length - validated.length
-  if (dropped > 0) console.log(`[Ingest] Dropped ${dropped} false positives (keyword not found in content or own account)`)
+  console.log(`[Ingest] Validated: ${validated.length} kept, ${allMentions.length - validated.length} dropped`)
 
-  // ── Ingest report ─────────────────────────────────────────────────────────
-  const badDateCount = validated.filter(m => !isValidDate(m._rawDate)).length
-  console.log(`\n${'─'.repeat(80)}`)
-  console.log(`INGEST REPORT — ${validated.length} posts to save (${badDateCount} with missing/bad date)`)
-  console.log('─'.repeat(80))
-  validated.forEach((m, i) => {
-    const dateOk = isValidDate(m._rawDate)
-    const dateFlag = dateOk ? '' : '  ⚠️  NO PROPER DATE'
-    console.log(`\n[${i + 1}] [${m.source}] ${m.text.slice(0, 80)}${m.text.length > 80 ? '…' : ''}`)
-    console.log(`     Keyword  : ${m.keyword_matched?.[0] || '—'}`)
-    console.log(`     URL      : ${m.url}`)
-    console.log(`     Raw date : ${m._rawDate || '(none)'}${dateFlag}`)
-    console.log(`     Saved as : ${m.published_at}`)
-    console.log(`     Sentiment: ${m.sentiment_label} (${m.sentiment_score})`)
-  })
-  console.log(`\n${'─'.repeat(80)}\n`)
+  // ── Phase 3: Full-text crawl (plain HTTP, only thin articles, after validation) ──
+  console.log('\n[Ingest] Phase 3 — Full-text crawl (HTTP, simple sites only)...')
+  const crawlTargets = validated.filter(m =>
+    (m.platform === 'News' || m.platform === 'Web') && (m.full_text || '').length < 200
+  )
+  let crawled = 0
+  for (const m of crawlTargets) {
+    const body = await crawlFullText(m.url)
+    if (body) {
+      m.full_text = body
+      const sent = analyzeSentiment(`${m.text} ${body}`)
+      m.sentiment_label = sent.label
+      m.sentiment_score = sent.score
+      crawled++
+    }
+    await new Promise(r => setTimeout(r, 300))
+  }
+  console.log(`[Ingest] Crawled ${crawled}/${crawlTargets.length} articles successfully`)
 
-  // Strip internal flags before saving
+  // ── Phase 4: Save ─────────────────────────────────────────────────────────
+  console.log('\n[Ingest] Phase 4 — Saving to Supabase...')
   const toSave = validated.map(({ _rawDate, ...rest }) => rest)
-
   const { saved, skipped } = await saveToSupabase(toSave)
-  console.log(`[Ingest] Saved: ${saved} new | Skipped (duplicates): ${skipped}`)
-  console.log(`[Ingest] Done at ${new Date().toISOString()}\n`)
+
+  // ── Phase 5: Multi-keyword backfill (recent rows only) ────────────────────
+  console.log('\n[Ingest] Phase 5 — Multi-keyword backfill (last 48h)...')
+  await backfillMultiKeywords(searches)
+
+  // ── Summary report ────────────────────────────────────────────────────────
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1)
+  const badDateCount = validated.filter(m => !isValidDate(m._rawDate)).length
+
+  console.log(`\n${'─'.repeat(60)}`)
+  console.log(`INGEST SUMMARY  (${elapsed}s)`)
+  console.log('─'.repeat(60))
+  console.log(`  Fetched   : ${allMentions.length} raw`)
+  console.log(`  Validated : ${validated.length} kept  |  ${allMentions.length - validated.length} dropped`)
+  console.log(`  Crawled   : ${crawled} full-text enriched`)
+  console.log(`  Saved     : ${saved} new  |  ${skipped} duplicates`)
+  console.log(`  Bad dates : ${badDateCount} (run fix-dates.js)`)
+  console.log('\n  By source:')
+  Object.entries(sourceCounts).forEach(([src, n]) => console.log(`    ${src.padEnd(14)} ${n}`))
+  console.log('─'.repeat(60))
+  console.log(`\n⚠️  Next: run Claude Search for each keyword using WebSearch tool`)
+  console.log(`   Then: node scripts/fix-dates.js --apply\n`)
 }
 
 run().catch(console.error)

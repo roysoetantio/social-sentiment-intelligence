@@ -4,6 +4,7 @@ const rowToMention = (row) => ({
   id: row.id,
   text: row.text,
   fullText: row.full_text || '',
+  summary: row.summary || '',
   platform: row.platform,
   url: row.url || '#',
   author: {

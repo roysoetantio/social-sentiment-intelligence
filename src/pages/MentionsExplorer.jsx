@@ -224,6 +224,14 @@ function DetailPanel({ mention, onClose, onSaved, onPrev, onNext, hasPrev, hasNe
           <p className="text-sm text-ink dark:text-on-dark leading-relaxed">{mention.text}</p>
         </div>
 
+        {/* AI Summary */}
+        {mention.summary && (
+          <div className="border border-[#2940BE]/20 bg-[#2940BE]/5 dark:bg-[#2940BE]/10 rounded-lg p-3">
+            <p className="text-[0.625rem] font-semibold text-[#2940BE] uppercase tracking-wide mb-1">AI Summary</p>
+            <p className="text-xs text-ink dark:text-on-dark leading-relaxed">{mention.summary}</p>
+          </div>
+        )}
+
         {/* Sentiment */}
         <div>
           <p className="section-label mb-1.5">Sentiment Analysis</p>

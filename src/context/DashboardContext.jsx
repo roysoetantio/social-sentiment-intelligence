@@ -53,7 +53,7 @@ export function DashboardProvider({ children }) {
       const [{ data: groups }, { data: kws }, { data: allKws }] = await Promise.all([
         supabase.from('keyword_groups').select('*').order('created_at'),
         supabase.from('keywords').select('*').eq('is_active', true).order('created_at'),
-        supabase.from('keywords').select('id, term').order('created_at'),
+        supabase.from('keywords').select('id, term, group_id').order('created_at'),
       ])
       if (groups && kws) {
         setKeywordGroups(groups.map(g => ({
