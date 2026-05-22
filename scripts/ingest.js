@@ -74,7 +74,9 @@ const loadKeywordsFromDB = async () => {
 const queryMatchesText = (query, text) => {
   return query.split(' ').every(word => {
     const isAllCaps = word.length > 1 && word === word.toUpperCase() && /[A-Z]/.test(word)
-    return isAllCaps ? text.includes(word) : text.toLowerCase().includes(word.toLowerCase())
+    return isAllCaps
+      ? new RegExp(`\\b${word}\\b`).test(text)
+      : text.toLowerCase().includes(word.toLowerCase())
   })
 }
 
@@ -234,7 +236,10 @@ const fetchRealTimeNews = async ({ query, keywordId, group, isCompetitor }) => {
     if (!res.ok) throw new Error(data?.message || `HTTP ${res.status}`)
     if (data.status !== 'OK') throw new Error(data.request_id || 'Non-OK status')
 
-    return (data.data || []).map(article => {
+    return (data.data || []).filter(article => {
+      const text = `${article.title} ${article.snippet || ''} ${article.link || ''}`
+      return queryMatchesText(query, text)
+    }).map(article => {
       const text = `${article.title} ${article.snippet || ''}`
       const sent = analyzeSentiment(text)
       return {
@@ -393,9 +398,10 @@ const extractAuthorFromUrl = (url = '') => {
   return null
 }
 
-const serperItemToMention = (item, { keywordId, group, isCompetitor }, source) => {
-  const text = `${item.title} ${item.snippet || ''}`
-  const sent = analyzeSentiment(text)
+const serperItemToMention = (item, { query, keywordId, group, isCompetitor }, source) => {
+  const text = `${item.title} ${item.snippet || ''} ${item.link || ''}`
+  if (!queryMatchesText(query, text)) return null
+  const sent = analyzeSentiment(`${item.title} ${item.snippet || ''}`)
   const extracted = extractAuthorFromUrl(item.link)
   return {
     text: item.title,
@@ -454,7 +460,7 @@ const fetchSerperNews = async (search) => {
           q: `${search.query} ${BLACKLIST}`,
           gl: 'my', hl, num: 10, page, tbs: 'qdr:m',
         })
-        results.push(...(data.news || []).map(item => serperItemToMention(item, search, 'serper_news')))
+        results.push(...(data.news || []).map(item => serperItemToMention(item, search, 'serper_news')).filter(Boolean))
         await new Promise(r => setTimeout(r, 300))
       } catch (e) {
         console.warn(`[SerperNews] Failed for "${search.query}" hl=${hl} page=${page}:`, e.message)
@@ -483,7 +489,7 @@ const fetchSerperSocial = async (search) => {
           gl: 'my', hl, num: 10, page, tbs: 'qdr:m',
         })
         const items = [...(data.organic || []), ...(data.news || [])]
-        results.push(...items.map(item => serperItemToMention(item, search, 'serper_social')))
+        results.push(...items.map(item => serperItemToMention(item, search, 'serper_social')).filter(Boolean))
         await new Promise(r => setTimeout(r, 300))
       } catch (e) {
         console.warn(`[SerperSocial] Failed for "${search.query}" hl=${hl} page=${page}:`, e.message)
@@ -521,7 +527,10 @@ const fetchReddit = async ({ query, keywordId, group, isCompetitor }) => {
     const data = await res.json()
     const posts = data?.data?.children || []
 
-    return posts.map(({ data: p }) => {
+    return posts.filter(({ data: p }) => {
+      const text = `${p.title} ${p.selftext || ''} https://www.reddit.com${p.permalink}`.trim()
+      return queryMatchesText(query, text)
+    }).map(({ data: p }) => {
       const text = `${p.title} ${p.selftext || ''}`.trim()
       const sent = analyzeSentiment(text)
       return {
@@ -648,7 +657,11 @@ const fetchWorldNews = async ({ query, keywordId, group, isCompetitor }) => {
     const data = await res.json()
     const articles = data.news || []
 
-    return articles.filter(article => !isBlacklisted(article.url || '')).map(article => {
+    return articles.filter(article => {
+      if (isBlacklisted(article.url || '')) return false
+      const text = `${article.title} ${article.text || article.summary || ''} ${article.url || ''}`
+      return queryMatchesText(query, text)
+    }).map(article => {
       const text = `${article.title} ${article.text || article.summary || ''}`
       const sent = analyzeSentiment(text)
       return {
@@ -890,7 +903,7 @@ const run = async () => {
   const validated = allMentions.filter(m => {
     if (isOwnAccount(m.author_handle, m.url)) return false
     const keyword = searches.find(s => s.keywordId === m.keyword_matched?.[0])?.query || ''
-    if (!keyword) return true
+    if (!keyword) return false
     const haystack = `${m.text} ${m.full_text} ${m.url}`
     return queryMatchesText(keyword, haystack)
   })
