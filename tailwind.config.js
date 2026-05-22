@@ -64,6 +64,20 @@ export default {
       boxShadow: {
         card: '0 4px 12px rgba(0,0,0,0.04)',
       },
+      keyframes: {
+        'fade-in': {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        'modal-in': {
+          '0%': { opacity: '0', transform: 'scale(0.96) translateY(-8px)' },
+          '100%': { opacity: '1', transform: 'scale(1) translateY(0)' },
+        },
+      },
+      animation: {
+        'fade-in': 'fade-in 0.15s ease-out',
+        'modal-in': 'modal-in 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+      },
     },
   },
   plugins: [],

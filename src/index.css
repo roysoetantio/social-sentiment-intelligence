@@ -12,6 +12,13 @@
   to   { opacity: 1; }
 }
 
+/* Apply safe area padding to bottom nav only when running as installed PWA */
+@media (display-mode: standalone) {
+  .bottom-nav-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
 @layer base {
   html {
     font-family: 'Inter', sans-serif;

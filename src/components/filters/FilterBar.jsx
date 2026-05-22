@@ -21,7 +21,7 @@ const SOURCE_LABELS = {
 const PLATFORMS = ['Twitter', 'LinkedIn', 'YouTube', 'News', 'Blog', 'Forum']
 const SENTIMENTS = ['positive', 'negative', 'neutral']
 const LANGUAGES = [{ value: 'en', label: 'English' }, { value: 'ms', label: 'Malay' }, { value: 'zh', label: 'Chinese' }]
-const MENTION_TYPES = ['news', 'complaint', 'praise', 'question', 'rumor', 'crisis']
+const MENTION_TYPES = ['news', 'complaint', 'praise', 'question', 'rumor']
 
 const SENTIMENT_COLORS = {
   positive: '#19C9A5',
@@ -29,16 +29,18 @@ const SENTIMENT_COLORS = {
   neutral: '#1490EA',
 }
 
-const ToggleButton = ({ active, onClick, children, color }) => (
+const ToggleButton = ({ active, onClick, children, color, disabled }) => (
   <button
     onClick={onClick}
+    disabled={disabled}
     className={clsx(
       'px-2.5 py-1 text-xs rounded-md border border-hairline-strong font-medium transition-all',
+      disabled ? 'opacity-35 cursor-not-allowed bg-canvas text-body' :
       active
         ? 'text-white border-transparent'
         : 'bg-canvas text-body hover:border-ink/30'
     )}
-    style={active ? { backgroundColor: color || '#000000', borderColor: color || '#000000' } : {}}
+    style={active && !disabled ? { backgroundColor: color || '#000000', borderColor: color || '#000000' } : {}}
   >
     {children}
   </button>
@@ -58,6 +60,7 @@ export default function FilterBar({ inline = false }) {
     resetFilters,
     setDatePreset,
     mentionsWithoutSourceFilter,
+    filteredMentions,
     keywordGroups,
   } = useDashboard()
 
@@ -75,12 +78,28 @@ export default function FilterBar({ inline = false }) {
 
   const groupCounts = useMemo(() => {
     const counts = {}
-    ;(mentionsWithoutSourceFilter || []).forEach(m => {
+    ;(filteredMentions || []).forEach(m => {
       const g = m.keywordGroup || 'unknown'
       counts[g] = (counts[g] || 0) + 1
     })
     return counts
-  }, [mentionsWithoutSourceFilter])
+  }, [filteredMentions])
+
+  const platformCounts = useMemo(() => {
+    const counts = {}
+    ;(filteredMentions || []).forEach(m => {
+      if (m.platform) counts[m.platform] = (counts[m.platform] || 0) + 1
+    })
+    return counts
+  }, [filteredMentions])
+
+  const mentionTypeCounts = useMemo(() => {
+    const counts = {}
+    ;(filteredMentions || []).forEach(m => {
+      if (m.mentionType) counts[m.mentionType] = (counts[m.mentionType] || 0) + 1
+    })
+    return counts
+  }, [filteredMentions])
 
   const content = (
     <>
@@ -106,29 +125,36 @@ export default function FilterBar({ inline = false }) {
         <div className="mb-5">
           <p className="section-label mb-1.5">Keyword Groups</p>
           <div className="space-y-1.5">
-            {keywordGroups.map(g => (
-              <div key={g.id}>
-                <button
-                  onClick={() => toggleGroup(g.id)}
-                  className={clsx(
-                    'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md border text-xs font-medium transition-all text-left',
-                    selectedGroups.includes(g.id)
-                      ? 'bg-[#2940BE] text-white border-[#2940BE]'
-                      : 'bg-canvas dark:bg-white/8 text-body dark:text-on-dark-soft border-hairline-strong dark:border-white/8 hover:border-ink/30 dark:hover:border-white/20'
-                  )}
-                >
-                  {g.name}
-                  <span className={clsx(
-                    'ml-auto text-[0.625rem] font-semibold rounded-full px-1.5 py-0.5',
-                    selectedGroups.includes(g.id)
-                      ? 'bg-white/20 text-on-dark border border-transparent'
-                      : 'bg-canvas dark:bg-white/8 border border-hairline-strong dark:border-white/8 text-muted dark:text-on-dark-soft'
-                  )}>
-                    {groupCounts[g.id] || 0}
-                  </span>
-                </button>
-              </div>
-            ))}
+            {keywordGroups.map(g => {
+              const count = groupCounts[g.id] || 0
+              const isSelected = selectedGroups.includes(g.id)
+              const isEmpty = count === 0 && !isSelected
+              return (
+                <div key={g.id}>
+                  <button
+                    onClick={() => !isEmpty && toggleGroup(g.id)}
+                    disabled={isEmpty}
+                    className={clsx(
+                      'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md border text-xs font-medium transition-all text-left',
+                      isEmpty ? 'opacity-35 cursor-not-allowed bg-canvas dark:bg-white/8 text-body dark:text-on-dark-soft border-hairline-strong dark:border-white/8' :
+                      isSelected
+                        ? 'bg-[#2940BE] text-white border-[#2940BE]'
+                        : 'bg-canvas dark:bg-white/8 text-body dark:text-on-dark-soft border-hairline-strong dark:border-white/8 hover:border-ink/30 dark:hover:border-white/20'
+                    )}
+                  >
+                    {g.name}
+                    <span className={clsx(
+                      'ml-auto text-[0.625rem] font-semibold rounded-full px-1.5 py-0.5',
+                      isSelected
+                        ? 'bg-white/20 text-on-dark border border-transparent'
+                        : 'bg-canvas dark:bg-white/8 border border-hairline-strong dark:border-white/8 text-muted dark:text-on-dark-soft'
+                    )}>
+                      {count}
+                    </span>
+                  </button>
+                </div>
+              )
+            })}
           </div>
         </div>
 
@@ -188,12 +214,15 @@ export default function FilterBar({ inline = false }) {
                     const count = sourceCounts[src] || 0
                     const meta = SOURCE_LABELS[src] || { label: src, Icon: Link }
                     const active = selectedSources.includes(src)
+                    const isEmpty = count === 0 && !active
                     return (
                       <button
                         key={src}
-                        onClick={() => toggleSource(src)}
+                        onClick={() => !isEmpty && toggleSource(src)}
+                        disabled={isEmpty}
                         className={clsx(
                           'w-full flex items-center justify-between px-2.5 py-1.5 rounded-md border text-left transition-all',
+                          isEmpty ? 'opacity-35 cursor-not-allowed bg-canvas dark:bg-white/8 border-hairline-strong dark:border-white/8' :
                           active
                             ? 'bg-[#2940BE] border-[#2940BE] text-on-dark'
                             : 'bg-canvas dark:bg-white/8 border-hairline-strong dark:border-white/8 hover:border-ink/30 dark:hover:border-white/20'
@@ -217,16 +246,21 @@ export default function FilterBar({ inline = false }) {
             <div>
               <p className="section-label mb-1.5">Platform</p>
               <div className="flex flex-wrap gap-1">
-                {PLATFORMS.map(p => (
-                  <ToggleButton
-                    key={p}
-                    active={selectedPlatforms.includes(p)}
-                    color="#2940BE"
-                    onClick={() => togglePlatform(p)}
-                  >
-                    {p}
-                  </ToggleButton>
-                ))}
+                {PLATFORMS.map(p => {
+                  const isActive = selectedPlatforms.includes(p)
+                  const isEmpty = (platformCounts[p] || 0) === 0 && !isActive
+                  return (
+                    <ToggleButton
+                      key={p}
+                      active={isActive}
+                      color="#2940BE"
+                      onClick={() => !isEmpty && togglePlatform(p)}
+                      disabled={isEmpty}
+                    >
+                      {p}
+                    </ToggleButton>
+                  )
+                })}
               </div>
             </div>
 
@@ -234,18 +268,23 @@ export default function FilterBar({ inline = false }) {
             <div>
               <p className="section-label mb-1.5">Mention Type</p>
               <div className="flex flex-wrap gap-1">
-                {MENTION_TYPES.map(t => (
-                  <ToggleButton
-                    key={t}
-                    active={selectedMentionTypes.includes(t)}
-                    color="#2940BE"
-                    onClick={() => setSelectedMentionTypes(prev =>
-                      prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t]
-                    )}
-                  >
-                    <span className="capitalize">{t}</span>
-                  </ToggleButton>
-                ))}
+                {MENTION_TYPES.map(t => {
+                  const isActive = selectedMentionTypes.includes(t)
+                  const isEmpty = (mentionTypeCounts[t] || 0) === 0 && !isActive
+                  return (
+                    <ToggleButton
+                      key={t}
+                      active={isActive}
+                      color="#2940BE"
+                      onClick={() => !isEmpty && setSelectedMentionTypes(prev =>
+                        prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t]
+                      )}
+                      disabled={isEmpty}
+                    >
+                      <span className="capitalize">{t}</span>
+                    </ToggleButton>
+                  )
+                })}
               </div>
             </div>
 

@@ -70,15 +70,9 @@ export default function MentionCard({ mention, onClick, selected }) {
             <SentimentBadge label={mention.sentiment.label} overridden={!!mention.sentiment.originalLabel} />
             {group && (
               <span
-                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[0.6875rem] font-normal border"
-                style={{ color: group.color, borderColor: `${group.color}30`, backgroundColor: `${group.color}10` }}
+                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[0.6875rem] font-normal border border-hairline-strong dark:border-white/8 bg-surface-strong dark:bg-white/8 text-muted dark:text-on-dark-soft"
               >
                 {group.name}
-              </span>
-            )}
-            {mention.mentionType === 'crisis' && (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[0.6875rem] font-normal bg-error/10 text-error border border-error/30">
-                Crisis
               </span>
             )}
           </div>

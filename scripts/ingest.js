@@ -116,7 +116,6 @@ const guessMentionType = (text) => {
   if (t.match(/complaint|complain|issue|problem|broken|fail/)) return 'complaint'
   if (t.match(/award|win|achiev|congrat|excellent|best/)) return 'praise'
   if (t.match(/\?|how|what|why|when|where/)) return 'question'
-  if (t.match(/crisis|emergency|urgent|danger|risk/)) return 'crisis'
   return 'news'
 }
 

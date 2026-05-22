@@ -363,7 +363,7 @@ function DetailPanel({ mention, onClose, onSaved, onPrev, onNext, hasPrev, hasNe
                   reddit:               '🔴 Reddit',
                   google_news_rapidapi: '📰 Google News',
                   worldnews:            '🌐 World News API',
-                  claude_search:        '🤖 Claude Search',
+                  claude_search:        'Claude Search',
                 }[mention.source] || `🔗 ${mention.source}`}
               </span>
             </div>
@@ -498,7 +498,7 @@ function DetailPanel({ mention, onClose, onSaved, onPrev, onNext, hasPrev, hasNe
 }
 
 export default function MentionsExplorer() {
-  const { filteredMentions, allMentions, selectedSentiments, toggleSentiment, activeFilterCount } = useDashboard()
+  const { filteredMentions, allMentions, selectedSentiments, toggleSentiment, activeFilterCount, resetFilters, setSelectedSentiments } = useDashboard()
   const location = useLocation()
   const [selectedMention, setSelectedMention] = useState(null)
   const [sortBy, setSortBy] = useState('recent')
@@ -518,7 +518,10 @@ export default function MentionsExplorer() {
     if (!mentionId || didHandleNav.current || allMentions.length === 0) return
     didHandleNav.current = true
 
-    if (sentimentFilter && !selectedSentiments.includes(sentimentFilter)) toggleSentiment(sentimentFilter)
+    if (sentimentFilter) {
+      resetFilters()
+      setSelectedSentiments([sentimentFilter])
+    }
 
     const target = allMentions.find(m => m.id === mentionId)
     if (target) setSelectedMention(target)

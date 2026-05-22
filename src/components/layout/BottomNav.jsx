@@ -13,29 +13,31 @@ const navItems = [
 
 export default function BottomNav() {
   return (
-    <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-canvas dark:bg-surface-dark border-t border-hairline dark:border-white/8 flex items-stretch" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-      {navItems.map(({ path, label, icon: Icon }) => (
-        <NavLink
-          key={path}
-          to={path}
-          end={path === '/'}
-          className={({ isActive }) =>
-            clsx(
-              'flex-1 flex flex-col items-center justify-center gap-1 text-[0.625rem] font-medium transition-colors',
-              isActive
-                ? 'text-[#2940BE] dark:text-[#6B80FF]'
-                : 'text-muted dark:text-on-dark-soft'
-            )
-          }
-        >
-          {({ isActive }) => (
-            <>
-              <Icon size={20} strokeWidth={isActive ? 2.2 : 1.8} />
-              <span>{label}</span>
-            </>
-          )}
-        </NavLink>
-      ))}
+    <nav className="bottom-nav-safe lg:hidden fixed bottom-0 inset-x-0 z-30 bg-canvas dark:bg-surface-dark border-t border-hairline dark:border-white/8">
+      <div className="flex h-16">
+        {navItems.map(({ path, label, icon: Icon }) => (
+          <NavLink
+            key={path}
+            to={path}
+            end={path === '/'}
+            className={({ isActive }) =>
+              clsx(
+                'flex-1 flex flex-col items-center justify-center gap-1 text-[0.625rem] font-medium transition-colors',
+                isActive
+                  ? 'text-[#2940BE] dark:text-[#6B80FF]'
+                  : 'text-muted dark:text-on-dark-soft'
+              )
+            }
+          >
+            {({ isActive }) => (
+              <>
+                <Icon size={20} strokeWidth={isActive ? 2.2 : 1.8} />
+                <span>{label}</span>
+              </>
+            )}
+          </NavLink>
+        ))}
+      </div>
     </nav>
   )
 }
