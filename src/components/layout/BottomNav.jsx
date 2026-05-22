@@ -13,7 +13,7 @@ const navItems = [
 
 export default function BottomNav() {
   return (
-    <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-canvas dark:bg-surface-dark border-t border-hairline dark:border-white/8 flex items-stretch h-16 safe-bottom">
+    <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-canvas dark:bg-surface-dark border-t border-hairline dark:border-white/8 flex items-stretch" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
       {navItems.map(({ path, label, icon: Icon }) => (
         <NavLink
           key={path}
