@@ -333,7 +333,7 @@ const BLACKLIST = [
 const BLACKLIST_DOMAINS = [
   'klsescreener.com', 'tradingview.com', 'bebee.com', 'prosple.com',
   'trabajo.org', 'hiredly.com', 'wikipedia.org', 'insage.com.my',
-  'oraclecloud.com', 'marketscreener.com',
+  'oraclecloud.com', 'marketscreener.com', 'reveliolabs.com',
 ]
 
 const isBlacklisted = (url) => {
@@ -891,8 +891,8 @@ const run = async () => {
     if (isOwnAccount(m.author_handle, m.url)) return false
     const keyword = searches.find(s => s.keywordId === m.keyword_matched?.[0])?.query || ''
     if (!keyword) return true
-    const haystack = `${m.text} ${m.full_text} ${m.url}`.toLowerCase()
-    return keyword.toLowerCase().split(' ').every(word => haystack.includes(word))
+    const haystack = `${m.text} ${m.full_text} ${m.url}`
+    return queryMatchesText(keyword, haystack)
   })
   const dropped = allMentions.length - validated.length
   if (dropped > 0) console.log(`[Ingest] Dropped ${dropped} false positives (keyword not found in content or own account)`)
