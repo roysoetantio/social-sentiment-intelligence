@@ -78,8 +78,8 @@ export function DashboardProvider({ children }) {
       dateRange, selectedKeywords, selectedGroups, selectedPlatforms,
       selectedSentiments, selectedLanguages, searchQuery, selectedMentionTypes,
       selectedSources: [], riskOnly, showExcluded,
-    })
-  }, [allMentionsData, dateRange, selectedKeywords, selectedGroups, selectedPlatforms, selectedSentiments, selectedLanguages, searchQuery, selectedMentionTypes, riskOnly, showExcluded])
+    }, allKeywordsFlat)
+  }, [allMentionsData, dateRange, selectedKeywords, selectedGroups, selectedPlatforms, selectedSentiments, selectedLanguages, searchQuery, selectedMentionTypes, riskOnly, showExcluded, allKeywordsFlat])
 
   // All filters — used only by Mentions Explorer
   const filteredMentions = useMemo(() => {
@@ -87,8 +87,8 @@ export function DashboardProvider({ children }) {
       dateRange, selectedKeywords, selectedGroups, selectedPlatforms,
       selectedSentiments, selectedLanguages, searchQuery, selectedMentionTypes,
       selectedSources, riskOnly, showExcluded,
-    })
-  }, [allMentionsData, dateRange, selectedKeywords, selectedGroups, selectedPlatforms, selectedSentiments, selectedLanguages, searchQuery, selectedMentionTypes, selectedSources, riskOnly, showExcluded])
+    }, allKeywordsFlat)
+  }, [allMentionsData, dateRange, selectedKeywords, selectedGroups, selectedPlatforms, selectedSentiments, selectedLanguages, searchQuery, selectedMentionTypes, selectedSources, riskOnly, showExcluded, allKeywordsFlat])
 
   // Global filters only (date range + search) — used by Overview, Analytics, Keywords
   const globalFilteredMentions = useMemo(() => {

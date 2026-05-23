@@ -1,6 +1,6 @@
 import { isWithinInterval, parseISO, startOfDay, endOfDay } from 'date-fns'
 
-export const filterMentions = (mentions, filters) => {
+export const filterMentions = (mentions, filters, allKeywordsFlat = []) => {
   const {
     dateRange,
     selectedKeywords,
@@ -14,6 +14,9 @@ export const filterMentions = (mentions, filters) => {
     riskOnly,
     showExcluded,
   } = filters
+
+  // Build a map of keywordId -> groupId for fast lookup
+  const kwGroupMap = new Map(allKeywordsFlat.map(k => [k.id, k.group_id]))
 
   return mentions.filter(mention => {
     // Excluded filter — hide excluded by default, show only when showExcluded is on
@@ -37,9 +40,11 @@ export const filterMentions = (mentions, filters) => {
       if (!hasKeyword) return false
     }
 
-    // Group filter
+    // Group filter — check keywordGroup field OR any matched keyword's group
     if (selectedGroups && selectedGroups.length > 0) {
-      if (!selectedGroups.includes(mention.keywordGroup)) return false
+      const matchedGroups = (mention.keywordMatched || []).map(id => kwGroupMap.get(id)).filter(Boolean)
+      const allGroups = [...new Set([mention.keywordGroup, ...matchedGroups])]
+      if (!allGroups.some(g => selectedGroups.includes(g))) return false
     }
 
     // Platform filter

@@ -62,6 +62,7 @@ export default function FilterBar({ inline = false }) {
     mentionsWithoutSourceFilter,
     filteredMentions,
     keywordGroups,
+    allKeywordsFlat,
   } = useDashboard()
 
   const [advancedOpen, setAdvancedOpen] = useState(false)
@@ -78,12 +79,14 @@ export default function FilterBar({ inline = false }) {
 
   const groupCounts = useMemo(() => {
     const counts = {}
+    const kwGroupMap = new Map((allKeywordsFlat || []).map(k => [k.id, k.group_id]))
     ;(filteredMentions || []).forEach(m => {
-      const g = m.keywordGroup || 'unknown'
-      counts[g] = (counts[g] || 0) + 1
+      const matchedGroups = (m.keywordMatched || []).map(id => kwGroupMap.get(id)).filter(Boolean)
+      const allGroups = [...new Set([m.keywordGroup || 'unknown', ...matchedGroups])]
+      allGroups.forEach(g => { counts[g] = (counts[g] || 0) + 1 })
     })
     return counts
-  }, [filteredMentions])
+  }, [filteredMentions, allKeywordsFlat])
 
   const platformCounts = useMemo(() => {
     const counts = {}
