@@ -1,28 +1,57 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
+import { X, Info } from 'lucide-react'
+import { format } from 'date-fns'
 import Sidebar from './Sidebar'
 import TopBar from './TopBar'
 import BottomNav from './BottomNav'
+import { useDashboard } from '../../context/DashboardContext'
+import isPWA from '../../utils/isPWA'
+
+const DISCLAIMER_KEY = 'data_disclaimer_dismissed'
 
 const pageTitles = {
-  '/': 'Overview',
-  '/mentions': 'Mentions Explorer',
-  '/analytics': 'Sentiment Analytics',
-  '/keywords': 'Keyword Manager',
-  '/more': 'More',
+  '/': { full: 'Overview', short: 'Overview' },
+  '/mentions': { full: 'Mentions Explorer', short: 'Mentions' },
+  '/analytics': { full: 'Sentiment Analytics', short: 'Analytics' },
+  '/keywords': { full: 'Keyword Manager', short: 'Keywords' },
+  '/more': { full: 'More', short: 'More' },
 }
 
 export default function Layout({ children }) {
   const location = useLocation()
-  const title = pageTitles[location.pathname] || 'Dashboard'
+  const pageTitle = pageTitles[location.pathname] || { full: 'Dashboard', short: 'Dashboard' }
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [disclaimerDismissed, setDisclaimerDismissed] = useState(
+    () => localStorage.getItem(DISCLAIMER_KEY) === 'true'
+  )
+
+  const { allMentions } = useDashboard()
+
+  const earliestDate = useMemo(() => {
+    if (!allMentions.length) return null
+    const min = allMentions.reduce((earliest, m) => {
+      const d = new Date(m.publishedAt)
+      return d < earliest ? d : earliest
+    }, new Date(allMentions[0].publishedAt))
+    return format(min, 'd MMM yyyy')
+  }, [allMentions])
+
+  const dismissDisclaimer = () => {
+    localStorage.setItem(DISCLAIMER_KEY, 'true')
+    setDisclaimerDismissed(true)
+  }
+
+  const scrollRef = useRef(null)
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = 0
+  }, [location.pathname])
 
   const openSidebar = useCallback(() => setSidebarOpen(true), [])
   const closeSidebar = useCallback(() => setSidebarOpen(false), [])
 
   return (
     <div className="flex h-screen overflow-hidden bg-canvas-soft dark:bg-surface-dark">
-      {/* Mobile backdrop */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 z-20 bg-black/40 lg:hidden"
@@ -33,9 +62,28 @@ export default function Layout({ children }) {
       <Sidebar isOpen={sidebarOpen} onClose={closeSidebar} />
 
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-        <TopBar title={title} onMenuClick={openSidebar} />
-        <main className="flex-1 overflow-y-auto p-3 pb-20 md:pb-4 md:p-4 flex flex-col bg-canvas">
-          <div className="w-full max-w-[2000px] mx-auto flex flex-col flex-1">
+        <TopBar title={pageTitle.full} shortTitle={pageTitle.short} onMenuClick={openSidebar} />
+
+        {/* Data availability disclaimer — one-time */}
+        {!disclaimerDismissed && earliestDate && (
+          <div className="flex items-start gap-2.5 px-4 py-3 bg-[#EEF1FB] dark:bg-[#2940BE]/20 border-b border-[#2940BE]/20 text-[#2940BE] dark:text-[#6B80FF]">
+            <Info size={15} className="flex-shrink-0 mt-0.5" />
+            <p className="flex-1 text-xs leading-relaxed">
+              <span className="font-semibold">Data Availability Notice — </span>
+              The earliest record in this system is from <span className="font-semibold">{earliestDate}</span>. Historical coverage may be incomplete; not all mentions from that period were necessarily captured.
+            </p>
+            <button onClick={dismissDisclaimer} className="flex-shrink-0 p-0.5 hover:opacity-70 transition-opacity">
+              <X size={14} />
+            </button>
+          </div>
+        )}
+
+        <main className="flex-1 overflow-hidden flex flex-col bg-canvas">
+          <div
+            ref={scrollRef}
+            className="flex-1 overflow-y-auto overscroll-contain px-3 pt-3 md:px-4 md:pt-4 flex flex-col w-full max-w-[2000px] mx-auto"
+            style={{ paddingBottom: isPWA ? 'calc(160px + env(safe-area-inset-bottom, 0px))' : '1rem' }}
+          >
             {children}
           </div>
         </main>

@@ -206,7 +206,7 @@ function DetailPanel({ mention, onClose, onSaved, onPrev, onNext, hasPrev, hasNe
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 pb-8 space-y-4">
+      <div className="flex-1 overflow-y-auto overscroll-contain p-4 pb-8 space-y-4">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>

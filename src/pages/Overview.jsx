@@ -114,7 +114,7 @@ export default function Overview() {
           >
             <p className="text-sm text-body leading-snug">
               {digest
-                ? digest.content
+                ? digest.content.slice(0, 450)
                 : 'Coverage over the past 30 days has been largely positive across corporate and executive topics. Sentiment is healthy with only a small negative share. 2 high-risk items relate to PLUS Expressway — a fatal crash and holiday traffic congestion warnings — and warrant monitoring.'}
             </p>
           </AICard>

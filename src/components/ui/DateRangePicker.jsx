@@ -167,95 +167,98 @@ export default function DateRangePicker({ startDate, endDate, onApply, onCancel,
         <div className="fixed inset-0 z-40 bg-black/30 animate-[fadeIn_200ms_ease-out]" onClick={onCancel} />
 
         {/* Bottom sheet */}
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-canvas rounded-t-2xl shadow-xl pb-safe animate-[slideUp_280ms_cubic-bezier(0.32,0.72,0,1)]">
+        <div className="fixed left-0 right-0 z-50 bg-canvas rounded-t-2xl shadow-xl animate-[slideUp_280ms_cubic-bezier(0.32,0.72,0,1)] flex flex-col max-h-[80vh]" style={{ bottom: 'calc(4rem + env(safe-area-inset-bottom, 0px))' }}>
           {/* Handle */}
-          <div className="flex justify-center pt-3 pb-1">
+          <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
             <div className="w-10 h-1 rounded-full bg-hairline-strong" />
           </div>
 
           {/* Header */}
-          <div className="flex items-center justify-between px-5 pt-2 pb-4">
+          <div className="flex items-center justify-between px-5 pt-1 pb-3 flex-shrink-0">
             <h3 className="text-sm font-semibold text-ink">Select Date Range</h3>
             <button onClick={onCancel} className="p-1.5 rounded-md hover:bg-surface-strong text-muted">
               <X size={16} />
             </button>
           </div>
 
-          {/* Mode toggle */}
-          <div className="flex items-center gap-1 bg-surface-strong rounded-lg p-0.5 w-fit mb-4 mx-5">
-            {[{ label: 'Date Range', value: 'range' }, { label: 'Single Day', value: 'single' }].map(opt => (
-              <button
-                key={opt.value}
-                onClick={() => switchMode(opt.value)}
-                className={clsx(
-                  'px-3 h-8 text-xs font-medium rounded-md transition-all',
-                  mode === opt.value ? 'bg-white text-ink shadow-sm' : 'text-body hover:text-ink'
-                )}
-              >
-                {opt.label}
-              </button>
-            ))}
+          {/* Scrollable content */}
+          <div className="overflow-y-auto flex-1 px-5">
+            {/* Mode toggle */}
+            <div className="flex items-center gap-1 bg-surface-strong rounded-lg p-0.5 w-fit mb-3">
+              {[{ label: 'Date Range', value: 'range' }, { label: 'Single Day', value: 'single' }].map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => switchMode(opt.value)}
+                  className={clsx(
+                    'px-3 h-8 text-xs font-medium rounded-md transition-all',
+                    mode === opt.value ? 'bg-white text-ink shadow-sm' : 'text-body hover:text-ink'
+                  )}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Step indicator for range mode */}
+            {mode === 'range' && (
+              <div className="flex gap-2 mb-3">
+                <button
+                  onClick={() => { setMobileStep('start'); setPickedEnd(null) }}
+                  className={clsx(
+                    'flex-1 py-2 rounded-lg text-xs font-medium border transition-colors',
+                    mobileStep === 'start'
+                      ? 'border-ink bg-ink text-white'
+                      : pickedStart
+                        ? 'border-hairline-strong bg-surface-strong text-ink'
+                        : 'border-hairline text-muted'
+                  )}
+                >
+                  {pickedStart ? format(pickedStart, 'MMM d, yyyy') : 'Start date'}
+                </button>
+                <button
+                  onClick={() => pickedStart && setMobileStep('end')}
+                  className={clsx(
+                    'flex-1 py-2 rounded-lg text-xs font-medium border transition-colors',
+                    mobileStep === 'end'
+                      ? 'border-ink bg-ink text-white'
+                      : pickedEnd
+                        ? 'border-hairline-strong bg-surface-strong text-ink'
+                        : 'border-hairline text-muted'
+                  )}
+                >
+                  {pickedEnd ? format(pickedEnd, 'MMM d, yyyy') : 'End date'}
+                </button>
+              </div>
+            )}
+
+            {/* Calendar */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <button onClick={() => setLeftMonth(m => subMonths(m, 1))} className="p-2 rounded-lg hover:bg-surface-strong text-body">
+                  <ChevronLeft size={18} />
+                </button>
+                <span />
+                <button onClick={() => setLeftMonth(m => addMonths(m, 1))} className="p-2 rounded-lg hover:bg-surface-strong text-body">
+                  <ChevronRight size={18} />
+                </button>
+              </div>
+              <CalendarMonth
+                month={leftMonth}
+                startDate={pickedStart}
+                endDate={pickedEnd}
+                hoverDate={null}
+                onDayClick={handleMobileDay}
+                onDayHover={() => {}}
+                onDayLeave={() => {}}
+                selectingEnd={mobileStep === 'end'}
+                mentionDates={mentionDates}
+                large
+              />
+            </div>
           </div>
 
-          {/* Step indicator for range mode */}
-          {mode === 'range' && (
-            <div className="flex gap-2 px-5 mb-4">
-              <button
-                onClick={() => { setMobileStep('start'); setPickedEnd(null) }}
-                className={clsx(
-                  'flex-1 py-2 rounded-lg text-xs font-medium border transition-colors',
-                  mobileStep === 'start'
-                    ? 'border-ink bg-ink text-white'
-                    : pickedStart
-                      ? 'border-hairline-strong bg-surface-strong text-ink'
-                      : 'border-hairline text-muted'
-                )}
-              >
-                {pickedStart ? format(pickedStart, 'MMM d, yyyy') : 'Start date'}
-              </button>
-              <button
-                onClick={() => pickedStart && setMobileStep('end')}
-                className={clsx(
-                  'flex-1 py-2 rounded-lg text-xs font-medium border transition-colors',
-                  mobileStep === 'end'
-                    ? 'border-ink bg-ink text-white'
-                    : pickedEnd
-                      ? 'border-hairline-strong bg-surface-strong text-ink'
-                      : 'border-hairline text-muted'
-                )}
-              >
-                {pickedEnd ? format(pickedEnd, 'MMM d, yyyy') : 'End date'}
-              </button>
-            </div>
-          )}
-
-          {/* Calendar */}
-          <div className="px-5">
-            <div className="flex items-center justify-between mb-3">
-              <button onClick={() => setLeftMonth(m => subMonths(m, 1))} className="p-2 rounded-lg hover:bg-surface-strong text-body">
-                <ChevronLeft size={18} />
-              </button>
-              <span />
-              <button onClick={() => setLeftMonth(m => addMonths(m, 1))} className="p-2 rounded-lg hover:bg-surface-strong text-body">
-                <ChevronRight size={18} />
-              </button>
-            </div>
-            <CalendarMonth
-              month={leftMonth}
-              startDate={pickedStart}
-              endDate={pickedEnd}
-              hoverDate={null}
-              onDayClick={handleMobileDay}
-              onDayHover={() => {}}
-              onDayLeave={() => {}}
-              selectingEnd={mobileStep === 'end'}
-              mentionDates={mentionDates}
-              large
-            />
-          </div>
-
-          {/* Footer */}
-          <div className="flex gap-3 px-5 pt-4 pb-6">
+          {/* Footer — always visible */}
+          <div className="flex gap-3 px-5 pt-3 pb-5 flex-shrink-0 border-t border-hairline">
             <button
               onClick={onCancel}
               className="flex-1 h-11 text-sm text-body border border-hairline-strong rounded-xl hover:bg-surface-strong transition-colors"

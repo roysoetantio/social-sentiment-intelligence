@@ -17,6 +17,7 @@
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+
 @layer base {
   html {
     font-family: 'Inter', sans-serif;

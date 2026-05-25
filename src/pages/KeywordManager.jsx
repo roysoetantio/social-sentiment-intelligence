@@ -4,8 +4,9 @@ import {
   CheckCircle, AlertCircle, XCircle, Activity, Save, X, RefreshCw, Loader, FolderInput,
   Settings, Pause, Play, Download, Terminal,
 } from 'lucide-react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useDashboard } from '../context/DashboardContext'
-import { getKeywordGroupStats } from '../data/mockAnalytics'
+import isPWA from '../utils/isPWA'
 import { supabase } from '../lib/supabase'
 import { BRAND_COLORS, SENTIMENT_COLORS, STATUS_COLORS } from '../constants/colors'
 import clsx from 'clsx'
@@ -350,7 +351,10 @@ function KeywordForm({ keyword, groupColor, onSave, onCancel, saving }) {
 }
 
 export default function KeywordManager() {
-  const { globalFilteredMentions: filteredMentions, updateMentionGroups, reloadMentions } = useDashboard()
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const mobileGroupId = searchParams.get('g')
+  const { allMentions: filteredMentions, updateMentionGroups, reloadMentions } = useDashboard()
   const { running, logs, fetchingIds, run: runIngest } = useIngest({ onDone: reloadMentions })
   const [showLog, setShowLog] = useState(false)
   const [groups, setGroups] = useState([])
@@ -398,14 +402,28 @@ export default function KeywordManager() {
           })),
       }))
       setGroups(merged)
-      if (!selectedGroup) setSelectedGroup(merged[0])
+      const fromUrl = mobileGroupId ? merged.find(g => String(g.id) === mobileGroupId) : null
+      if (!selectedGroup) setSelectedGroup(fromUrl || merged[0])
     }
     setLoading(false)
   }, [])
 
   useEffect(() => { loadKeywords() }, [loadKeywords])
 
-  const groupStats = useMemo(() => getKeywordGroupStats(filteredMentions), [filteredMentions])
+  const groupStats = useMemo(() => {
+    const stats = {}
+    groups.forEach(g => {
+      const kwIds = new Set(g.keywords.map(k => k.id))
+      const gMentions = filteredMentions.filter(m => (m.keywordMatched || []).some(id => kwIds.has(id)))
+      stats[g.id] = {
+        total: gMentions.length,
+        positive: gMentions.filter(m => m.sentiment.label === 'positive').length,
+        negative: gMentions.filter(m => m.sentiment.label === 'negative').length,
+        neutral: gMentions.filter(m => m.sentiment.label === 'neutral').length,
+      }
+    })
+    return stats
+  }, [groups, filteredMentions])
 
   const getKeywordStats = (kwId) => {
     const mentions = filteredMentions.filter(m => m.keywordMatched.includes(kwId))
@@ -753,19 +771,43 @@ export default function KeywordManager() {
         </div>
       </div>
 
-      {/* Right: Group detail */}
-      <div className="flex-1 overflow-y-auto">
-        {/* Mobile group selector bar */}
+      {/* Mobile: Groups list (no ?g= param) */}
+      {!mobileGroupId && (
+        <div className="md:hidden flex-1 overflow-y-auto overscroll-contain space-y-3" style={{ paddingBottom: isPWA ? 'calc(128px + env(safe-area-inset-bottom, 0px))' : undefined }}>
+          {loading ? (
+            <div className="flex justify-center py-12"><svg className="animate-spin h-5 w-5 text-[#2940BE]" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg></div>
+          ) : groups.map(g => {
+            const stats = groupStats[g.id] || {}
+            return (
+              <button
+                key={g.id}
+                onClick={() => { setSelectedGroup(g); navigate(`/keywords?g=${g.id}&name=${encodeURIComponent(g.name)}`) }}
+                className="w-full flex items-center justify-between px-4 h-16 rounded-xl border border-hairline-strong dark:border-white/8 bg-white dark:bg-white/4 hover:bg-surface-strong dark:hover:bg-white/8 transition-colors text-left"
+              >
+                <div>
+                  <p className="text-sm font-semibold text-ink dark:text-on-dark">{g.name}</p>
+                  <p className="text-xs text-muted mt-0.5">{g.keywords.length} keyword{g.keywords.length !== 1 ? 's' : ''} · {stats.total || 0} mentions</p>
+                </div>
+                <ChevronDown size={16} className="text-muted -rotate-90" />
+              </button>
+            )
+          })}
+          <button
+            onClick={handleAddGroup}
+            className="w-full flex items-center justify-center gap-2 px-4 h-14 rounded-xl border border-dashed border-hairline-strong dark:border-white/8 text-sm font-medium text-ink dark:text-on-dark hover:bg-surface-strong dark:hover:bg-white/8 transition-colors"
+          >
+            <Plus size={15} /> New Group
+          </button>
+        </div>
+      )}
+
+      {/* Right: Group detail (desktop always, mobile only when ?g= set) */}
+      <div className={clsx('flex-1 overflow-y-auto overscroll-contain', !mobileGroupId && 'hidden md:block')} style={{ paddingBottom: isPWA ? 'calc(128px + env(safe-area-inset-bottom, 0px))' : undefined }}>
+        {/* Mobile group selector bar — desktop only now */}
         <button
           onClick={() => setGroupSheetOpen(true)}
-          className="md:hidden w-full flex items-center justify-between px-4 h-14 mb-3 rounded-xl border text-sm font-medium border-hairline-strong dark:border-white/8 bg-canvas dark:bg-surface-dark hover:bg-surface-strong dark:hover:bg-white/8 transition-colors"
-        >
-          {selectedGroupData
-            ? <span className="font-semibold text-ink dark:text-on-dark">{selectedGroupData.name}</span>
-            : <span className="text-muted">Select a group…</span>
-          }
-          <ChevronDown size={16} className="text-muted" />
-        </button>
+          className="hidden"
+        />
 
         {selectedGroupData && (
           <div className="space-y-4">

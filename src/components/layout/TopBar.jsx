@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Search, Bell, Calendar, X, Menu, ChevronDown } from 'lucide-react'
+import { Search, Bell, Calendar, X, Menu, ChevronDown, ArrowLeft } from 'lucide-react'
 import { format } from 'date-fns'
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { useDashboard } from '../../context/DashboardContext'
 import DateRangePicker from '../ui/DateRangePicker'
 import clsx from 'clsx'
@@ -13,7 +14,13 @@ const presets = [
   { label: '1Y', value: '1y' },
 ]
 
-export default function TopBar({ title, onMenuClick }) {
+export default function TopBar({ title, shortTitle, onMenuClick }) {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [searchParams] = useSearchParams()
+  const showBack = location.pathname === '/keywords'
+  const inGroupDetail = showBack && searchParams.has('g')
+  const handleBack = () => inGroupDetail ? navigate('/keywords') : navigate('/more')
   const {
     searchQuery, setSearchQuery,
     dateRange, setDateRange,
@@ -26,13 +33,17 @@ export default function TopBar({ title, onMenuClick }) {
   const [presetDropdownOpen, setPresetDropdownOpen] = useState(false)
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
   const pickerRef = useRef(null)
+  const mobilePickerRef = useRef(null)
   const presetDropdownRef = useRef(null)
   const mobileSearchRef = useRef(null)
   const desktopSearchRef = useRef(null)
 
   useEffect(() => {
     const handler = (e) => {
-      if (pickerRef.current && !pickerRef.current.contains(e.target)) setPickerOpen(false)
+      const insidePicker =
+        (pickerRef.current && pickerRef.current.contains(e.target)) ||
+        (mobilePickerRef.current && mobilePickerRef.current.contains(e.target))
+      if (!insidePicker) setPickerOpen(false)
       if (presetDropdownRef.current && !presetDropdownRef.current.contains(e.target)) setPresetDropdownOpen(false)
     }
     document.addEventListener('mousedown', handler)
@@ -65,9 +76,19 @@ export default function TopBar({ title, onMenuClick }) {
   const riskCount = allMentions.filter(m => m.riskFlag && m.riskLevel === 'high').length
 
   return (
-    <header className="bg-canvas dark:bg-surface-dark flex-shrink-0">
+    <header className="bg-canvas dark:bg-surface-dark flex-shrink-0 sticky top-0 z-30" style={{ touchAction: 'pan-x' }}>
       {/* Main row */}
       <div className="h-14 md:h-16 flex items-center px-4 gap-2 md:gap-4 border-b border-hairline dark:border-white/8">
+        {/* Back button — mobile only, keywords page */}
+        {showBack && (
+          <button
+            onClick={handleBack}
+            className="md:hidden flex items-center justify-center p-1 -ml-1 mr-1 text-[#2940BE] dark:text-[#6B80FF]"
+          >
+            <ArrowLeft size={20} />
+          </button>
+        )}
+
         {/* Burger — tablet only */}
         <button
           onClick={onMenuClick}
@@ -78,7 +99,12 @@ export default function TopBar({ title, onMenuClick }) {
         </button>
 
         <div className="flex-1 min-w-0">
-          <h1 className="text-base md:text-lg font-semibold text-ink dark:text-on-dark tracking-tight truncate">{title}</h1>
+          <h1 className="text-base md:text-lg font-semibold text-ink dark:text-on-dark tracking-tight truncate">
+            {inGroupDetail
+              ? searchParams.get('name') || 'Keywords'
+              : <><span className="md:hidden">{shortTitle}</span><span className="hidden md:inline">{title}</span></>
+            }
+          </h1>
         </div>
 
         {/* ── Mobile controls (hidden on md+) ── */}
@@ -96,7 +122,7 @@ export default function TopBar({ title, onMenuClick }) {
               : 'border-hairline-strong text-muted hover:border-ink/30 dark:border-white/8 dark:text-on-dark-soft'
           )}
         >
-          <Search size={15} />
+          {mobileSearchOpen ? <X size={15} /> : <Search size={15} />}
         </button>
 
         {/* Date preset dropdown — mobile */}
@@ -134,7 +160,7 @@ export default function TopBar({ title, onMenuClick }) {
         </div>
 
         {/* Calendar icon — mobile */}
-        <div className="relative md:hidden flex-shrink-0">
+        <div className="relative md:hidden flex-shrink-0" ref={mobilePickerRef}>
           <button
             onClick={openCalendar}
             className={clsx(
@@ -251,34 +277,22 @@ export default function TopBar({ title, onMenuClick }) {
         </button>
       </div>
 
-      {/* Mobile search — full screen overlay */}
+      {/* Mobile search — inline row below topbar */}
       {mobileSearchOpen && (
-        <div className="md:hidden fixed inset-0 z-50 bg-white dark:bg-[#111111] flex flex-col">
-          {/* Search bar */}
-          <div className="flex items-center gap-3 px-4 h-14 border-b border-hairline dark:border-white/8 flex-shrink-0">
-            <Search size={16} className="text-muted flex-shrink-0" />
-            <input
-              ref={mobileSearchRef}
-              type="text"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search mentions..."
-              className="flex-1 h-full text-sm bg-transparent focus:outline-none text-ink dark:text-on-dark placeholder-muted"
-            />
-            <button
-              onClick={() => { setMobileSearchOpen(false); setSearchQuery('') }}
-              className="flex-shrink-0 text-sm font-medium text-[#2940BE] dark:text-[#6B80FF]"
-            >
-              Cancel
+        <div className="md:hidden flex items-center gap-2 px-4 h-11 border-b border-hairline dark:border-white/8 bg-canvas dark:bg-surface-dark">
+          <Search size={14} className="text-muted flex-shrink-0" />
+          <input
+            ref={mobileSearchRef}
+            type="text"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="Search mentions..."
+            className="flex-1 h-full text-sm bg-transparent focus:outline-none text-ink dark:text-on-dark placeholder-muted"
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery('')} className="text-muted">
+              <X size={13} />
             </button>
-          </div>
-
-          {/* Empty state hint */}
-          {!searchQuery && (
-            <div className="flex-1 flex flex-col items-center justify-center gap-2 text-muted pb-20">
-              <Search size={32} strokeWidth={1.2} />
-              <p className="text-sm">Type to search mentions</p>
-            </div>
           )}
         </div>
       )}

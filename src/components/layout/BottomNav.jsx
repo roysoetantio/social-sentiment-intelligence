@@ -7,7 +7,6 @@ const navItems = [
   { path: '/', label: 'Overview', icon: LayoutDashboard },
   { path: '/mentions', label: 'Mentions', icon: MessageSquare },
   { path: '/analytics', label: 'Analytics', icon: BarChart3 },
-  { path: '/keywords', label: 'Keywords', icon: Tags },
   { path: '/more', label: 'More', icon: MoreHorizontal },
 ]
 

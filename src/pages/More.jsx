@@ -1,5 +1,6 @@
 import React from 'react'
-import { TrendingUp, AlertTriangle, Hash, Sun, LogOut } from 'lucide-react'
+import { TrendingUp, AlertTriangle, Hash, Sun, LogOut, Tags, ChevronRight } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { useDashboard } from '../context/DashboardContext'
 import { ANALYST_NAME } from '../constants/sentiment'
 
@@ -17,6 +18,7 @@ function StatRow({ icon: Icon, label, value, color }) {
 }
 
 export default function More() {
+  const navigate = useNavigate()
   const { globalFilteredMentions: filteredMentions } = useDashboard()
   const riskCount = filteredMentions.filter(m => m.riskFlag).length
   const positiveCount = filteredMentions.filter(m => m.sentiment.label === 'positive').length
@@ -35,6 +37,18 @@ export default function More() {
           <div className="text-sm font-semibold text-ink dark:text-on-dark">{ANALYST_NAME}</div>
           <div className="text-xs text-muted dark:text-on-dark-soft">Analyst</div>
         </div>
+      </div>
+
+      {/* Menu */}
+      <div className="rounded-xl border border-hairline dark:border-white/8 bg-white dark:bg-white/4 overflow-hidden">
+        <button
+          onClick={() => navigate('/keywords')}
+          className="w-full flex items-center gap-3 px-4 py-4 hover:bg-surface-strong dark:hover:bg-white/8 transition-colors"
+        >
+          <Tags size={17} className="text-body dark:text-on-dark-soft flex-shrink-0" />
+          <span className="flex-1 text-sm text-left text-ink dark:text-on-dark">Keyword Manager</span>
+          <ChevronRight size={15} className="text-muted" />
+        </button>
       </div>
 
       {/* Quick Insights */}
@@ -67,6 +81,11 @@ export default function More() {
             <span className="text-sm text-error">Log Out</span>
           </button>
         </div>
+      </div>
+
+      {/* Logo */}
+      <div className="flex justify-center pt-4 pb-2">
+        <img src="/assets/uemedgenta-logo.png" alt="UEM Edgenta" className="h-8 w-auto" />
       </div>
     </div>
   )
