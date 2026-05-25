@@ -61,7 +61,7 @@ Each source has a `fetch*()` function that returns rows matching the Supabase sc
 
 ## Post-ingest workflow
 
-**Every time after running ingest, follow ALL five steps in order — never stop at step 1.**
+**Every time after running ingest, follow ALL six steps in order — never stop at step 1.**
 
 **Step 1 — Run ingest**
 ```bash
@@ -89,10 +89,17 @@ node scripts/fix-dates.js --apply      # write corrected dates to Supabase
 **Step 3 — Send unfixed URLs to user**
 After `--apply`, collect all URLs that still couldn't be dated (403s, JS-rendered, paywalled). Present the full list to the user — they provide correct dates, then apply them manually via Supabase UPDATE.
 
-**Step 4 — Delete junk mentions**
+**Step 4 — Generate AI summaries**
+Spawn an agent to generate summaries for mentions that don't have one yet. The agent should:
+- Fetch all mentions where `summary is null` AND `full_text >= 150 chars` AND source is NOT `twitter135`
+- For each, write a 2-3 sentence factual summary (max 400 chars) based on `text` (title) + `full_text`
+- PATCH the `summary` field back to Supabase for each row
+- Report: how many fetched, skipped, saved
+
+**Step 5 — Delete junk mentions**
 Open Mentions Explorer in the dashboard. Delete rows that are off-topic despite passing keyword validation, duplicate stories with different URLs, or have garbled/truncated text.
 
-**Step 5 — Reload the dashboard**
+**Step 6 — Reload the dashboard**
 Refresh the browser — the app reads fresh from Supabase on load.
 
 ### Brand colours

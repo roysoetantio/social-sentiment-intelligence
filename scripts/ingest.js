@@ -283,8 +283,8 @@ const fetchRealTimeNews = async ({ query, keywordId, group, isCompetitor }) => {
       const text = `${article.title} ${article.snippet || ''} ${article.link || ''}`
       return queryMatchesText(query, text)
     }).map(article => {
-      const text = `${article.title} ${article.snippet || ''}`
-      const sent = analyzeSentiment(text)
+      const sentText = `${article.title} ${article.snippet || ''}`
+      const sent = analyzeSentiment(sentText)
       return {
         text: article.title,
         full_text: article.snippet || '',
@@ -381,6 +381,7 @@ const BLACKLIST = [
 // Domains blocked across ALL sources (not just Serper query strings)
 const BLACKLIST_DOMAINS = [
   'asseto.ai',
+  'apps.apple.com',
   'klsescreener.com', 'tradingview.com', 'bebee.com', 'prosple.com',
   'trabajo.org', 'hiredly.com', 'wikipedia.org', 'insage.com.my',
   'oraclecloud.com', 'marketscreener.com', 'reveliolabs.com',
@@ -446,7 +447,7 @@ const extractAuthorFromUrl = (url = '') => {
 const serperItemToMention = (item, { query, keywordId, group, isCompetitor }, source) => {
   const text = `${item.title} ${item.snippet || ''} ${item.link || ''}`
   if (!queryMatchesText(query, text)) return null
-  const sent = analyzeSentiment(`${item.title} ${item.snippet || ''}`)
+  const sent = analyzeSentiment(`${item.title} ${item.snippet || ''} ${item.fullText || ''}`)
   const extracted = extractAuthorFromUrl(item.link)
   return {
     text: item.title,
@@ -577,7 +578,7 @@ const fetchReddit = async ({ query, keywordId, group, isCompetitor }) => {
       return queryMatchesText(query, text)
     }).map(({ data: p }) => {
       const text = `${p.title} ${p.selftext || ''}`.trim()
-      const sent = analyzeSentiment(text)
+      const sent = analyzeSentiment(`${p.title} ${p.selftext || ''}`.trim())
       return {
         text: p.title,
         full_text: p.selftext || '',
@@ -784,7 +785,7 @@ const fetchRSS = async (searches) => {
         if (BLACKLIST.split(' ').some(b => b.startsWith('-site:') && link.includes(b.replace('-site:', '')))) continue
         if (isBlacklisted(link)) continue
 
-        const sent = analyzeSentiment(text)
+        const sent = analyzeSentiment(`${title} ${desc}`)
         results.push({
           text: title,
           full_text: desc,
