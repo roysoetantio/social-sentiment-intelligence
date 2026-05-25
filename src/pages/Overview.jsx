@@ -1,6 +1,6 @@
-import React, { useMemo, useRef, useState, useCallback } from 'react'
+import React, { useMemo, useRef, useState, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { MessageSquare, TrendingUp, TrendingDown, AlertTriangle, Tag, BarChart2, Eye, Sparkles } from 'lucide-react'
+import { MessageSquare, TrendingUp, TrendingDown, AlertTriangle, Tag, BarChart2, Eye } from 'lucide-react'
 import { parseISO, startOfMonth, endOfMonth, startOfWeek, endOfWeek, startOfDay, endOfDay, startOfHour, endOfHour, parse } from 'date-fns'
 import { useDashboard } from '../context/DashboardContext'
 import { getKPIs } from '../data/mockAnalytics'
@@ -13,6 +13,8 @@ import KeywordComparisonChart from '../components/charts/KeywordComparisonChart'
 import { isAtRisk, ANALYST_NAME } from '../constants/sentiment'
 import { BRAND_COLORS, SENTIMENT_COLORS } from '../constants/colors'
 import { formatNum } from '../utils/format'
+import AICard from '../components/common/AICard'
+import { fetchAIDigest } from '../services/apiService'
 
 const PRESET_CHART = {
   'today': { days: 1,   granularity: 'hour'  },
@@ -26,6 +28,11 @@ export default function Overview() {
   const { globalFilteredMentions: filteredMentions, activePreset, setDateRange } = useDashboard()
   const navigate = useNavigate()
   const { days, granularity } = PRESET_CHART[activePreset] || PRESET_CHART['1m']
+  const [digest, setDigest] = useState(null)
+
+  useEffect(() => {
+    fetchAIDigest().then(data => { if (data) setDigest(data) })
+  }, [])
 
   const handleTimelineClick = useCallback((dateKey) => {
     let start, end
@@ -100,29 +107,17 @@ export default function Overview() {
         </div>
 
         {/* Right — AI Digest */}
-        <div className="sm:col-span-4 relative px-3 py-2 rounded-lg border border-[#E6E6E8] bg-white overflow-hidden">
-        {/* Diagonal blue lines background */}
-        <div className="absolute inset-0 pointer-events-none" style={{
-          backgroundImage: `repeating-linear-gradient(
-            135deg,
-            transparent,
-            transparent 3px,
-            rgba(207, 231, 255, 0.6) 3px,
-            rgba(207, 231, 255, 0.6) 4px
-          )`
-        }} />
-        <div className="relative">
-          <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center gap-1">
-              <Sparkles size={12} style={{ color: '#2940BE' }} />
-              <span className="text-xs font-semibold" style={{ color: '#2940BE' }}>AI Digest</span>
-            </div>
-            <span className="text-xs text-muted">Updated 8:00 AM</span>
-          </div>
-          <p className="text-sm text-body leading-snug">
-            Sentiment remained broadly positive over the past 30 days, with <span className="font-medium text-ink">UEM Edgenta</span> generating the highest share of coverage across 6 outlets. Infrastructure and ESG topics dominated positive mentions. <span className="font-medium text-ink">1 risk item</span> flagged from The Edge Malaysia warrants monitoring — a report on quarterly impairments published yesterday.
-          </p>
-        </div>
+        <div className="sm:col-span-4">
+          <AICard
+            label="AI Digest"
+            aside={digest ? `Updated ${new Date(digest.generated_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}` : 'Updated 25 May 2026'}
+          >
+            <p className="text-sm text-body leading-snug">
+              {digest
+                ? digest.content
+                : 'Coverage over the past 30 days has been largely positive across corporate and executive topics. Sentiment is healthy with only a small negative share. 2 high-risk items relate to PLUS Expressway — a fatal crash and holiday traffic congestion warnings — and warrant monitoring.'}
+            </p>
+          </AICard>
         </div>
 
       </div>

@@ -15,6 +15,7 @@ import { EMOTION_COLORS } from '../constants/colors'
 import { formatNum } from '../utils/format'
 import Sentiment from 'sentiment'
 import clsx from 'clsx'
+import AICard from '../components/common/AICard'
 
 const sentimentAnalyzer = new Sentiment()
 
@@ -215,7 +216,7 @@ function DetailPanel({ mention, onClose, onSaved, onPrev, onNext, hasPrev, hasNe
           </div>
           <div className="text-right">
             <p className="text-xs text-muted dark:text-on-dark-soft">{mention.platform}</p>
-            <p className="text-[0.625rem] text-muted dark:text-on-dark-soft">{format(parseISO(mention.publishedAt), 'MMM d, yyyy HH:mm')}</p>
+            <p className="text-[0.625rem] text-muted dark:text-on-dark-soft">{format(parseISO(mention.publishedAt), 'd MMM yyyy - h:mmaaa').replace('am', 'AM').replace('pm', 'PM')}</p>
           </div>
         </div>
 
@@ -226,10 +227,9 @@ function DetailPanel({ mention, onClose, onSaved, onPrev, onNext, hasPrev, hasNe
 
         {/* AI Summary */}
         {mention.summary && (
-          <div className="border border-[#2940BE]/20 bg-[#2940BE]/5 dark:bg-[#2940BE]/10 rounded-lg p-3">
-            <p className="text-[0.625rem] font-semibold text-[#2940BE] uppercase tracking-wide mb-1">AI Summary</p>
-            <p className="text-xs text-ink dark:text-on-dark leading-relaxed">{mention.summary}</p>
-          </div>
+          <AICard label="AI Summary">
+            <p className="text-sm text-ink dark:text-on-dark leading-relaxed">{mention.summary}</p>
+          </AICard>
         )}
 
         {/* Sentiment */}
@@ -258,14 +258,14 @@ function DetailPanel({ mention, onClose, onSaved, onPrev, onNext, hasPrev, hasNe
               style={{
                 width: `${Math.abs(mention.sentiment.score) * 100}%`,
                 backgroundColor: mention.sentiment.score >= 0 ? '#19C9A5' : '#E97132',
-                marginLeft: mention.sentiment.score < 0 ? `${(1 - Math.abs(mention.sentiment.score)) * 100}%` : 0,
+                marginLeft: 0,
               }}
             />
           </div>
         </div>
 
         {/* Risk */}
-        {mention.riskFlag && (
+        {mention.riskLevel && (
           <div>
             <p className="section-label mb-1.5">Risk Assessment</p>
             <RiskBadge level={mention.riskLevel} />
@@ -344,15 +344,7 @@ function DetailPanel({ mention, onClose, onSaved, onPrev, onNext, hasPrev, hasNe
           </div>
         </div>
 
-        {/* Geography */}
-        <div>
-          <p className="section-label mb-1.5">Geography</p>
-          <div className="flex items-center gap-1.5 text-xs text-body dark:text-on-dark-soft">
-            <Globe size={12} className="text-muted dark:text-on-dark-soft" />
-            {mention.geography.country}{mention.geography.region ? `, ${mention.geography.region}` : ''}
-            <span className="text-muted">• {mention.language.toUpperCase()}</span>
-          </div>
-        </div>
+        {/* Geography — hidden */}
 
         {/* Source */}
         {mention.source && (

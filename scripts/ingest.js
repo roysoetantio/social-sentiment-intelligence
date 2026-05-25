@@ -28,6 +28,13 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
 })
 const sentiment = new Sentiment()
 
+const riskLevel = (sent) => {
+  if (sent.label !== 'negative') return null
+  if (sent.score <= -0.80) return 'high'
+  if (sent.score <= -0.30) return 'medium'
+  return 'low'
+}
+
 // ── Load keywords from Supabase ───────────────────────────────────────────────
 // Accept --keywords=id1,id2 to filter which keywords to ingest
 const CLI_KEYWORD_IDS = (() => {
@@ -240,7 +247,7 @@ const fetchTwitter135 = async ({ query, keywordId, group, isCompetitor }) => {
               language: detectLanguage(text),
               mention_type: guessMentionType(text),
               risk_flag: sent.label === 'negative' && sent.confidence > 0.7,
-              risk_level: sent.label === 'negative' ? 'medium' : null,
+              risk_level: riskLevel(sent),
               topics: extractTopics(text),
               is_competitor: isCompetitor || false,
               source: 'twitter135',
@@ -311,7 +318,7 @@ const fetchRealTimeNews = async ({ query, keywordId, group, isCompetitor }) => {
         language: detectLanguage(text),
         mention_type: guessMentionType(text),
         risk_flag: sent.label === 'negative' && sent.confidence > 0.7,
-        risk_level: sent.label === 'negative' ? 'medium' : null,
+        risk_level: riskLevel(sent),
         topics: extractTopics(text),
         is_competitor: isCompetitor || false,
         source: 'realtimesnews',
@@ -475,7 +482,7 @@ const serperItemToMention = (item, { query, keywordId, group, isCompetitor }, so
     language: detectLanguage(text),
     mention_type: guessMentionType(text),
     risk_flag: sent.label === 'negative' && sent.confidence > 0.7,
-    risk_level: sent.label === 'negative' ? 'medium' : null,
+    risk_level: riskLevel(sent),
     topics: extractTopics(text),
     is_competitor: isCompetitor || false,
     source,
@@ -605,7 +612,7 @@ const fetchReddit = async ({ query, keywordId, group, isCompetitor }) => {
         language: detectLanguage(text),
         mention_type: guessMentionType(text),
         risk_flag: sent.label === 'negative' && sent.confidence > 0.7,
-        risk_level: sent.label === 'negative' ? 'medium' : null,
+        risk_level: riskLevel(sent),
         topics: extractTopics(text),
         is_competitor: isCompetitor,
         source: 'reddit',
@@ -672,7 +679,7 @@ const fetchGoogleNews = async ({ query, keywordId, group, isCompetitor }) => {
         language: detectLanguage(text),
         mention_type: guessMentionType(text),
         risk_flag: sent.label === 'negative' && sent.confidence > 0.7,
-        risk_level: sent.label === 'negative' ? 'medium' : null,
+        risk_level: riskLevel(sent),
         topics: extractTopics(text),
         is_competitor: isCompetitor,
         source: 'google_news_rapidapi',
@@ -736,7 +743,7 @@ const fetchWorldNews = async ({ query, keywordId, group, isCompetitor }) => {
         language: article.language || detectLanguage(text),
         mention_type: guessMentionType(text),
         risk_flag: sent.label === 'negative' && sent.confidence > 0.7,
-        risk_level: sent.label === 'negative' ? 'medium' : null,
+        risk_level: riskLevel(sent),
         topics: extractTopics(text),
         is_competitor: isCompetitor || false,
         source: 'worldnews',
@@ -812,7 +819,7 @@ const fetchRSS = async (searches) => {
           language: feed.lang,
           mention_type: guessMentionType(text),
           risk_flag: sent.label === 'negative' && sent.confidence > 0.7,
-          risk_level: sent.label === 'negative' ? 'medium' : null,
+          risk_level: riskLevel(sent),
           topics: extractTopics(text),
           is_competitor: matched.search.isCompetitor || false,
           source: 'rss_my',

@@ -2,7 +2,7 @@ import React from 'react'
 import { formatDistanceToNow, parseISO } from 'date-fns'
 import {
   Twitter, Youtube, Globe, Linkedin, MessageCircle,
-  Heart, Share2, Eye, AlertTriangle, ExternalLink,
+  Heart, Share2, Eye, ExternalLink,
 } from 'lucide-react'
 import SentimentBadge from './SentimentBadge'
 import RiskBadge from './RiskBadge'
@@ -53,12 +53,7 @@ export default function MentionCard({ mention, onClick, selected }) {
             )}
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0">
-            {(mention.riskFlag || mention.sentiment?.label === 'negative') && (
-              <AlertTriangle size={13} className={clsx(
-                mention.riskLevel === 'high' ? 'text-error' :
-                mention.sentiment?.label === 'negative' ? 'text-orange' : 'text-warning'
-              )} />
-            )}
+            <RiskBadge level={mention.riskLevel} minimal />
             <span className="text-[0.8125rem] text-muted">
               {formatDistanceToNow(parseISO(mention.publishedAt), { addSuffix: true })}
             </span>

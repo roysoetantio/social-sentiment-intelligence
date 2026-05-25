@@ -52,6 +52,18 @@ const rowToMention = (row) => ({
   source: row.source,
 })
 
+export const fetchAIDigest = async () => {
+  const { data, error } = await supabase
+    .from('ai_digest')
+    .select('content, generated_at')
+    .order('generated_at', { ascending: false })
+    .limit(1)
+    .single()
+
+  if (error || !data) return null
+  return data
+}
+
 export const fetchAllMentions = async () => {
   const { data, error } = await supabase
     .from('mentions')
