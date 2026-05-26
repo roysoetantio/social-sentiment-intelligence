@@ -78,16 +78,7 @@ export default function Sidebar({ isOpen, onClose }) {
         ))}
       </nav>
 
-      <div className="px-3 pb-4">
-        <div className="rounded-lg border border-hairline bg-canvas p-3 space-y-1.5">
-          <p className="nav-section-label mb-2 text-ink">Quick Insights</p>
-          <StatPill label="Total Mentions" value={total.toLocaleString()} color="#171717" />
-          <StatPill label="Positive Rate" value={`${positivePct}%`} color="#19C9A5" />
-          <StatPill label="At Risk" value={riskCount} color={riskCount > 5 ? '#E97132' : '#999999'} />
-        </div>
-      </div>
-
-      <div className="p-4 border-t border-hairline dark:border-white/8">
+<div className="p-4 border-t border-hairline dark:border-white/8">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-full bg-surface-strong dark:bg-white/8 flex items-center justify-center">
             <span className="text-xs font-semibold text-ink dark:text-on-dark">{ANALYST_NAME.split(' ').map(w => w[0]).slice(0, 2).join('')}</span>

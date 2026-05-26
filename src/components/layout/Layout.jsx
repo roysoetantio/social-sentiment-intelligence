@@ -81,10 +81,13 @@ export default function Layout({ children }) {
         <main className="flex-1 overflow-hidden flex flex-col bg-canvas">
           <div
             ref={scrollRef}
-            className="flex-1 overflow-y-auto overscroll-contain px-3 pt-3 md:px-4 md:pt-4 flex flex-col w-full max-w-[2000px] mx-auto"
-            style={{ paddingBottom: isPWA ? 'calc(160px + env(safe-area-inset-bottom, 0px))' : '1rem' }}
+            className="flex-1 overflow-y-auto overscroll-contain px-3 pt-3 pb-4 md:px-4 md:pt-4 md:pb-4 flex flex-col w-full max-w-[2000px] mx-auto"
           >
             {children}
+            <div
+              className="flex-shrink-0 lg:hidden"
+              style={{ height: isPWA ? 'calc(160px + env(safe-area-inset-bottom, 0px))' : 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}
+            />
           </div>
         </main>
       </div>

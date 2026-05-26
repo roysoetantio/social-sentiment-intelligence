@@ -48,13 +48,14 @@ const ToggleButton = ({ active, onClick, children, color, disabled }) => (
 
 export default function FilterBar({ inline = false }) {
   const {
-    selectedPlatforms, togglePlatform,
-    selectedSentiments, toggleSentiment,
-    selectedGroups, toggleGroup,
-    selectedKeywords, toggleKeyword,
+    selectedPlatforms, togglePlatform, setSelectedPlatforms,
+    selectedSentiments, toggleSentiment, setSelectedSentiments,
+    selectedGroups, toggleGroup, setSelectedGroups,
+    selectedKeywords, toggleKeyword, setSelectedKeywords,
     selectedLanguages, setSelectedLanguages,
     selectedMentionTypes, setSelectedMentionTypes,
-    selectedSources, toggleSource,
+    selectedSources, toggleSource, setSelectedSources,
+    riskOnly, setRiskOnly,
     showExcluded, setShowExcluded,
     activeFilterCount,
     resetFilters,
@@ -104,6 +105,23 @@ export default function FilterBar({ inline = false }) {
     return counts
   }, [filteredMentions])
 
+  const sentimentCounts = useMemo(() => {
+    const counts = {}
+    ;(filteredMentions || []).forEach(m => {
+      const label = m.sentiment?.label
+      if (label) counts[label] = (counts[label] || 0) + 1
+    })
+    return counts
+  }, [filteredMentions])
+
+  const languageCounts = useMemo(() => {
+    const counts = {}
+    ;(filteredMentions || []).forEach(m => {
+      if (m.language) counts[m.language] = (counts[m.language] || 0) + 1
+    })
+    return counts
+  }, [filteredMentions])
+
   const content = (
     <>
 
@@ -111,17 +129,49 @@ export default function FilterBar({ inline = false }) {
         <div className="mb-5">
           <p className="section-label mb-1.5">Sentiment</p>
           <div className="flex flex-wrap gap-1.5">
-            {SENTIMENTS.map(s => (
-              <ToggleButton
-                key={s}
-                active={selectedSentiments.includes(s)}
-                onClick={() => toggleSentiment(s)}
-                color={SENTIMENT_COLORS[s]}
-              >
-                <span className="capitalize">{s}</span>
-              </ToggleButton>
-            ))}
+            {SENTIMENTS.map(s => {
+              const isActive = selectedSentiments.includes(s)
+              const isEmpty = (sentimentCounts[s] || 0) === 0 && !isActive
+              return (
+                <ToggleButton
+                  key={s}
+                  active={isActive}
+                  disabled={isEmpty}
+                  onClick={() => toggleSentiment(s)}
+                  color={SENTIMENT_COLORS[s]}
+                >
+                  <span className="capitalize">{s}</span>
+                </ToggleButton>
+              )
+            })}
           </div>
+          <button
+            onClick={() => {
+              const next = !riskOnly
+              setRiskOnly(next)
+              if (next) {
+                setSelectedSentiments(['negative'])
+                setSelectedKeywords([])
+                setSelectedGroups([])
+                setSelectedPlatforms([])
+                setSelectedLanguages([])
+                setSelectedMentionTypes([])
+                setSelectedSources([])
+              }
+            }}
+            className={clsx(
+              'mt-2 w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-all text-left',
+              riskOnly ? 'font-medium text-[#2940BE] bg-[#2940BE]/10' : 'text-body dark:text-on-dark-soft hover:bg-surface-strong dark:hover:bg-white/8'
+            )}
+          >
+            <div className={clsx(
+              'w-4 h-4 rounded border flex items-center justify-center flex-shrink-0',
+              riskOnly ? 'bg-[#2940BE] border-[#2940BE]' : 'border-hairline-strong dark:border-white/20'
+            )}>
+              {riskOnly && <Check size={10} className="text-white" />}
+            </div>
+            <span>Show high risk only</span>
+          </button>
         </div>
 
         {/* Keyword Groups */}
@@ -171,18 +221,23 @@ export default function FilterBar({ inline = false }) {
         <div className="mb-5">
           <p className="section-label mb-1.5">Language</p>
           <div className="flex gap-1.5">
-            {LANGUAGES.map(l => (
-              <ToggleButton
-                key={l.value}
-                active={selectedLanguages.includes(l.value)}
-                color="#2940BE"
-                onClick={() => setSelectedLanguages(prev =>
-                  prev.includes(l.value) ? prev.filter(x => x !== l.value) : [...prev, l.value]
-                )}
-              >
-                {l.label}
-              </ToggleButton>
-            ))}
+            {LANGUAGES.map(l => {
+              const isActive = selectedLanguages.includes(l.value)
+              const isEmpty = (languageCounts[l.value] || 0) === 0 && !isActive
+              return (
+                <ToggleButton
+                  key={l.value}
+                  active={isActive}
+                  color="#2940BE"
+                  disabled={isEmpty}
+                  onClick={() => setSelectedLanguages(prev =>
+                    prev.includes(l.value) ? prev.filter(x => x !== l.value) : [...prev, l.value]
+                  )}
+                >
+                  {l.label}
+                </ToggleButton>
+              )
+            })}
           </div>
         </div>
 

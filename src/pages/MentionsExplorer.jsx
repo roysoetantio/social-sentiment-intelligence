@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { X, ExternalLink, Heart, Share2, MessageCircle, Eye, Globe, ChevronDown, CheckSquare, Save, Loader, Trash2, SlidersHorizontal, ArrowLeft, ChevronUp } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
+import { formatDateTime } from '../utils/format'
 import { useDashboard } from '../context/DashboardContext'
 import { sortMentions } from '../services/filterService'
 import MentionCard from '../components/common/MentionCard'
@@ -27,6 +28,12 @@ const SORT_OPTIONS = [
   { value: 'sentiment-neg', label: 'Most Negative' },
   { value: 'sentiment-pos', label: 'Most Positive' },
 ]
+
+export function calcLiveConfidence(text, fullText) {
+  const combined = `${text} ${fullText || ''}`.trim()
+  const result = sentimentAnalyzer.analyze(combined)
+  return parseFloat(Math.max(0.3, Math.min(1, Math.abs(result.score) / 10)).toFixed(3))
+}
 
 function AfinnTooltip({ text, fullText }) {
   const result = useMemo(() => {
@@ -216,7 +223,7 @@ function DetailPanel({ mention, onClose, onSaved, onPrev, onNext, hasPrev, hasNe
           </div>
           <div className="text-right">
             <p className="text-xs text-muted dark:text-on-dark-soft">{mention.platform}</p>
-            <p className="text-[0.625rem] text-muted dark:text-on-dark-soft">{format(parseISO(mention.publishedAt), 'd MMM yyyy - h:mmaaa').replace('am', 'AM').replace('pm', 'PM')}</p>
+            <p className="text-[0.625rem] text-muted dark:text-on-dark-soft">{formatDateTime(mention.publishedAt)}</p>
           </div>
         </div>
 
@@ -245,7 +252,7 @@ function DetailPanel({ mention, onClose, onSaved, onPrev, onNext, hasPrev, hasNe
               />
               {showAfinn && <AfinnTooltip text={mention.text} fullText={mention.fullText} />}
             </div>
-            <span className="text-xs text-muted dark:text-on-dark-soft">Confidence: {Math.round(mention.sentiment.confidence * 100)}%</span>
+            <span className="text-xs text-muted dark:text-on-dark-soft">Confidence: {Math.round(calcLiveConfidence(mention.text, mention.fullText) * 100)}%</span>
             {displayFlag && (
               <span className="text-[0.625rem] text-muted italic">
                 was <span className="font-medium">{mention.sentiment.originalLabel || mention.sentiment.label}</span>
@@ -498,7 +505,7 @@ function DetailPanel({ mention, onClose, onSaved, onPrev, onNext, hasPrev, hasNe
 }
 
 export default function MentionsExplorer() {
-  const { filteredMentions, allMentions, selectedSentiments, toggleSentiment, activeFilterCount, resetFilters, setSelectedSentiments } = useDashboard()
+  const { filteredMentions, allMentions, selectedSentiments, toggleSentiment, activeFilterCount, resetFilters, setSelectedSentiments, markRead } = useDashboard()
   const location = useLocation()
   const [selectedMention, setSelectedMention] = useState(null)
   const [sortBy, setSortBy] = useState('recent')
@@ -559,6 +566,11 @@ export default function MentionsExplorer() {
     const card = listRef.current.querySelector(`[data-id="${selectedMention.id}"]`)
     if (card) card.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
   }, [selectedMention])
+
+  // Mark high risk mention as read when detail panel opens
+  useEffect(() => {
+    if (selectedMention?.riskLevel === 'high') markRead(selectedMention.id)
+  }, [selectedMention?.id])
 
   // Init scroll-down indicator
   useEffect(() => {

@@ -120,9 +120,9 @@ export default function SentimentAnalytics() {
                 { label: 'Neutral', value: kpis.neutralCount, pct: kpis.neutralPercent, color: SENTIMENT_COLORS.neutral },
               ].map(s => (
                 <div key={s.label} className="bg-surface-strong dark:bg-white/8 rounded-md px-3 flex-1 flex items-center gap-3">
-                  <div className="text-xl font-bold leading-none" style={{ color: s.color }}>{s.value}</div>
+                  <div className="text-xl font-bold leading-none w-10 flex-shrink-0" style={{ color: s.color }}>{s.value}</div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-1">
                       <span className="text-xs font-medium text-body dark:text-on-dark-soft">{s.label}</span>
                       <span className="text-xs text-muted dark:text-on-dark-soft">{s.pct}%</span>
                     </div>
@@ -192,68 +192,7 @@ export default function SentimentAnalytics() {
         <SentimentHeatmap mentions={filteredMentions} />
       </div>
 
-      {/* Emotions + Crisis side by side */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="card">
-          <h2 className="text-base font-semibold text-ink dark:text-on-dark tracking-tight mb-4">Top Emotions Detected</h2>
-          {topEmotions.length === 0 ? (
-            <div className="flex items-center justify-center h-32 text-xs text-muted">No emotion data</div>
-          ) : (
-            <div className="space-y-2.5">
-              {topEmotions.slice(0, 8).map(e => (
-                <div key={e.name} className="flex items-center gap-3">
-                  <span
-                    className="w-24 text-xs font-medium capitalize text-right flex-shrink-0"
-                    style={{ color: EMOTION_COLORS[e.name] || '#6b7280' }}
-                  >
-                    {e.name}
-                  </span>
-                  <div className="flex-1 h-5 bg-surface-strong dark:bg-white/8 rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-700"
-                      style={{
-                        width: `${(e.count / maxEmotionCount) * 100}%`,
-                        backgroundColor: EMOTION_COLORS[e.name] || '#6b7280',
-                        opacity: 0.85,
-                      }}
-                    />
-                  </div>
-                  <span className="text-xs font-medium text-body dark:text-on-dark-soft w-10 text-right">{e.count}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="card">
-          <h2 className="text-base font-semibold text-ink dark:text-on-dark tracking-tight mb-4">Crisis Risk Timeline</h2>
-          <p className="text-xs text-muted dark:text-on-dark-soft mb-3">Negative rate per day — spikes above 40% indicate elevated risk periods.</p>
-          {!crisisData.length ? (
-            <div className="flex items-center justify-center h-40 text-xs text-muted">No data</div>
-          ) : (
-            <ResponsiveContainer width="100%" height={160}>
-              <AreaChart data={crisisData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="crisisGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={SENTIMENT_COLORS.negative} stopOpacity={0.3} />
-                    <stop offset="95%" stopColor={SENTIMENT_COLORS.negative} stopOpacity={0.02} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f3" />
-                <XAxis dataKey="displayDate" tick={{ fontSize: 10, fill: '#9ca3af' }} tickLine={false} axisLine={{ stroke: '#e5e7eb' }} interval="preserveStartEnd" />
-                <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} tickLine={false} axisLine={false} domain={[0, 100]} tickFormatter={v => `${v}%`} />
-                <Tooltip formatter={(v) => [`${v}%`, 'Negative rate']} labelStyle={{ fontSize: 11 }} contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid #f3f4f6' }} />
-                <ReferenceLine y={40} stroke={SENTIMENT_COLORS.negative} strokeDasharray="4 2" strokeWidth={1.5} label={{ value: 'Risk threshold', position: 'right', fontSize: 10, fill: SENTIMENT_COLORS.negative }} />
-                <Area type="monotone" dataKey="negativeRate" stroke={SENTIMENT_COLORS.negative} fill="url(#crisisGrad)" strokeWidth={2} dot={(props) => {
-                  const { cx, cy, payload } = props
-                  if (!payload.isCrisis) return null
-                  return <circle key={`dot-${cx}-${cy}`} cx={cx} cy={cy} r={4} fill={SENTIMENT_COLORS.negative} stroke="white" strokeWidth={2} />
-                }} />
-              </AreaChart>
-            </ResponsiveContainer>
-          )}
-        </div>
-      </div>
+      {/* Emotions + Crisis side by side — hidden for now */}
 
       {/* AI Disclaimer */}
       <div className="rounded-lg border border-hairline-strong dark:border-white/8 bg-surface-strong dark:bg-white/8 p-4 flex items-start gap-3">

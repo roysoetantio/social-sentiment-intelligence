@@ -1,5 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react'
-import { Search, Bell, Calendar, X, Menu, ChevronDown, ArrowLeft } from 'lucide-react'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
+import { Search, Bell, Calendar, X, Menu, ChevronDown, ArrowLeft, Circle, CheckCircle, CheckCheck } from 'lucide-react'
+import { formatDateTime } from '../../utils/format'
 import { format } from 'date-fns'
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { useDashboard } from '../../context/DashboardContext'
@@ -27,6 +28,8 @@ export default function TopBar({ title, shortTitle, onMenuClick }) {
     setDatePreset,
     activePreset, setActivePreset,
     allMentions,
+    setRiskOnly,
+    readIds, markRead, markAllRead,
   } = useDashboard()
 
   const [pickerOpen, setPickerOpen] = useState(false)
@@ -73,10 +76,24 @@ export default function TopBar({ title, shortTitle, onMenuClick }) {
     setPickerOpen(v => !v)
   }
 
-  const riskCount = allMentions.filter(m => m.riskFlag && m.riskLevel === 'high').length
+  const highRiskMentions = allMentions.filter(m => m.riskLevel === 'high')
+
+  const [notifOpen, setNotifOpen] = useState(false)
+  const [notifTab, setNotifTab] = useState('all')
+  const notifRef = useRef(null)
+  useEffect(() => {
+    const handler = (e) => {
+      if (notifRef.current && !notifRef.current.contains(e.target)) setNotifOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const unreadCount = highRiskMentions.filter(m => !readIds.has(m.id)).length
+  const riskCount = unreadCount
 
   return (
-    <header className="bg-canvas dark:bg-surface-dark flex-shrink-0 sticky top-0 z-30" style={{ touchAction: 'pan-x' }}>
+    <header className="bg-canvas dark:bg-surface-dark flex-shrink-0 sticky top-0 z-40" style={{ touchAction: 'pan-x' }}>
       {/* Main row */}
       <div className="h-14 md:h-16 flex items-center px-4 gap-2 md:gap-4 border-b border-hairline dark:border-white/8">
         {/* Back button — mobile only, keywords page */}
@@ -267,14 +284,108 @@ export default function TopBar({ title, shortTitle, onMenuClick }) {
         </div>
 
         {/* Notifications — both */}
-        <button className="relative h-9 w-9 flex items-center justify-center rounded-md border border-hairline-strong dark:border-white/8 hover:border-ink/30 dark:hover:border-white/20 hover:bg-surface-strong dark:hover:bg-surface-dark-elevated transition-colors flex-shrink-0">
-          <Bell size={17} className="text-body dark:text-on-dark-soft" />
-          {riskCount > 0 && (
-            <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-error text-white text-[0.5625rem] font-bold flex items-center justify-center">
-              {riskCount > 9 ? '9+' : riskCount}
-            </span>
+        <div className="relative flex-shrink-0" ref={notifRef}>
+          <button
+            onClick={() => setNotifOpen(v => !v)}
+            className="relative h-9 w-9 flex items-center justify-center rounded-md border border-hairline-strong dark:border-white/8 hover:border-ink/30 dark:hover:border-white/20 hover:bg-surface-strong dark:hover:bg-surface-dark-elevated transition-colors"
+          >
+            <Bell size={17} className="text-body dark:text-on-dark-soft" />
+            {riskCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-600 text-white text-[0.5625rem] font-bold flex items-center justify-center">
+                {riskCount > 9 ? '9+' : riskCount}
+              </span>
+            )}
+          </button>
+
+          {notifOpen && (
+            <div className={clsx(
+              'flex flex-col bg-canvas dark:bg-surface-dark z-[60] overflow-hidden',
+              // mobile: floating overlay with margins on all sides above bottom nav
+              'fixed inset-x-3 top-[calc(3.5rem+0.75rem)] bottom-20 rounded-2xl border border-hairline-strong dark:border-white/8 shadow-2xl',
+              // desktop: dropdown that hugs content up to max viewport height with bottom margin
+              'md:static md:absolute md:right-0 md:top-full md:mt-2 md:w-96 md:bottom-auto md:inset-x-auto md:rounded-xl md:border md:shadow-xl md:max-h-[calc(100vh-6rem)]'
+            )}>
+              {/* Header */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-hairline dark:border-white/8 flex-shrink-0">
+                <span className="text-sm font-semibold text-ink dark:text-on-dark">High Risk Alerts</span>
+                <div className="flex items-center gap-2">
+                  {unreadCount > 0 && (
+                    <button onClick={() => markAllRead(highRiskMentions.map(m => m.id))} className="flex items-center gap-1 text-xs text-[#2940BE] dark:text-[#6B80FF] hover:opacity-70 transition-opacity">
+                      <CheckCheck size={13} />
+                      Mark all read
+                    </button>
+                  )}
+                  <button onClick={() => setNotifOpen(false)} className="text-muted hover:text-ink dark:hover:text-on-dark transition-colors">
+                    <X size={14} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Tabs */}
+              <div className="px-4 pt-4 pb-4 flex-shrink-0">
+                <div className="flex items-center gap-1 bg-surface-strong dark:bg-white/8 rounded-lg p-0.5 w-fit">
+                  {[{ id: 'all', label: 'All' }, { id: 'unread', label: `Unread${unreadCount > 0 ? ` (${unreadCount})` : ''}` }].map(t => (
+                    <button
+                      key={t.id}
+                      onClick={() => setNotifTab(t.id)}
+                      className={clsx(
+                        'px-3 h-8 text-xs font-medium rounded-md transition-all',
+                        notifTab === t.id ? 'bg-white dark:bg-surface-dark-elevated text-ink dark:text-on-dark shadow-sm' : 'text-body dark:text-on-dark-soft hover:text-ink dark:hover:text-on-dark'
+                      )}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* List */}
+              <div className="overflow-y-auto flex-1 px-4 pb-4 space-y-1.5 scrollbar-hide">
+                {(() => {
+                  const displayed = notifTab === 'unread' ? highRiskMentions.filter(m => !readIds.has(m.id)) : highRiskMentions
+                  if (displayed.length === 0) return (
+                    <div className="py-8 text-center text-sm text-muted dark:text-on-dark-soft">
+                      {notifTab === 'unread' ? 'All caught up!' : 'No high risk mentions'}
+                    </div>
+                  )
+                  return displayed.map(m => {
+                    const isRead = readIds.has(m.id)
+                    return (
+                      <button
+                        key={m.id}
+                        onClick={() => {
+                          markRead(m.id)
+                          setNotifOpen(false)
+                          setRiskOnly(true)
+                          navigate('/mentions', { state: { mentionId: m.id } })
+                        }}
+                        className={clsx(
+                          'w-full text-left rounded-lg p-3 border transition-colors hover:bg-gray-50 dark:hover:bg-white/12',
+                          isRead
+                            ? 'bg-white dark:bg-surface-dark border-hairline dark:border-white/8 opacity-60'
+                            : 'bg-white dark:bg-white/8 border-hairline-strong dark:border-white/12'
+                        )}
+                      >
+                        <div className="flex items-start justify-between gap-2 mb-1.5">
+                          <span className="text-sm font-semibold text-ink dark:text-on-dark line-clamp-2 flex-1">{m.text}</span>
+                          {isRead
+                            ? <CheckCircle size={13} className="text-muted flex-shrink-0 mt-0.5" />
+                            : <Circle size={8} className="text-red-600 flex-shrink-0 mt-1 fill-red-600" />
+                          }
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs text-muted dark:text-on-dark-soft flex-wrap">
+                          <span>{formatDateTime(m.publishedAt)}</span>
+                          <span>·</span>
+                          <span>{m.author?.name || m.author?.handle}</span>
+                        </div>
+                      </button>
+                    )
+                  })
+                })()}
+              </div>
+            </div>
           )}
-        </button>
+        </div>
       </div>
 
       {/* Mobile search — inline row below topbar */}

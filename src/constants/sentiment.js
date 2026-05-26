@@ -19,7 +19,7 @@ export const isAtRisk = (m) => {
   const userOverrode = !!m.sentiment?.originalLabel
   if (userOverrode && m.sentiment?.label !== SENTIMENT.NEGATIVE) return false
   return (
-    (m.riskFlag && m.sentiment?.label !== SENTIMENT.POSITIVE) ||
+    (m.riskLevel && m.riskLevel !== 'low' && m.sentiment?.label !== SENTIMENT.POSITIVE) ||
     (m.sentiment?.label === SENTIMENT.NEGATIVE && userOverrode)
   )
 }

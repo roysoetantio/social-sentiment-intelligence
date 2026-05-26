@@ -74,7 +74,7 @@ export const filterMentions = (mentions, filters, allKeywordsFlat = []) => {
 
     // Risk only filter
     if (riskOnly) {
-      if (!mention.riskFlag) return false
+      if (mention.riskLevel !== 'high') return false
     }
 
     // Search query

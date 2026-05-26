@@ -31,6 +31,28 @@ export function DashboardProvider({ children }) {
   const [dataSource, setDataSource] = useState('mock')
   const [keywordGroups, setKeywordGroups] = useState([])
   const [allKeywordsFlat, setAllKeywordsFlat] = useState([])
+  const [readIds, setReadIds] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem('notif_read_ids') || '[]')) }
+    catch { return new Set() }
+  })
+
+  const markRead = useCallback((id) => {
+    setReadIds(prev => {
+      const next = new Set(prev)
+      next.add(id)
+      localStorage.setItem('notif_read_ids', JSON.stringify([...next]))
+      return next
+    })
+  }, [])
+
+  const markAllRead = useCallback((ids) => {
+    setReadIds(prev => {
+      const next = new Set(prev)
+      ids.forEach(id => next.add(id))
+      localStorage.setItem('notif_read_ids', JSON.stringify([...next]))
+      return next
+    })
+  }, [])
 
   const reloadMentions = useCallback(async () => {
     setIsLoading(true)
@@ -245,6 +267,8 @@ export function DashboardProvider({ children }) {
     activePreset,
     setActivePreset,
     activeFilterCount,
+    // Notifications
+    readIds, markRead, markAllRead,
     // Actions
     updateMentionSentiment,
     updateMentionGroups,

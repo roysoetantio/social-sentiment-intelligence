@@ -1,5 +1,5 @@
 import React from 'react'
-import { TrendingUp, AlertTriangle, Hash, Sun, LogOut, Tags, ChevronRight } from 'lucide-react'
+import { TrendingUp, AlertTriangle, Hash, Sun, LogOut, Tags, ChevronRight, BellOff } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useDashboard } from '../context/DashboardContext'
 import { ANALYST_NAME } from '../constants/sentiment'
@@ -51,17 +51,7 @@ export default function More() {
         </button>
       </div>
 
-      {/* Quick Insights */}
-      <div>
-        <p className="text-xs font-semibold text-muted dark:text-on-dark-soft uppercase tracking-wider mb-2">Quick Insights</p>
-        <div className="rounded-xl border border-hairline dark:border-white/8 bg-white dark:bg-white/4 overflow-hidden">
-          <StatRow icon={Hash} label="Total Mentions" value={total.toLocaleString()} color="#2940BE" />
-          <StatRow icon={TrendingUp} label="Positive Rate" value={`${positivePct}%`} color="#19C9A5" />
-          <StatRow icon={AlertTriangle} label="At Risk" value={riskCount} color={riskCount > 5 ? '#E97132' : '#999999'} />
-        </div>
-      </div>
-
-      {/* Settings */}
+{/* Settings */}
       <div>
         <p className="text-xs font-semibold text-muted dark:text-on-dark-soft uppercase tracking-wider mb-2">Settings</p>
         <div className="rounded-xl border border-hairline dark:border-white/8 bg-white dark:bg-white/4 overflow-hidden">
@@ -72,6 +62,14 @@ export default function More() {
               <div className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow translate-x-0.5" />
             </div>
           </div>
+
+          <button
+            onClick={() => { localStorage.removeItem('notif_read_ids'); window.location.reload() }}
+            className="w-full flex items-center gap-3 px-4 py-4 border-b border-hairline dark:border-white/8 hover:bg-surface-strong dark:hover:bg-white/8 transition-colors"
+          >
+            <BellOff size={17} className="text-body dark:text-on-dark-soft flex-shrink-0" />
+            <span className="flex-1 text-sm text-left text-ink dark:text-on-dark">Reset Notifications</span>
+          </button>
 
           <button
             onClick={() => {}}
