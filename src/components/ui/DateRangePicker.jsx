@@ -167,7 +167,7 @@ export default function DateRangePicker({ startDate, endDate, onApply, onCancel,
         <div className="fixed inset-0 z-40 bg-black/30 animate-[fadeIn_200ms_ease-out]" onClick={onCancel} />
 
         {/* Bottom sheet */}
-        <div className="fixed left-0 right-0 z-50 bg-canvas rounded-t-2xl shadow-xl animate-[slideUp_280ms_cubic-bezier(0.32,0.72,0,1)] flex flex-col max-h-[80vh]" style={{ bottom: 'calc(4rem + env(safe-area-inset-bottom, 0px))' }}>
+        <div className="fixed left-0 right-0 bottom-0 z-50 bg-canvas rounded-t-2xl shadow-xl animate-[slideUp_280ms_cubic-bezier(0.32,0.72,0,1)] flex flex-col max-h-[80vh]">
           {/* Handle */}
           <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
             <div className="w-10 h-1 rounded-full bg-hairline-strong" />
@@ -232,7 +232,7 @@ export default function DateRangePicker({ startDate, endDate, onApply, onCancel,
             )}
 
             {/* Calendar */}
-            <div>
+            <div className="mb-8">
               <div className="flex items-center justify-between mb-3">
                 <button onClick={() => setLeftMonth(m => subMonths(m, 1))} className="p-2 rounded-lg hover:bg-surface-strong text-body">
                   <ChevronLeft size={18} />
@@ -258,7 +258,7 @@ export default function DateRangePicker({ startDate, endDate, onApply, onCancel,
           </div>
 
           {/* Footer — always visible */}
-          <div className="flex gap-3 px-5 pt-3 pb-5 flex-shrink-0 border-t border-hairline">
+          <div className="flex gap-3 px-5 pt-3 pb-[52px] flex-shrink-0 border-t border-hairline">
             <button
               onClick={onCancel}
               className="flex-1 h-11 text-sm text-body border border-hairline-strong rounded-xl hover:bg-surface-strong transition-colors"
@@ -285,13 +285,13 @@ export default function DateRangePicker({ startDate, endDate, onApply, onCancel,
   // Desktop — original two-calendar layout
   return (
     <div className="absolute right-0 top-11 z-50 bg-canvas border border-hairline-strong rounded-lg shadow-card p-5 w-auto">
-      <div className="flex items-center gap-1 bg-surface-strong rounded-lg p-0.5 w-fit mb-4 mx-auto">
+      <div className={clsx('flex items-center gap-1 bg-surface-strong rounded-lg p-0.5 mb-4', mode === 'single' ? 'w-full' : 'w-fit')}>
         {[{ label: 'Date Range', value: 'range' }, { label: 'Single Day', value: 'single' }].map(opt => (
           <button
             key={opt.value}
             onClick={() => switchMode(opt.value)}
             className={clsx(
-              'px-3 h-7 text-xs font-medium rounded-md transition-all',
+              `${mode === 'single' ? 'flex-1' : ''} px-3 h-7 text-xs font-medium rounded-md transition-all`,
               mode === opt.value ? 'bg-white text-ink shadow-sm' : 'text-body hover:text-ink'
             )}
           >
