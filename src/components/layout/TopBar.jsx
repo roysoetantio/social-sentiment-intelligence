@@ -357,7 +357,7 @@ export default function TopBar({ title, shortTitle, onMenuClick }) {
                           markRead(m.id)
                           setNotifOpen(false)
                           setRiskOnly(true)
-                          navigate('/mentions', { state: { mentionId: m.id } })
+                          navigate('/mentions', { state: { mentionId: m.id, sentimentFilter: 'negative' } })
                         }}
                         className={clsx(
                           'w-full text-left rounded-lg p-3 border transition-colors hover:bg-gray-50 dark:hover:bg-white/12',
@@ -373,9 +373,8 @@ export default function TopBar({ title, shortTitle, onMenuClick }) {
                             : <Circle size={8} className="text-red-600 flex-shrink-0 mt-1 fill-red-600" />
                           }
                         </div>
-                        <div className="flex items-center gap-1.5 text-xs text-muted dark:text-on-dark-soft flex-wrap">
+                        <div className="flex items-center justify-between text-xs text-muted dark:text-on-dark-soft">
                           <span>{formatDateTime(m.publishedAt)}</span>
-                          <span>·</span>
                           <span>{m.author?.name || m.author?.handle}</span>
                         </div>
                       </button>

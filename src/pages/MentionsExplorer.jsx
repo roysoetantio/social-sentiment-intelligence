@@ -505,7 +505,7 @@ function DetailPanel({ mention, onClose, onSaved, onPrev, onNext, hasPrev, hasNe
 }
 
 export default function MentionsExplorer() {
-  const { filteredMentions, allMentions, selectedSentiments, toggleSentiment, activeFilterCount, resetFilters, setSelectedSentiments, markRead } = useDashboard()
+  const { filteredMentions, allMentions, selectedSentiments, toggleSentiment, activeFilterCount, resetFilters, setSelectedSentiments, setRiskOnly, markRead } = useDashboard()
   const location = useLocation()
   const [selectedMention, setSelectedMention] = useState(null)
   const [sortBy, setSortBy] = useState('recent')
@@ -528,6 +528,7 @@ export default function MentionsExplorer() {
     if (sentimentFilter) {
       resetFilters()
       setSelectedSentiments([sentimentFilter])
+      setRiskOnly(true)
     }
 
     const target = allMentions.find(m => m.id === mentionId)

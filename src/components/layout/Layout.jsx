@@ -65,12 +65,12 @@ export default function Layout({ children }) {
         <TopBar title={pageTitle.full} shortTitle={pageTitle.short} onMenuClick={openSidebar} />
 
         {/* Data availability disclaimer — one-time */}
-        {!disclaimerDismissed && earliestDate && (
+        {!disclaimerDismissed && (
           <div className="flex items-start gap-2.5 px-4 py-3 bg-[#EEF1FB] dark:bg-[#2940BE]/20 border-b border-[#2940BE]/20 text-[#2940BE] dark:text-[#6B80FF]">
             <Info size={15} className="flex-shrink-0 mt-0.5" />
             <p className="flex-1 text-xs leading-relaxed">
               <span className="font-semibold">Data Availability Notice — </span>
-              The earliest record in this system is from <span className="font-semibold">{earliestDate}</span>. Historical coverage may be incomplete; not all mentions from that period were necessarily captured.
+              Historical coverage may be incomplete. Not all mentions from monitored sources were necessarily captured.
             </p>
             <button onClick={dismissDisclaimer} className="flex-shrink-0 p-0.5 hover:opacity-70 transition-opacity">
               <X size={14} />
