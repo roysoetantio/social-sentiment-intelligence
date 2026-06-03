@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import SentimentBadge from './SentimentBadge'
 import RiskBadge from './RiskBadge'
-import { KEYWORD_GROUPS } from '../../data/mockKeywords'
+import { KEYWORD_GROUPS } from '../../data/fallbackKeywords'
 import { formatNum } from '../../utils/format'
 import { useDashboard } from '../../context/DashboardContext'
 import clsx from 'clsx'
@@ -49,9 +49,6 @@ export default function MentionCard({ mention, onClick, selected }) {
             <PlatformIcon platform={mention.platform} />
             <span className="text-sm font-semibold text-ink dark:text-on-dark truncate">{mention.author.name}</span>
             {isSocialUrl(mention.url) && <span className="text-[0.8125rem] text-muted truncate">@{mention.author.handle}</span>}
-            {mention.author.verified && (
-              <span className="text-[0.625rem] bg-sky/10 text-sky px-1.5 py-0.5 rounded font-medium">✓</span>
-            )}
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0">
             <RiskBadge level={mention.riskLevel} minimal />

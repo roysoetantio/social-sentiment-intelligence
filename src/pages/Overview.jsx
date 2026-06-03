@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { MessageSquare, TrendingUp, TrendingDown, AlertTriangle, Tag, BarChart2, Eye } from 'lucide-react'
 import { parseISO, startOfMonth, endOfMonth, startOfWeek, endOfWeek, startOfDay, endOfDay, startOfHour, endOfHour, parse } from 'date-fns'
 import { useDashboard } from '../context/DashboardContext'
-import { getKPIs } from '../data/mockAnalytics'
-import { getAllKeywords, getGroupById } from '../data/mockKeywords'
+import { getKPIs } from '../data/analytics'
+import { getAllKeywords, getGroupById } from '../data/fallbackKeywords'
 import KPICard from '../components/common/KPICard'
 import MentionCard from '../components/common/MentionCard'
 import SentimentTimelineChart from '../components/charts/SentimentTimelineChart'
@@ -138,6 +138,7 @@ export default function Overview() {
           icon={MessageSquare}
           iconColor={BRAND_COLORS.primary}
           subtitle={`${formatNum(kpis.totalReach)} reach`}
+          tooltip="All mentions across every source in the selected date range."
         />
         <KPICard
           title="Positive Rate"
@@ -147,6 +148,7 @@ export default function Overview() {
           iconColor={SENTIMENT_COLORS.positive}
           valueColor={SENTIMENT_COLORS.positive}
           subtitle={`${kpis.positiveCount} positive mentions`}
+          tooltip="Share of mentions with positive sentiment."
         />
         <KPICard
           title="Negative Rate"
@@ -156,6 +158,7 @@ export default function Overview() {
           iconColor={SENTIMENT_COLORS.negative}
           valueColor={SENTIMENT_COLORS.negative}
           subtitle={`${kpis.negativeCount} negative mentions`}
+          tooltip="Share of mentions with negative sentiment."
         />
         <KPICard
           title="Net Sentiment"
@@ -165,6 +168,7 @@ export default function Overview() {
           iconColor={kpis.netSentimentScore >= 0 ? SENTIMENT_COLORS.positive : SENTIMENT_COLORS.negative}
           valueColor={kpis.netSentimentScore >= 0 ? SENTIMENT_COLORS.positive : SENTIMENT_COLORS.negative}
           subtitle="Positive minus negative"
+          tooltip="Positive rate minus negative rate."
         />
         <KPICard
           title="At-Risk Mentions"
@@ -173,6 +177,7 @@ export default function Overview() {
           iconColor={kpis.atRiskCount > 5 ? SENTIMENT_COLORS.negative : '#f59e0b'}
           valueColor={kpis.atRiskCount > 5 ? SENTIMENT_COLORS.negative : BRAND_COLORS.darkText}
           subtitle="Flagged for review"
+          tooltip="Negative mentions with Medium or High risk. Excludes Low risk."
         />
         <KPICard
           title="Top Keyword"
@@ -181,6 +186,7 @@ export default function Overview() {
           iconColor={BRAND_COLORS.purple}
           subtitle={topKeyword ? `${kpis.topKeywordCount} mentions` : 'No data'}
           compact
+          tooltip="Most-mentioned keyword in the selected period."
         />
       </div>
 
@@ -188,7 +194,7 @@ export default function Overview() {
       <div className="grid grid-cols-1 lg:grid-cols-6 gap-3 lg:gap-4 lg:items-stretch lg:flex-1 lg:min-h-0">
         {/* Left: stacked — spans 4 of 6 columns */}
         <div className="lg:col-span-4 flex flex-col gap-3 lg:gap-4 lg:min-h-0">
-          <div className="card h-[320px] lg:flex-1 lg:h-auto lg:min-h-[300px] lg:max-h-[600px] flex flex-col">
+          <div className="card h-[320px] lg:flex-1 lg:h-auto lg:min-h-[290px] lg:max-h-[600px] flex flex-col">
             <div className="flex items-center justify-between mb-4 flex-shrink-0">
               <h2 className="text-base font-semibold text-ink dark:text-on-dark tracking-tight">Sentiment Timeline</h2>
               <span className="text-xs text-muted dark:text-on-dark-soft">{filteredMentions.length} mentions in period</span>
@@ -197,7 +203,7 @@ export default function Overview() {
               <SentimentTimelineChart mentions={filteredMentions} days={days} granularity={granularity} onPointClick={handleTimelineClick} />
             </div>
           </div>
-          <div className="flex flex-col sm:flex-row gap-3 lg:gap-4 lg:flex-1 lg:min-h-[300px] lg:max-h-[600px]">
+          <div className="flex flex-col sm:flex-row gap-3 lg:gap-4 lg:flex-1 lg:min-h-[290px] lg:max-h-[600px]">
             <div className="card h-[320px] sm:h-auto sm:flex-1 flex flex-col min-h-0">
               <h2 className="text-base font-semibold text-ink dark:text-on-dark tracking-tight mb-4 flex-shrink-0">Platform Breakdown</h2>
               <div className="flex-1 min-h-0">
@@ -219,8 +225,8 @@ export default function Overview() {
           {/* Desktop inner absolute fill */}
           <div className="lg:absolute lg:inset-0 flex flex-col lg:pt-5 lg:px-5 lg:pb-0 overflow-hidden lg:overflow-hidden">
             <div className="flex items-center justify-between mb-4 flex-shrink-0">
-              <h2 className="text-base font-semibold text-ink dark:text-on-dark tracking-tight">Recent Negative Mentions</h2>
-              <span className="text-xs text-muted dark:text-on-dark-soft">{kpis.atRiskCount} total at risk</span>
+              <h2 className="text-base font-semibold text-ink dark:text-on-dark tracking-tight">Recent At-Risk Mentions</h2>
+              <span className="text-xs text-muted dark:text-on-dark-soft">{kpis.atRiskCount} total mentions</span>
             </div>
             {highRiskMentions.length === 0 ? (
               <div className="text-center py-8 text-sm text-muted dark:text-on-dark-soft">No at-risk mentions</div>

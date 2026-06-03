@@ -25,6 +25,7 @@ export function DashboardProvider({ children }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [riskOnly, setRiskOnly] = useState(false)
   const [showExcluded, setShowExcluded] = useState(false)
+  const [heatmapFilter, setHeatmapFilter] = useState(null)
   const [activePreset, setActivePreset] = useState(DEFAULT_PRESET)
   const [allMentionsData, setAllMentionsData] = useState([])
   const [isLoading, setIsLoading] = useState(false)
@@ -99,18 +100,18 @@ export function DashboardProvider({ children }) {
     return filterMentions(allMentionsData, {
       dateRange, selectedKeywords, selectedGroups, selectedPlatforms,
       selectedSentiments, selectedLanguages, searchQuery, selectedMentionTypes,
-      selectedSources: [], riskOnly, showExcluded,
+      selectedSources: [], riskOnly, showExcluded, heatmapFilter,
     }, allKeywordsFlat)
-  }, [allMentionsData, dateRange, selectedKeywords, selectedGroups, selectedPlatforms, selectedSentiments, selectedLanguages, searchQuery, selectedMentionTypes, riskOnly, showExcluded, allKeywordsFlat])
+  }, [allMentionsData, dateRange, selectedKeywords, selectedGroups, selectedPlatforms, selectedSentiments, selectedLanguages, searchQuery, selectedMentionTypes, riskOnly, showExcluded, heatmapFilter, allKeywordsFlat])
 
   // All filters — used only by Mentions Explorer
   const filteredMentions = useMemo(() => {
     return filterMentions(allMentionsData, {
       dateRange, selectedKeywords, selectedGroups, selectedPlatforms,
       selectedSentiments, selectedLanguages, searchQuery, selectedMentionTypes,
-      selectedSources, riskOnly, showExcluded,
+      selectedSources, riskOnly, showExcluded, heatmapFilter,
     }, allKeywordsFlat)
-  }, [allMentionsData, dateRange, selectedKeywords, selectedGroups, selectedPlatforms, selectedSentiments, selectedLanguages, searchQuery, selectedMentionTypes, selectedSources, riskOnly, showExcluded, allKeywordsFlat])
+  }, [allMentionsData, dateRange, selectedKeywords, selectedGroups, selectedPlatforms, selectedSentiments, selectedLanguages, searchQuery, selectedMentionTypes, selectedSources, riskOnly, showExcluded, heatmapFilter, allKeywordsFlat])
 
   // Global filters only (date range + search) — used by Overview, Analytics, Keywords
   const globalFilteredMentions = useMemo(() => {
@@ -172,6 +173,7 @@ export function DashboardProvider({ children }) {
     setSelectedSources([])
     setSearchQuery('')
     setRiskOnly(false)
+    setHeatmapFilter(null)
   }, [])
 
   const setDatePreset = useCallback((preset) => {
@@ -238,8 +240,9 @@ export function DashboardProvider({ children }) {
     if (selectedMentionTypes.length) count++
     if (selectedSources.length) count++
     if (riskOnly) count++
+    if (heatmapFilter) count++
     return count
-  }, [selectedKeywords, selectedGroups, selectedPlatforms, selectedSentiments, selectedLanguages, selectedMentionTypes, selectedSources, riskOnly])
+  }, [selectedKeywords, selectedGroups, selectedPlatforms, selectedSentiments, selectedLanguages, selectedMentionTypes, selectedSources, riskOnly, heatmapFilter])
 
   const value = {
     // State
@@ -254,6 +257,7 @@ export function DashboardProvider({ children }) {
     searchQuery, setSearchQuery,
     riskOnly, setRiskOnly,
     showExcluded, setShowExcluded,
+    heatmapFilter, setHeatmapFilter,
     // Derived
     filteredMentions,
     globalFilteredMentions,

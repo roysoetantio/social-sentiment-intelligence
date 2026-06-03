@@ -13,6 +13,7 @@ export const filterMentions = (mentions, filters, allKeywordsFlat = []) => {
     selectedSources,
     riskOnly,
     showExcluded,
+    heatmapFilter,
   } = filters
 
   // Build a map of keywordId -> groupId for fast lookup
@@ -70,6 +71,12 @@ export const filterMentions = (mentions, filters, allKeywordsFlat = []) => {
     // Source filter
     if (selectedSources && selectedSources.length > 0) {
       if (!selectedSources.includes(mention.source)) return false
+    }
+
+    // Heatmap filter (day of week + hour)
+    if (heatmapFilter) {
+      const pubDate = parseISO(mention.publishedAt)
+      if (pubDate.getDay() !== heatmapFilter.day || pubDate.getHours() !== heatmapFilter.hour) return false
     }
 
     // Risk only filter

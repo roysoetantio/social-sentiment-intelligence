@@ -10,7 +10,7 @@ import MentionCard from '../components/common/MentionCard'
 import SentimentBadge from '../components/common/SentimentBadge'
 import RiskBadge from '../components/common/RiskBadge'
 import FilterBar from '../components/filters/FilterBar'
-import { getKeywordById } from '../data/mockKeywords'
+import { getKeywordById } from '../data/fallbackKeywords'
 import { supabase } from '../lib/supabase'
 import { SENTIMENT_OPTIONS, ANALYST_NAME } from '../constants/sentiment'
 import { EMOTION_COLORS } from '../constants/colors'
@@ -220,7 +220,6 @@ function DetailPanel({ mention, onClose, onSaved, onPrev, onNext, hasPrev, hasNe
           <div>
             <p className="text-sm font-semibold text-ink dark:text-on-dark">{mention.author.name}</p>
             {isSocialUrl(mention.url) && <p className="text-xs text-muted dark:text-on-dark-soft">@{mention.author.handle}</p>}
-            {mention.author.verified && <span className="text-[0.625rem] text-sky font-medium">✓ Verified</span>}
           </div>
           <div className="text-right">
             <p className="text-xs text-muted dark:text-on-dark-soft">{mention.platform}</p>

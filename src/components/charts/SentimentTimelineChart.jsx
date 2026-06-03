@@ -1,10 +1,12 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Brush, Legend,
+  ResponsiveContainer, Brush,
 } from 'recharts'
-import { getTimelineData } from '../../data/mockAnalytics'
+import { getTimelineData } from '../../data/analytics'
 import { SENTIMENT_COLORS as COLORS } from '../../constants/colors'
+
+const SERIES = ['positive', 'neutral', 'negative']
 
 const CustomTooltip = ({ active, payload, label, granularity }) => {
   if (!active || !payload?.length) return null
@@ -29,13 +31,40 @@ const CustomTooltip = ({ active, payload, label, granularity }) => {
         <span className="text-body dark:text-on-dark-soft">Total</span>
         <span className="font-semibold dark:text-on-dark">{total}</span>
       </div>
-      <p className="mt-2 text-[0.625rem] text-blue-400 italic">{hint}</p>
+      <div className="mt-2 rounded bg-gray-100 dark:bg-white/8 px-2 py-1">
+        <p className="text-[0.625rem] text-muted">{hint}</p>
+      </div>
     </div>
   )
 }
 
+const CustomLegend = ({ hidden, onToggle }) => (
+  <div className="flex items-center justify-center gap-4 pt-3 pb-1">
+    {SERIES.map(key => (
+      <button
+        key={key}
+        onClick={() => onToggle(key)}
+        className="flex items-center gap-1.5 transition-opacity"
+        style={{ opacity: hidden.includes(key) ? 0.35 : 1 }}
+      >
+        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: COLORS[key] }} />
+        <span className="text-[11px] capitalize" style={{ color: '#6b7280' }}>{key}</span>
+      </button>
+    ))}
+  </div>
+)
+
 export default function SentimentTimelineChart({ mentions, days = 30, granularity = 'day', height = '100%', onPointClick }) {
   const data = useMemo(() => getTimelineData(mentions || [], days, granularity), [mentions, days, granularity])
+  const [hidden, setHidden] = useState([])
+
+  const handleToggle = (key) => {
+    setHidden(prev => {
+      if (prev.length === 0) return SERIES.filter(k => k !== key)
+      const next = prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
+      return next.length === SERIES.length ? [] : next
+    })
+  }
 
   if (!mentions?.length) {
     return (
@@ -51,53 +80,64 @@ export default function SentimentTimelineChart({ mentions, days = 30, granularit
     if (dateKey) onPointClick(dateKey)
   }
 
+  const isFixedHeight = typeof height === 'number'
+
   return (
-    <ResponsiveContainer width="100%" height={height}>
-      <AreaChart
-        data={data}
-        margin={{ top: 5, right: 10, left: -20, bottom: 0 }}
-        onClick={handleClick}
-        style={{ cursor: onPointClick ? 'pointer' : 'default' }}
-      >
-        <defs>
-          {Object.entries(COLORS).map(([key, color]) => (
-            <linearGradient key={key} id={`grad-${key}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor={color} stopOpacity={0.4} />
-              <stop offset="95%" stopColor={color} stopOpacity={0.05} />
-            </linearGradient>
-          ))}
-        </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-        <XAxis
-          dataKey="displayDate"
-          tick={{ fontSize: 11, fill: '#9ca3af' }}
-          tickLine={false}
-          axisLine={{ stroke: '#e5e7eb' }}
-          interval="preserveStartEnd"
-        />
-        <YAxis
-          tick={{ fontSize: 11, fill: '#9ca3af' }}
-          tickLine={false}
-          axisLine={false}
-          allowDecimals={false}
-        />
-        <Tooltip content={<CustomTooltip granularity={granularity} />} />
-        <Legend
-          iconType="circle"
-          iconSize={8}
-          formatter={(v) => <span style={{ fontSize: 11, color: '#6b7280', textTransform: 'capitalize' }}>{v}</span>}
-        />
-        <Area type="monotone" dataKey="positive" stroke={COLORS.positive} fill={`url(#grad-positive)`} strokeWidth={2} dot={false} />
-        <Area type="monotone" dataKey="neutral" stroke={COLORS.neutral} fill={`url(#grad-neutral)`} strokeWidth={2} dot={false} />
-        <Area type="monotone" dataKey="negative" stroke={COLORS.negative} fill={`url(#grad-negative)`} strokeWidth={2} dot={false} />
-        <Brush
-          dataKey="displayDate"
-          height={20}
-          stroke="#e5e7eb"
-          fill="#f9fafb"
-          travellerWidth={6}
-        />
-      </AreaChart>
-    </ResponsiveContainer>
+    <div className="flex flex-col w-full" style={isFixedHeight ? { height } : { height: '100%' }}>
+      <div className="flex-1 min-h-0">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart
+            data={data}
+            margin={{ top: 5, right: 10, left: -20, bottom: 0 }}
+            onClick={handleClick}
+            style={{ cursor: onPointClick ? 'pointer' : 'default' }}
+          >
+            <defs>
+              {SERIES.map(key => (
+                <linearGradient key={key} id={`grad-${key}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={COLORS[key]} stopOpacity={0.4} />
+                  <stop offset="95%" stopColor={COLORS[key]} stopOpacity={0.05} />
+                </linearGradient>
+              ))}
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+            <XAxis
+              dataKey="displayDate"
+              tick={{ fontSize: 11, fill: '#9ca3af' }}
+              tickLine={false}
+              axisLine={{ stroke: '#e5e7eb' }}
+              interval="preserveStartEnd"
+            />
+            <YAxis
+              tick={{ fontSize: 11, fill: '#9ca3af' }}
+              tickLine={false}
+              axisLine={false}
+              allowDecimals={false}
+            />
+            <Tooltip content={<CustomTooltip granularity={granularity} />} />
+            {SERIES.map(key => (
+              <Area
+                key={key}
+                type="monotone"
+                dataKey={key}
+                stroke={COLORS[key]}
+                fill={`url(#grad-${key})`}
+                strokeWidth={2}
+                dot={false}
+                hide={hidden.includes(key)}
+              />
+            ))}
+            <Brush
+              dataKey="displayDate"
+              height={20}
+              stroke="#e5e7eb"
+              fill="#f9fafb"
+              travellerWidth={6}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+      <CustomLegend hidden={hidden} onToggle={handleToggle} />
+    </div>
   )
 }

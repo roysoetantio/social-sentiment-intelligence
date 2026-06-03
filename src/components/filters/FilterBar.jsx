@@ -1,22 +1,21 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react'
-import { ChevronDown, ChevronUp, Twitter, Newspaper, MessageSquare, Zap, Radio, Globe, Rss, Link, Check } from 'lucide-react'
+import { ChevronDown, ChevronUp, Twitter, Newspaper, MessageSquare, Zap, Radio, Globe, Rss, Link, Check, Search } from 'lucide-react'
 import { useDashboard } from '../../context/DashboardContext'
 import KeywordFilterPanel from './KeywordFilterPanel'
 import clsx from 'clsx'
 
-const SOURCE_LABELS = {
-  twitter135:           { label: 'Twitter',          Icon: Twitter },
-  serper_news:          { label: 'Google News',      Icon: Newspaper },
-  serper_social:        { label: 'Social Media',     Icon: MessageSquare },
-  realtimesnews:        { label: 'Real-Time News',   Icon: Zap },
-  rss_my:               { label: 'MY News Portals',  Icon: Rss },
-  google_alerts:        { label: 'Google Alerts',    Icon: Radio },
-  gnews:                { label: 'GNews',            Icon: Newspaper },
-  reddit:               { label: 'Reddit',           Icon: MessageSquare },
-  google_news_rapidapi: { label: 'Google News',      Icon: Newspaper },
-  worldnews:            { label: 'World News API',   Icon: Globe },
-  claude_search:        { label: 'Claude Search',    Icon: Globe },
-}
+// UI display groups — keys are group IDs, keys[] are the actual source values in DB
+const SOURCE_GROUPS = [
+  { id: 'claude_search',        label: 'Claude Search',    Icon: Globe,          keys: ['claude_search'] },
+  { id: 'serper',               label: 'Serper',           Icon: Search,         keys: ['serper', 'serper_news', 'serper_social'] },
+  { id: 'google_news_rapidapi', label: 'Google News',      Icon: Newspaper,      keys: ['google_news_rapidapi', 'gnews'] },
+  { id: 'twitter135',           label: 'Twitter',          Icon: Twitter,        keys: ['twitter135'] },
+  { id: 'realtimesnews',        label: 'Real-Time News',   Icon: Zap,            keys: ['realtimesnews'] },
+  { id: 'worldnews',            label: 'World News API',   Icon: Globe,          keys: ['worldnews'] },
+  { id: 'rss_my',               label: 'MY News Portals',  Icon: Rss,            keys: ['rss_my'] },
+  { id: 'google_alerts',        label: 'Google Alerts',    Icon: Radio,          keys: ['google_alerts'] },
+  { id: 'reddit',               label: 'Reddit',           Icon: MessageSquare,  keys: ['reddit'] },
+]
 
 const PLATFORMS = ['Twitter', 'LinkedIn', 'YouTube', 'News', 'Blog', 'Forum']
 const SENTIMENTS = ['positive', 'negative', 'neutral']
@@ -57,6 +56,7 @@ export default function FilterBar({ inline = false }) {
     selectedSources, toggleSource, setSelectedSources,
     riskOnly, setRiskOnly,
     showExcluded, setShowExcluded,
+    heatmapFilter, setHeatmapFilter,
     activeFilterCount,
     resetFilters,
     setDatePreset,
@@ -122,8 +122,19 @@ export default function FilterBar({ inline = false }) {
     return counts
   }, [filteredMentions])
 
+  const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
   const content = (
     <>
+        {/* Heatmap filter chip */}
+        {heatmapFilter && (
+          <div className="mb-4 flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-[#2940BE]/10 border border-[#2940BE]/20">
+            <span className="text-xs text-[#2940BE] font-medium flex-1">
+              {DAYS[heatmapFilter.day]} {String(heatmapFilter.hour).padStart(2, '0')}:00
+            </span>
+            <button onClick={() => setHeatmapFilter(null)} className="text-[#2940BE] hover:opacity-70 text-xs">✕</button>
+          </div>
+        )}
 
         {/* Sentiment */}
         <div className="mb-5">
@@ -266,36 +277,46 @@ export default function FilterBar({ inline = false }) {
                   </button>
                 </div>
                 <div className="space-y-1">
-                  {(showAllSources ? Object.keys(SOURCE_LABELS) : Object.keys(sourceCounts))
-                    .sort((a, b) => (sourceCounts[b] || 0) - (sourceCounts[a] || 0))
-                    .map(src => {
-                    const count = sourceCounts[src] || 0
-                    const meta = SOURCE_LABELS[src] || { label: src, Icon: Link }
-                    const active = selectedSources.includes(src)
-                    const isEmpty = count === 0 && !active
-                    return (
-                      <button
-                        key={src}
-                        onClick={() => !isEmpty && toggleSource(src)}
-                        disabled={isEmpty}
-                        className={clsx(
-                          'w-full flex items-center justify-between px-2.5 py-1.5 rounded-md border text-left transition-all',
-                          isEmpty ? 'opacity-35 cursor-not-allowed bg-canvas dark:bg-white/8 border-hairline-strong dark:border-white/8' :
-                          active
-                            ? 'bg-[#2940BE] border-[#2940BE] text-on-dark'
-                            : 'bg-canvas dark:bg-white/8 border-hairline-strong dark:border-white/8 hover:border-ink/30 dark:hover:border-white/20'
-                        )}
-                      >
-                        <span className={clsx('flex items-center gap-1.5 text-xs', active ? 'text-on-dark' : 'text-body dark:text-on-dark-soft')}>
-                          <meta.Icon size={12} />
-                          <span>{meta.label}</span>
-                        </span>
-                        <span className={clsx('text-[0.625rem] font-semibold rounded-full px-1.5 py-0.5', active ? 'bg-white/20 text-on-dark border border-transparent' : 'bg-canvas dark:bg-white/8 border border-hairline-strong dark:border-white/8 text-muted dark:text-on-dark-soft')}>
-                          {count}
-                        </span>
-                      </button>
-                    )
-                  })}
+                  {SOURCE_GROUPS
+                    .map(group => ({
+                      ...group,
+                      count: group.keys.reduce((sum, k) => sum + (sourceCounts[k] || 0), 0),
+                      active: group.keys.some(k => selectedSources.includes(k)),
+                    }))
+                    .filter(group => showAllSources || group.count > 0)
+                    .sort((a, b) => b.count - a.count)
+                    .map(group => {
+                      const isEmpty = group.count === 0 && !group.active
+                      return (
+                        <button
+                          key={group.id}
+                          onClick={() => {
+                            if (isEmpty) return
+                            if (group.active) {
+                              setSelectedSources(s => s.filter(k => !group.keys.includes(k)))
+                            } else {
+                              setSelectedSources(s => [...new Set([...s, ...group.keys])])
+                            }
+                          }}
+                          disabled={isEmpty}
+                          className={clsx(
+                            'w-full flex items-center justify-between px-2.5 py-1.5 rounded-md border text-left transition-all',
+                            isEmpty ? 'opacity-35 cursor-not-allowed bg-canvas dark:bg-white/8 border-hairline-strong dark:border-white/8' :
+                            group.active
+                              ? 'bg-[#2940BE] border-[#2940BE] text-on-dark'
+                              : 'bg-canvas dark:bg-white/8 border-hairline-strong dark:border-white/8 hover:border-ink/30 dark:hover:border-white/20'
+                          )}
+                        >
+                          <span className={clsx('flex items-center gap-1.5 text-xs', group.active ? 'text-on-dark' : 'text-body dark:text-on-dark-soft')}>
+                            <group.Icon size={12} />
+                            <span>{group.label}</span>
+                          </span>
+                          <span className={clsx('text-[0.625rem] font-semibold rounded-full px-1.5 py-0.5', group.active ? 'bg-white/20 text-on-dark border border-transparent' : 'bg-canvas dark:bg-white/8 border border-hairline-strong dark:border-white/8 text-muted dark:text-on-dark-soft')}>
+                            {group.count}
+                          </span>
+                        </button>
+                      )
+                    })}
                 </div>
               </div>
             )}
@@ -412,7 +433,7 @@ export default function FilterBar({ inline = false }) {
 
       {/* Scrollable content + gradient */}
       <div className="relative flex-1 min-h-0">
-        <div ref={scrollRef} className="h-full overflow-y-auto px-4 pb-6">
+        <div ref={scrollRef} className="h-full overflow-y-auto px-4 pb-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {content}
         </div>
         {canScrollUp && (

@@ -38,6 +38,7 @@ export default function KPICard({
   formatter,
   dark = false,
   compact = false,
+  tooltip,
 }) {
   const isNumber = typeof value === 'number'
   const animated = useCountUp(isNumber ? value : 0)
@@ -50,12 +51,17 @@ export default function KPICard({
 
   return (
     <div className={clsx(
-      'rounded-lg border p-3 transition-shadow duration-200 hover:shadow-card flex flex-col justify-between',
+      'group relative rounded-lg border p-3 transition-shadow duration-200 hover:shadow-card flex flex-col justify-between',
       dark
         ? 'bg-surface-dark-elevated border-white/8 text-on-dark'
         : 'bg-canvas dark:bg-surface-dark-elevated border-hairline-strong dark:border-white/8',
       className
     )}>
+      {tooltip && (
+        <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 rounded bg-gray-900 dark:bg-gray-700 px-2.5 py-2 text-[11px] leading-snug text-white opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-50 shadow-lg">
+          {tooltip}
+        </div>
+      )}
       <div className="flex items-start justify-between mb-1.5">
         <div className="flex-1 min-w-0">
           <p className={clsx(
@@ -85,7 +91,6 @@ export default function KPICard({
       {subtitle && (
         <p className={clsx('text-xs truncate', dark ? 'text-on-dark-soft' : 'text-body dark:text-on-dark-soft')}>{subtitle}</p>
       )}
-
     </div>
   )
 }

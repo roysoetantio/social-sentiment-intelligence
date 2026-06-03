@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { format, startOfWeek, startOfMonth, parseISO } from 'date-fns'
-import { KEYWORD_GROUPS } from '../../data/mockKeywords'
+import { KEYWORD_GROUPS } from '../../data/fallbackKeywords'
 import clsx from 'clsx'
 
 const GROUP_COLORS = Object.fromEntries(KEYWORD_GROUPS.map(g => [g.id, g.color]))

@@ -1,12 +1,13 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState, useCallback } from 'react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   LineChart, Line, ReferenceLine, AreaChart, Area,
 } from 'recharts'
 import { AlertTriangle, Info } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { useDashboard } from '../context/DashboardContext'
-import { getKPIs, getPlatformBreakdown, getKeywordGroupStats, getTopEmotions, getTimelineData } from '../data/mockAnalytics'
-import { KEYWORD_GROUPS } from '../data/mockKeywords'
+import { getKPIs, getPlatformBreakdown, getKeywordGroupStats, getTopEmotions, getTimelineData } from '../data/analytics'
+import { KEYWORD_GROUPS } from '../data/fallbackKeywords'
 import SentimentTimelineChart from '../components/charts/SentimentTimelineChart'
 import SentimentHeatmap from '../components/charts/SentimentHeatmap'
 import { SENTIMENT_COLORS, EMOTION_COLORS, BRAND_COLORS } from '../constants/colors'
@@ -55,8 +56,46 @@ function NetSentimentGauge({ score }) {
   )
 }
 
+const SENTIMENT_SERIES = ['positive', 'neutral', 'negative']
+
+function SentimentLegend({ hidden, onToggle }) {
+  return (
+    <div className="flex items-center justify-center gap-4 mt-3">
+      {SENTIMENT_SERIES.map(key => (
+        <button
+          key={key}
+          onClick={() => onToggle(key)}
+          className="flex items-center gap-1.5 transition-opacity"
+          style={{ opacity: hidden.includes(key) ? 0.35 : 1 }}
+        >
+          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: SENTIMENT_COLORS[key] }} />
+          <span className="text-[11px] capitalize" style={{ color: '#6b7280' }}>{key}</span>
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function useSentimentLegend() {
+  const [hidden, setHidden] = useState([])
+  const toggle = (key) => setHidden(prev => {
+    if (prev.length === 0) return SENTIMENT_SERIES.filter(k => k !== key)
+    const next = prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
+    return next.length === SENTIMENT_SERIES.length ? [] : next
+  })
+  return [hidden, toggle]
+}
+
 export default function SentimentAnalytics() {
-  const { globalFilteredMentions: filteredMentions } = useDashboard()
+  const { globalFilteredMentions: filteredMentions, setHeatmapFilter } = useDashboard()
+  const navigate = useNavigate()
+  const [platformHidden, togglePlatform] = useSentimentLegend()
+  const [groupHidden, toggleGroup] = useSentimentLegend()
+
+  const handleHeatmapClick = useCallback(({ day, hour }) => {
+    setHeatmapFilter({ day, hour })
+    navigate('/mentions')
+  }, [setHeatmapFilter, navigate])
   const kpis = useMemo(() => getKPIs(filteredMentions), [filteredMentions])
   const platformData = useMemo(() => getPlatformBreakdown(filteredMentions), [filteredMentions])
   const groupStats = useMemo(() => getKeywordGroupStats(filteredMentions), [filteredMentions])
@@ -149,18 +188,20 @@ export default function SentimentAnalytics() {
           {!filteredMentions.length ? (
             <div className="flex items-center justify-center h-48 text-xs text-muted">No data</div>
           ) : (
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={platformData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f3" />
-                <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#9ca3af' }} tickLine={false} axisLine={{ stroke: '#e5e7eb' }} />
-                <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} tickLine={false} axisLine={false} />
-                <Tooltip content={<CustomPlatformTooltip />} />
-                <Legend iconType="circle" iconSize={7} formatter={(v) => <span style={{ fontSize: 10, color: '#6b7280', textTransform: 'capitalize' }}>{v}</span>} />
-                <Bar dataKey="positive" stackId="a" fill={SENTIMENT_COLORS.positive} />
-                <Bar dataKey="neutral" stackId="a" fill={SENTIMENT_COLORS.neutral} />
-                <Bar dataKey="negative" stackId="a" fill={SENTIMENT_COLORS.negative} radius={[3, 3, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <>
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={platformData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f3" />
+                  <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#9ca3af' }} tickLine={false} axisLine={{ stroke: '#e5e7eb' }} />
+                  <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} tickLine={false} axisLine={false} />
+                  <Tooltip content={<CustomPlatformTooltip />} />
+                  <Bar dataKey="positive" stackId="a" fill={SENTIMENT_COLORS.positive} hide={platformHidden.includes('positive')} />
+                  <Bar dataKey="neutral" stackId="a" fill={SENTIMENT_COLORS.neutral} hide={platformHidden.includes('neutral')} />
+                  <Bar dataKey="negative" stackId="a" fill={SENTIMENT_COLORS.negative} radius={[3, 3, 0, 0]} hide={platformHidden.includes('negative')} />
+                </BarChart>
+              </ResponsiveContainer>
+              <SentimentLegend hidden={platformHidden} onToggle={togglePlatform} />
+            </>
           )}
         </div>
 
@@ -169,18 +210,20 @@ export default function SentimentAnalytics() {
           {!filteredMentions.length ? (
             <div className="flex items-center justify-center h-48 text-xs text-muted">No data</div>
           ) : (
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={groupBarData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f3" />
-                <XAxis dataKey="name" tick={{ fontSize: 9, fill: '#9ca3af' }} tickLine={false} axisLine={{ stroke: '#e5e7eb' }} interval={0} />
-                <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} tickLine={false} axisLine={false} />
-                <Tooltip content={<CustomPlatformTooltip />} />
-                <Legend iconType="circle" iconSize={7} formatter={(v) => <span style={{ fontSize: 10, color: '#6b7280', textTransform: 'capitalize' }}>{v}</span>} />
-                <Bar dataKey="positive" stackId="a" fill={SENTIMENT_COLORS.positive} />
-                <Bar dataKey="neutral" stackId="a" fill={SENTIMENT_COLORS.neutral} />
-                <Bar dataKey="negative" stackId="a" fill={SENTIMENT_COLORS.negative} radius={[3, 3, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <>
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={groupBarData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f3" />
+                  <XAxis dataKey="name" tick={{ fontSize: 9, fill: '#9ca3af' }} tickLine={false} axisLine={{ stroke: '#e5e7eb' }} interval={0} />
+                  <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} tickLine={false} axisLine={false} />
+                  <Tooltip content={<CustomPlatformTooltip />} />
+                  <Bar dataKey="positive" stackId="a" fill={SENTIMENT_COLORS.positive} hide={groupHidden.includes('positive')} />
+                  <Bar dataKey="neutral" stackId="a" fill={SENTIMENT_COLORS.neutral} hide={groupHidden.includes('neutral')} />
+                  <Bar dataKey="negative" stackId="a" fill={SENTIMENT_COLORS.negative} radius={[3, 3, 0, 0]} hide={groupHidden.includes('negative')} />
+                </BarChart>
+              </ResponsiveContainer>
+              <SentimentLegend hidden={groupHidden} onToggle={toggleGroup} />
+            </>
           )}
         </div>
       </div>
@@ -189,7 +232,7 @@ export default function SentimentAnalytics() {
       <div className="card">
         <h2 className="text-base font-semibold text-ink dark:text-on-dark tracking-tight mb-4">Mention Heatmap — Day × Hour</h2>
         <p className="text-xs text-muted dark:text-on-dark-soft mb-4">Color intensity shows negative sentiment concentration. Darker red = higher negative rate at that time slot.</p>
-        <SentimentHeatmap mentions={filteredMentions} />
+        <SentimentHeatmap mentions={filteredMentions} onCellClick={handleHeatmapClick} />
       </div>
 
       {/* Emotions + Crisis side by side — hidden for now */}

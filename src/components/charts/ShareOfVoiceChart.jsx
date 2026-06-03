@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LabelList } from 'recharts'
-import { getShareOfVoice } from '../../data/mockAnalytics'
+import { getShareOfVoice } from '../../data/analytics'
 
 const CustomTooltip = ({ active, payload }) => {
   if (!active || !payload?.length) return null

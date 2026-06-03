@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react'
-import { getHeatmapData } from '../../data/mockAnalytics'
+import { getHeatmapData } from '../../data/analytics'
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
@@ -13,7 +13,7 @@ const getRatioColor = (ratio, total) => {
   return '#dc2626'
 }
 
-export default function SentimentHeatmap({ mentions }) {
+export default function SentimentHeatmap({ mentions, onCellClick }) {
   const [tooltip, setTooltip] = useState(null)
   const data = useMemo(() => getHeatmapData(mentions || []), [mentions])
 
@@ -50,6 +50,7 @@ export default function SentimentHeatmap({ mentions }) {
                         height: 16,
                         width: '100%',
                       }}
+                      onClick={() => cell?.total > 0 && onCellClick?.({ day, hour })}
                       onMouseEnter={(e) => setTooltip({
                         day: DAYS[day],
                         hour: `${hour.toString().padStart(2, '0')}:00`,

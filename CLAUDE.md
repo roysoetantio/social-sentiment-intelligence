@@ -18,7 +18,7 @@ There are no tests or linting configured.
 This is a **React 18 + Vite + Tailwind** dashboard with two distinct data layers:
 
 ### Data flow
-1. **On app load** — `DashboardContext` calls `fetchAllMentions()` (apiService), which reads from Supabase. If Supabase is empty or unreachable, the app falls back to mock data in `src/data/`.
+1. **On app load** — `DashboardContext` calls `fetchAllMentions()` (apiService), which reads from Supabase. If Supabase is empty or unreachable, the app falls back to data in `src/data/fallbackMentions.js` and `src/data/fallbackKeywords.js`.
 2. **Ingest script** (`scripts/ingest.js`) — a standalone Node.js script that fetches from external APIs and upserts into Supabase. Run manually or on a cron. Uses `SUPABASE_SERVICE_ROLE_KEY` (not the anon key) for writes.
 3. **Filtering** — all filter state lives in `DashboardContext`. `filterService.js` applies all active filters to `allMentionsData`. Source counts in the sidebar are computed *without* the source filter applied (`mentionsWithoutSourceFilter`) so clicking a source filter always shows a nonzero count.
 
@@ -37,8 +37,15 @@ Each source has a `fetch*()` function that returns rows matching the Supabase sc
 | `claude_search` | Claude WebSearch tool (agent step) | Claude searches the web for each keyword and saves results directly to Supabase — run as part of Step 1 in post-ingest workflow |
 
 **Rule:** When adding a new ingest source, always update both:
-- `src/components/filters/FilterBar.jsx` → `SOURCE_LABELS` (icon + label for filter sidebar)
+- `src/components/filters/FilterBar.jsx` → `SOURCE_GROUPS` (icon + label for filter sidebar)
 - `src/pages/MentionsExplorer.jsx` → mention card source label map
+
+## Adding a new keyword
+
+1. **Supabase** — insert into `keywords` table, linked to the correct `keyword_groups` row, with `is_active = true`
+2. **`src/data/fallbackKeywords.js`** — add the same keyword/group to keep the offline fallback in sync
+3. **Run ingest** — `npm run ingest` loads keywords dynamically from Supabase, so no code changes needed
+4. **Follow the full post-ingest workflow** (fix dates, summaries, delete junk, reload)
 
 ### Environment variables
 | Variable | Used by |

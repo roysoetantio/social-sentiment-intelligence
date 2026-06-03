@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts'
-import { getPlatformBreakdown } from '../../data/mockAnalytics'
+import { getPlatformBreakdown } from '../../data/analytics'
 import { BRAND_COLORS } from '../../constants/colors'
 
 const COLORS = [BRAND_COLORS.primary, BRAND_COLORS.sky, BRAND_COLORS.teal, BRAND_COLORS.orange, BRAND_COLORS.purple, '#f59e0b', '#10b981']
