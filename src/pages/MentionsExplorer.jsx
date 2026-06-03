@@ -5,6 +5,7 @@ import { format, parseISO } from 'date-fns'
 import { formatDateTime } from '../utils/format'
 import { useDashboard } from '../context/DashboardContext'
 import { sortMentions } from '../services/filterService'
+import { isSocialUrl } from '../services/apiService'
 import MentionCard from '../components/common/MentionCard'
 import SentimentBadge from '../components/common/SentimentBadge'
 import RiskBadge from '../components/common/RiskBadge'
@@ -218,7 +219,7 @@ function DetailPanel({ mention, onClose, onSaved, onPrev, onNext, hasPrev, hasNe
         <div className="flex items-start justify-between">
           <div>
             <p className="text-sm font-semibold text-ink dark:text-on-dark">{mention.author.name}</p>
-            <p className="text-xs text-muted dark:text-on-dark-soft">@{mention.author.handle}</p>
+            {isSocialUrl(mention.url) && <p className="text-xs text-muted dark:text-on-dark-soft">@{mention.author.handle}</p>}
             {mention.author.verified && <span className="text-[0.625rem] text-sky font-medium">✓ Verified</span>}
           </div>
           <div className="text-right">

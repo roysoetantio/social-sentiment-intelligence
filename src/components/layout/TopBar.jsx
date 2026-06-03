@@ -291,8 +291,8 @@ export default function TopBar({ title, shortTitle, onMenuClick }) {
           >
             <Bell size={17} className="text-body dark:text-on-dark-soft" />
             {riskCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-600 text-white text-[0.5625rem] font-bold flex items-center justify-center">
-                {riskCount > 9 ? '9+' : riskCount}
+              <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-red-600 text-white text-[0.5625rem] font-bold flex items-center justify-center">
+                {riskCount}
               </span>
             )}
           </button>

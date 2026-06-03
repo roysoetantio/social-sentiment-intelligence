@@ -1,4 +1,5 @@
 import React from 'react'
+import { isSocialUrl } from '../../services/apiService'
 import { formatDistanceToNow, parseISO } from 'date-fns'
 import {
   Twitter, Youtube, Globe, Linkedin, MessageCircle,
@@ -47,7 +48,7 @@ export default function MentionCard({ mention, onClick, selected }) {
           <div className="flex items-center gap-2 min-w-0">
             <PlatformIcon platform={mention.platform} />
             <span className="text-sm font-semibold text-ink dark:text-on-dark truncate">{mention.author.name}</span>
-            <span className="text-[0.8125rem] text-muted truncate">@{mention.author.handle}</span>
+            {isSocialUrl(mention.url) && <span className="text-[0.8125rem] text-muted truncate">@{mention.author.handle}</span>}
             {mention.author.verified && (
               <span className="text-[0.625rem] bg-sky/10 text-sky px-1.5 py-0.5 rounded font-medium">✓</span>
             )}
