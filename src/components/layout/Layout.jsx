@@ -6,6 +6,7 @@ import Sidebar from './Sidebar'
 import TopBar from './TopBar'
 import BottomNav from './BottomNav'
 import { useDashboard } from '../../context/DashboardContext'
+import { useAuth } from '../../context/AuthContext'
 import isPWA from '../../utils/isPWA'
 
 const DISCLAIMER_KEY = 'data_disclaimer_dismissed'
@@ -16,6 +17,7 @@ const pageTitles = {
   '/analytics': { full: 'Sentiment Analytics', short: 'Analytics' },
   '/keywords': { full: 'Keyword Manager', short: 'Keywords' },
   '/more': { full: 'More', short: 'More' },
+  '/admin': { full: 'Admin', short: 'Admin' },
 }
 
 export default function Layout({ children }) {
@@ -27,6 +29,10 @@ export default function Layout({ children }) {
   )
 
   const { allMentions } = useDashboard()
+  const { allowedGroupIds, department } = useAuth()
+  // The Admin page manages users and isn't scoped to keyword groups, so it must
+  // render even when the current view has no groups (e.g. super admin viewing Infra).
+  const noGroups = allowedGroupIds.length === 0 && location.pathname !== '/admin'
 
   const earliestDate = useMemo(() => {
     if (!allMentions.length) return null
@@ -83,7 +89,22 @@ export default function Layout({ children }) {
             ref={scrollRef}
             className="flex-1 overflow-y-auto overscroll-contain px-3 pt-3 pb-4 md:px-4 md:pt-4 md:pb-4 flex flex-col w-full max-w-[2000px] mx-auto"
           >
-            {children}
+            {noGroups ? (
+              <div className="flex-1 flex items-center justify-center py-16">
+                <div className="max-w-sm text-center">
+                  <Info size={28} className="mx-auto mb-3 text-muted" />
+                  <p className="text-sm font-semibold text-ink dark:text-on-dark mb-1">
+                    No keyword groups assigned yet
+                  </p>
+                  <p className="text-sm text-muted dark:text-on-dark-soft">
+                    Your department{department ? ` (${department})` : ''} doesn't have any keyword groups
+                    assigned. Contact your administrator to get set up.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              children
+            )}
             <div
               className="flex-shrink-0 lg:hidden"
               style={{ height: isPWA ? 'calc(160px + env(safe-area-inset-bottom, 0px))' : 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { MessageSquare, TrendingUp, TrendingDown, AlertTriangle, Tag, BarChart2, Eye } from 'lucide-react'
 import { parseISO, startOfMonth, endOfMonth, startOfWeek, endOfWeek, startOfDay, endOfDay, startOfHour, endOfHour, parse } from 'date-fns'
 import { useDashboard } from '../context/DashboardContext'
+import { useAuth } from '../context/AuthContext'
 import { getKPIs } from '../data/analytics'
 import { getAllKeywords, getGroupById } from '../data/fallbackKeywords'
 import KPICard from '../components/common/KPICard'
@@ -10,7 +11,7 @@ import MentionCard from '../components/common/MentionCard'
 import SentimentTimelineChart from '../components/charts/SentimentTimelineChart'
 import PlatformBreakdownChart from '../components/charts/PlatformBreakdownChart'
 import KeywordComparisonChart from '../components/charts/KeywordComparisonChart'
-import { isAtRisk, ANALYST_NAME } from '../constants/sentiment'
+import { isAtRisk } from '../constants/sentiment'
 import { BRAND_COLORS, SENTIMENT_COLORS } from '../constants/colors'
 import { formatNum } from '../utils/format'
 import AICard from '../components/common/AICard'
@@ -26,6 +27,7 @@ const PRESET_CHART = {
 
 export default function Overview() {
   const { globalFilteredMentions: filteredMentions, activePreset, setDateRange } = useDashboard()
+  const { fullName } = useAuth()
   const navigate = useNavigate()
   const { days, granularity } = PRESET_CHART[activePreset] || PRESET_CHART['1m']
   const [digest, setDigest] = useState(undefined)
@@ -103,7 +105,7 @@ export default function Overview() {
         {/* Left — Greeting */}
         <div className="sm:col-span-2 flex flex-col justify-start mb-4 sm:mb-0">
           <p className="text-sm text-muted mb-0.5">{greeting},</p>
-          <p className="text-[1.75rem] font-semibold text-ink leading-tight">{ANALYST_NAME}</p>
+          <p className="text-[1.75rem] font-semibold text-ink leading-tight">{fullName}</p>
         </div>
 
         {/* Right — AI Digest */}

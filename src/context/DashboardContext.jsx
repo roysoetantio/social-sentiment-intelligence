@@ -3,6 +3,7 @@ import { subDays, startOfDay } from 'date-fns'
 import { filterMentions } from '../services/filterService'
 import { fetchAllMentions } from '../services/apiService'
 import { supabase } from '../lib/supabase'
+import { useAuth } from './AuthContext'
 
 const DashboardContext = createContext(null)
 
@@ -14,6 +15,7 @@ const DEFAULT_DATE_RANGE = {
 }
 
 export function DashboardProvider({ children }) {
+  const { allowedGroupIds } = useAuth()
   const [dateRange, setDateRange] = useState(DEFAULT_DATE_RANGE)
   const [selectedKeywords, setSelectedKeywords] = useState([])
   const [selectedGroups, setSelectedGroups] = useState([])
@@ -95,30 +97,47 @@ export function DashboardProvider({ children }) {
     loadKeywords()
   }, [])
 
+  // ── Department scoping ──────────────────────────────────────────────────
+  // A user only sees mentions / keywords / groups belonging to the keyword
+  // groups their department is granted (department_group_access). This mirrors
+  // the RLS policies on the DB, so it's UX, not the security boundary.
+  const scopedMentions = useMemo(
+    () => allMentionsData.filter(m => allowedGroupIds.includes(m.keywordGroup)),
+    [allMentionsData, allowedGroupIds]
+  )
+  const scopedKeywordGroups = useMemo(
+    () => keywordGroups.filter(g => allowedGroupIds.includes(g.id)),
+    [keywordGroups, allowedGroupIds]
+  )
+  const scopedKeywordsFlat = useMemo(
+    () => allKeywordsFlat.filter(k => allowedGroupIds.includes(k.group_id)),
+    [allKeywordsFlat, allowedGroupIds]
+  )
+
   // Mentions with all filters applied except source — used for accurate source counts
   const mentionsWithoutSourceFilter = useMemo(() => {
-    return filterMentions(allMentionsData, {
+    return filterMentions(scopedMentions, {
       dateRange, selectedKeywords, selectedGroups, selectedPlatforms,
       selectedSentiments, selectedLanguages, searchQuery, selectedMentionTypes,
       selectedSources: [], riskOnly, showExcluded, heatmapFilter,
-    }, allKeywordsFlat)
-  }, [allMentionsData, dateRange, selectedKeywords, selectedGroups, selectedPlatforms, selectedSentiments, selectedLanguages, searchQuery, selectedMentionTypes, riskOnly, showExcluded, heatmapFilter, allKeywordsFlat])
+    }, scopedKeywordsFlat)
+  }, [scopedMentions, dateRange, selectedKeywords, selectedGroups, selectedPlatforms, selectedSentiments, selectedLanguages, searchQuery, selectedMentionTypes, riskOnly, showExcluded, heatmapFilter, scopedKeywordsFlat])
 
   // All filters — used only by Mentions Explorer
   const filteredMentions = useMemo(() => {
-    return filterMentions(allMentionsData, {
+    return filterMentions(scopedMentions, {
       dateRange, selectedKeywords, selectedGroups, selectedPlatforms,
       selectedSentiments, selectedLanguages, searchQuery, selectedMentionTypes,
       selectedSources, riskOnly, showExcluded, heatmapFilter,
-    }, allKeywordsFlat)
-  }, [allMentionsData, dateRange, selectedKeywords, selectedGroups, selectedPlatforms, selectedSentiments, selectedLanguages, searchQuery, selectedMentionTypes, selectedSources, riskOnly, showExcluded, heatmapFilter, allKeywordsFlat])
+    }, scopedKeywordsFlat)
+  }, [scopedMentions, dateRange, selectedKeywords, selectedGroups, selectedPlatforms, selectedSentiments, selectedLanguages, searchQuery, selectedMentionTypes, selectedSources, riskOnly, showExcluded, heatmapFilter, scopedKeywordsFlat])
 
   // Global filters only (date range + search) — used by Overview, Analytics, Keywords
   const globalFilteredMentions = useMemo(() => {
-    return filterMentions(allMentionsData, {
+    return filterMentions(scopedMentions, {
       dateRange, searchQuery,
     })
-  }, [allMentionsData, dateRange, searchQuery])
+  }, [scopedMentions, dateRange, searchQuery])
 
   const updateMentionSentiment = useCallback((mentionId, newLabel) => {
     setAllMentionsData(prev => prev.map(m =>
@@ -262,11 +281,11 @@ export function DashboardProvider({ children }) {
     filteredMentions,
     globalFilteredMentions,
     mentionsWithoutSourceFilter,
-    allMentions: allMentionsData,
+    allMentions: scopedMentions,
     isLoading,
     dataSource,
-    keywordGroups,
-    allKeywordsFlat,
+    keywordGroups: scopedKeywordGroups,
+    allKeywordsFlat: scopedKeywordsFlat,
     reloadMentions,
     activePreset,
     setActivePreset,

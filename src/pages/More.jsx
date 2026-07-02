@@ -1,8 +1,8 @@
 import React from 'react'
-import { TrendingUp, AlertTriangle, Hash, Sun, LogOut, Tags, ChevronRight, BellOff } from 'lucide-react'
+import { TrendingUp, AlertTriangle, Hash, Sun, LogOut, Tags, ChevronRight, BellOff, Users } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useDashboard } from '../context/DashboardContext'
-import { ANALYST_NAME } from '../constants/sentiment'
+import { useAuth } from '../context/AuthContext'
 
 
 function StatRow({ icon: Icon, label, value, color }) {
@@ -20,11 +20,12 @@ function StatRow({ icon: Icon, label, value, color }) {
 export default function More() {
   const navigate = useNavigate()
   const { globalFilteredMentions: filteredMentions } = useDashboard()
+  const { fullName, user, department, role, signOut, isSuperAdmin } = useAuth()
   const riskCount = filteredMentions.filter(m => m.riskFlag).length
   const positiveCount = filteredMentions.filter(m => m.sentiment.label === 'positive').length
   const total = filteredMentions.length
   const positivePct = total > 0 ? Math.round(positiveCount / total * 100) : 0
-  const initials = ANALYST_NAME.split(' ').map(w => w[0]).slice(0, 2).join('')
+  const initials = (fullName || user?.email || '?').split(/[\s@.]+/).map(w => w[0]).slice(0, 2).join('').toUpperCase()
 
   return (
     <div className="space-y-5 py-1">
@@ -33,9 +34,11 @@ export default function More() {
         <div className="w-11 h-11 rounded-full bg-surface-strong dark:bg-white/8 flex items-center justify-center flex-shrink-0">
           <span className="text-sm font-semibold text-ink dark:text-on-dark">{initials}</span>
         </div>
-        <div>
-          <div className="text-sm font-semibold text-ink dark:text-on-dark">{ANALYST_NAME}</div>
-          <div className="text-xs text-muted dark:text-on-dark-soft">Analyst</div>
+        <div className="min-w-0">
+          <div className="text-sm font-semibold text-ink dark:text-on-dark truncate">{fullName}</div>
+          <div className="text-xs text-muted dark:text-on-dark-soft truncate">
+            {user?.email}{department ? ` · ${department}${role ? ` (${role})` : ''}` : ''}
+          </div>
         </div>
       </div>
 
@@ -49,6 +52,16 @@ export default function More() {
           <span className="flex-1 text-sm text-left text-ink dark:text-on-dark">Keyword Manager</span>
           <ChevronRight size={15} className="text-muted" />
         </button>
+        {isSuperAdmin && (
+          <button
+            onClick={() => navigate('/admin')}
+            className="w-full flex items-center gap-3 px-4 py-4 border-t border-hairline dark:border-white/8 hover:bg-surface-strong dark:hover:bg-white/8 transition-colors"
+          >
+            <Users size={17} className="text-body dark:text-on-dark-soft flex-shrink-0" />
+            <span className="flex-1 text-sm text-left text-ink dark:text-on-dark">User Management</span>
+            <ChevronRight size={15} className="text-muted" />
+          </button>
+        )}
       </div>
 
 {/* Settings */}
@@ -72,7 +85,7 @@ export default function More() {
           </button>
 
           <button
-            onClick={() => {}}
+            onClick={signOut}
             className="w-full flex items-center gap-3 px-4 py-4 hover:bg-surface-strong dark:hover:bg-white/8 transition-colors"
           >
             <LogOut size={17} className="text-error flex-shrink-0" />
