@@ -15,6 +15,7 @@ const SOURCE_GROUPS = [
   { id: 'rss_my',               label: 'MY News Portals',  Icon: Rss,            keys: ['rss_my'] },
   { id: 'google_alerts',        label: 'Google Alerts',    Icon: Radio,          keys: ['google_alerts'] },
   { id: 'reddit',               label: 'Reddit',           Icon: MessageSquare,  keys: ['reddit'] },
+  { id: 'apify_instagram',      label: 'Instagram',        Icon: Globe,          keys: ['apify_instagram'] },
 ]
 
 const PLATFORMS = ['Twitter', 'LinkedIn', 'YouTube', 'News', 'Blog', 'Forum']

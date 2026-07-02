@@ -371,6 +371,7 @@ function DetailPanel({ mention, onClose, onSaved, onPrev, onNext, hasPrev, hasNe
                   google_news_rapidapi: '📰 Google News',
                   worldnews:            '🌐 World News API',
                   claude_search:        'Claude Search',
+                  apify_instagram:      '📸 Instagram (Apify)',
                 }[mention.source] || `🔗 ${mention.source}`}
               </span>
             </div>

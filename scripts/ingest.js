@@ -17,6 +17,7 @@ const TWITTER135_API_KEY  = process.env.VITE_TWITTER135_API_KEY || RAPIDAPI_KEY
 const SERPER_KEY          = process.env.SERPER_API_KEY
 const GOOGLE_NEWS_KEY     = process.env.VITE_RAPIDAPI_KEY
 const WORLDNEWS_API_KEY   = process.env.WORLDNEWS_API_KEY
+const APIFY_TOKEN         = process.env.APIFY_TOKEN
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
   console.error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY')
@@ -766,6 +767,89 @@ const fetchWorldNews = async ({ query, keywordId, group, isCompetitor }) => {
   }
 }
 
+const fetchApifyInstagram = async ({ query, keywordId, group, isCompetitor }) => {
+  if (!APIFY_TOKEN) {
+    console.warn(`[ApifyIG] Skipping "${query}" — APIFY_TOKEN not configured`)
+    return []
+  }
+  // Use hashtag search type — search by keyword maps to hashtag on IG
+  const hashtag = query.replace(/\s+/g, '').toLowerCase()
+  console.log(`[ApifyIG] Searching hashtag: #${hashtag}`)
+  try {
+    // Start the Actor run
+    const startRes = await fetch(
+      `https://api.apify.com/v2/acts/apify~instagram-scraper/runs?token=${APIFY_TOKEN}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          search: hashtag,
+          searchType: 'hashtag',
+          searchLimit: 1,
+          resultsType: 'posts',
+          resultsLimit: 20,
+        }),
+      }
+    )
+    const { data: run } = await startRes.json()
+    if (!run?.id) throw new Error('No run ID returned')
+
+    // Poll until finished (max 60s)
+    let status = run.status
+    let attempts = 0
+    while (!['SUCCEEDED', 'FAILED', 'ABORTED'].includes(status) && attempts < 12) {
+      await new Promise(r => setTimeout(r, 5000))
+      const pollRes = await fetch(`https://api.apify.com/v2/actor-runs/${run.id}?token=${APIFY_TOKEN}`)
+      const { data: pollData } = await pollRes.json()
+      status = pollData?.status
+      attempts++
+    }
+
+    if (status !== 'SUCCEEDED') {
+      console.warn(`[ApifyIG] Run ${status} for #${hashtag}`)
+      return []
+    }
+
+    // Fetch dataset
+    const dsRes = await fetch(
+      `https://api.apify.com/v2/actor-runs/${run.id}/dataset/items?token=${APIFY_TOKEN}&limit=20`
+    )
+    const items = await dsRes.json()
+    if (!Array.isArray(items) || items.length === 0) return []
+
+    return items
+      .filter(item => item.caption && queryMatchesText(query, item.caption))
+      .map(item => {
+        const text = item.caption || ''
+        const sent = analyzeSentiment(text)
+        return {
+          source: 'apify_instagram',
+          platform: 'Instagram',
+          url: item.url || `https://www.instagram.com/p/${item.shortCode}/`,
+          text: text.slice(0, 300),
+          full_text: text,
+          author_name: item.ownerUsername || null,
+          author_handle: item.ownerUsername || null,
+          published_at: item.timestamp ? new Date(item.timestamp).toISOString() : new Date().toISOString(),
+          sentiment_label: sent.label,
+          sentiment_score: sent.score,
+          sentiment_confidence: 0.75,
+          risk_level: riskLevel(sent, text),
+          keyword_matched: [keywordId],
+          keyword_group: group,
+          is_competitor: isCompetitor,
+          reach_score: item.likesCount || 0,
+          engagement_score: (item.likesCount || 0) + (item.commentsCount || 0),
+          date_fixed: false,
+          status: 'new',
+        }
+      })
+  } catch (e) {
+    console.warn(`[ApifyIG] Failed for "${query}":`, e.message)
+    return []
+  }
+}
+
 const fetchRSS = async (searches) => {
   const results = []
   const keywords = searches.map(s => ({ query: s.query, search: s }))
@@ -990,6 +1074,14 @@ const run = async () => {
   // RSS — single batch
   const rssResults = await fetchRSS(searches)
   collect('RSS', rssResults)
+
+  // Apify Instagram — sequential (avoid burning free credits too fast)
+  console.log('\n[Ingest] Fetching from Apify Instagram...')
+  for (const search of noHashtag) {
+    const results = await fetchApifyInstagram(search)
+    collect('ApifyInstagram', results)
+    await new Promise(r => setTimeout(r, 2000))
+  }
 
   console.log(`[Ingest] Phase 1 done — ${allMentions.length} raw mentions fetched`)
 
