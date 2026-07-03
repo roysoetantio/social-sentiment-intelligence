@@ -3,6 +3,9 @@ import { supabase } from '../lib/supabase'
 
 const AuthContext = createContext(null)
 
+// ⚠️ DEV-ONLY auth bypass (temporary). Never set VITE_DEV_NO_AUTH in production.
+const DEV_NO_AUTH = import.meta.env.VITE_DEV_NO_AUTH === 'true'
+
 // The departments a user can belong to / a super admin can view.
 export const DEPARTMENTS = ['CCD', 'Infra']
 
@@ -31,9 +34,13 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null)          // app_users row
   const [profileResolved, setProfileResolved] = useState(false)
 
-  // Group access data
+  // Group access data (folders per tenant — from department_group_access)
   const [ownGroupIds, setOwnGroupIds] = useState([])    // non-super users: their dept's groups
   const [deptGroupsMap, setDeptGroupsMap] = useState({}) // super admin: dept → [group_ids]
+
+  // Keyword-level tenant tags (new model — from keyword_tenants).
+  // null = table not present / not loaded yet → callers fall back to the legacy group model.
+  const [keywordTenantTags, setKeywordTenantTags] = useState(null)
 
   // Super admin: which department's data is currently being viewed (always a real dept)
   const [viewDepartment, setViewDepartmentState] = useState(() => {
@@ -47,6 +54,11 @@ export function AuthProvider({ children }) {
 
   // Track the auth session
   useEffect(() => {
+    // DEV-ONLY bypass: fake a signed-in session so we can preview without SSO.
+    if (DEV_NO_AUTH) {
+      setSession({ user: { email: 'dev@local', user_metadata: { full_name: 'Dev (No-Auth)' } } })
+      return
+    }
     supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null))
     const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => setSession(s ?? null))
     return () => sub.subscription.unsubscribe()
@@ -59,6 +71,22 @@ export function AuthProvider({ children }) {
 
     const resolve = async () => {
       setProfileResolved(false)
+
+      // DEV-ONLY bypass: act as a super admin, skip the app_users allowlist check.
+      if (DEV_NO_AUTH) {
+        setProfile({ email: 'dev@local', role: 'super_admin', department: null, is_active: true })
+        const { data: access } = await supabase.from('department_group_access').select('department, group_id')
+        if (cancelled) return
+        const map = {}
+        for (const row of access || []) { ;(map[row.department] ||= []).push(row.group_id) }
+        setDeptGroupsMap(map)
+        const { data: tags, error: tErr } = await supabase.from('keyword_tenants').select('keyword_id, department, group_id')
+        if (cancelled) return
+        setKeywordTenantTags(tErr ? null : (tags || []))
+        setProfileResolved(true)
+        return
+      }
+
       const email = session?.user?.email
       if (!email) {
         if (!cancelled) { setProfile(null); setProfileResolved(true) }
@@ -101,12 +129,48 @@ export function AuthProvider({ children }) {
         setOwnGroupIds((access || []).map(a => a.group_id))
       }
 
+      // Keyword-level tenant tags (new model). Missing table => null => legacy fallback.
+      {
+        let tq = supabase.from('keyword_tenants').select('keyword_id, department, group_id')
+        if (user.role !== 'super_admin') tq = tq.eq('department', user.department)
+        const { data: tags, error: tErr } = await tq
+        if (cancelled) return
+        setKeywordTenantTags(tErr ? null : (tags || []))
+      }
+
       setProfileResolved(true)
     }
 
     resolve()
     return () => { cancelled = true }
   }, [session])
+
+  // Re-fetch the department → group access mapping without re-resolving the whole session.
+  // Called after keyword groups are created/deleted so scoping stays fresh app-wide.
+  const refreshGroupAccess = useCallback(async () => {
+    if (!profile) return
+    if (profile.role === 'super_admin') {
+      const { data: access } = await supabase
+        .from('department_group_access')
+        .select('department, group_id')
+      const map = {}
+      for (const row of access || []) {
+        ;(map[row.department] ||= []).push(row.group_id)
+      }
+      setDeptGroupsMap(map)
+    } else {
+      const { data: access } = await supabase
+        .from('department_group_access')
+        .select('group_id')
+        .eq('department', profile.department)
+      setOwnGroupIds((access || []).map(a => a.group_id))
+    }
+    // Refresh keyword-level tenant tags too.
+    let tq = supabase.from('keyword_tenants').select('keyword_id, department, group_id')
+    if (profile.role !== 'super_admin') tq = tq.eq('department', profile.department)
+    const { data: tags, error: tErr } = await tq
+    setKeywordTenantTags(tErr ? null : (tags || []))
+  }, [profile])
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut()
@@ -135,13 +199,33 @@ export function AuthProvider({ children }) {
     return raw.split(' - ')[0].trim()
   }, [user])
 
-  // The keyword groups the current view is scoped to.
+  // The keyword groups (folders) the current view is scoped to.
   // Super admin: the selected department's groups. Others: their own department's.
   const allowedGroupIds = useMemo(() => {
     if (!profile) return []
     if (isSuperAdmin) return deptGroupsMap[viewDepartment] || []
     return ownGroupIds
   }, [profile, isSuperAdmin, viewDepartment, deptGroupsMap, ownGroupIds])
+
+  // Keyword-level visibility for the current tenant (new model).
+  // `allowedKeywordIds`/`keywordGroupMap` are null when tags aren't available,
+  // signalling consumers to fall back to the legacy group-based scoping.
+  const currentTenantDept = isSuperAdmin ? viewDepartment : (profile?.department ?? null)
+  const tenantTags = useMemo(() => {
+    if (keywordTenantTags == null) return null
+    return keywordTenantTags.filter(t => t.department === currentTenantDept)
+  }, [keywordTenantTags, currentTenantDept])
+
+  const allowedKeywordIds = useMemo(
+    () => (tenantTags ? tenantTags.map(t => t.keyword_id) : null),
+    [tenantTags]
+  )
+  const keywordGroupMap = useMemo(() => {
+    if (!tenantTags) return null
+    const m = {}
+    for (const t of tenantTags) m[t.keyword_id] = t.group_id
+    return m
+  }, [tenantTags])
 
   const value = useMemo(() => ({
     status,
@@ -153,12 +237,15 @@ export function AuthProvider({ children }) {
     role: profile?.role ?? null,
     isSuperAdmin,
     allowedGroupIds,
+    allowedKeywordIds,
+    keywordGroupMap,
     // Super admin department switcher
     viewDepartment,
     setViewDepartment,
     departments: DEPARTMENTS,
+    refreshGroupAccess,
     signOut,
-  }), [status, session, user, fullName, profile, isSuperAdmin, allowedGroupIds, viewDepartment, setViewDepartment, signOut])
+  }), [status, session, user, fullName, profile, isSuperAdmin, allowedGroupIds, allowedKeywordIds, keywordGroupMap, viewDepartment, setViewDepartment, refreshGroupAccess, signOut])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

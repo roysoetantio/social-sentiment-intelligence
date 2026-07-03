@@ -1,11 +1,15 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   UserPlus, Trash2, ShieldCheck, Loader2, AlertCircle, Check, X, Search,
-  Users, SlidersHorizontal, Building2, ScrollText, ArrowUp, ArrowDown, ChevronsUpDown, ChevronDown,
+  Users, SlidersHorizontal, Building2, ScrollText, ArrowUp, ArrowDown, ChevronsUpDown,
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { supabase } from '../lib/supabase'
 import { useAuth, DEPARTMENTS } from '../context/AuthContext'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 
 const relTime = (ts) => (ts ? formatDistanceToNow(new Date(ts), { addSuffix: true }) : 'Never')
 
@@ -159,31 +163,26 @@ export default function Admin() {
         <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-hairline dark:border-white/8">
           <div className="flex items-center gap-2">
             <div className="relative">
-              <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted" />
-              <input
-                type="text"
+              <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none z-10" />
+              <Input
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 placeholder="Search email…"
-                className="h-8 w-44 sm:w-56 pl-8 pr-3 text-xs bg-canvas dark:bg-surface-dark border border-hairline-strong dark:border-white/8 rounded-md focus:outline-none focus:border-ink dark:focus:border-white/30 text-ink dark:text-on-dark placeholder-muted"
+                className="h-8 w-44 sm:w-56 pl-8 text-xs"
               />
             </div>
-            <Select
-              value={deptFilter}
-              onChange={e => setDeptFilter(e.target.value)}
-              className="h-8 text-xs"
-            >
-              {DEPT_FILTERS.map(d => (
-                <option key={d} value={d}>{d === 'All' ? 'All departments' : d}</option>
-              ))}
+            <Select value={deptFilter} onValueChange={setDeptFilter}>
+              <SelectTrigger className="h-8 w-40 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {DEPT_FILTERS.map(d => (
+                  <SelectItem key={d} value={d}>{d === 'All' ? 'All departments' : d}</SelectItem>
+                ))}
+              </SelectContent>
             </Select>
           </div>
-          <button
-            onClick={() => setShowAdd(true)}
-            className="h-8 px-3 flex items-center gap-1.5 rounded-md bg-[#2940BE] text-white text-xs font-medium hover:bg-[#2338A6] transition-colors flex-shrink-0"
-          >
+          <Button size="sm" onClick={() => setShowAdd(true)} className="flex-shrink-0">
             <UserPlus size={14} /> Add User
-          </button>
+          </Button>
         </div>
 
         {/* Table */}
@@ -304,32 +303,34 @@ function AddUserModal({ onClose, onError, onAdded }) {
           <button onClick={onClose} className="text-muted hover:text-ink dark:hover:text-on-dark"><X size={16} /></button>
         </div>
         <form onSubmit={submit} className="p-4 space-y-3">
-          <div>
-            <label className="block text-xs font-medium text-body dark:text-on-dark-soft mb-1.5">Work email</label>
-            <input
+          <div className="space-y-1.5">
+            <Label>Work email</Label>
+            <Input
               type="email" required autoFocus value={email} onChange={e => setEmail(e.target.value)}
               placeholder="name@edgenta.com"
-              className="w-full h-9 px-3 text-sm bg-canvas dark:bg-surface-dark-elevated border border-hairline-strong dark:border-white/8 rounded-md focus:outline-none focus:border-ink dark:focus:border-white/30 text-ink dark:text-on-dark placeholder-muted"
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-body dark:text-on-dark-soft mb-1.5">Role</label>
-              <Select value={role} onChange={e => setRole(e.target.value)} wrapperClassName="block" className="h-9 text-sm">
-                {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+            <div className="space-y-1.5">
+              <Label>Role</Label>
+              <Select value={role} onValueChange={setRole}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {ROLES.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
+                </SelectContent>
               </Select>
             </div>
-            <div>
-              <label className="block text-xs font-medium text-body dark:text-on-dark-soft mb-1.5">Department</label>
+            <div className="space-y-1.5">
+              <Label>Department</Label>
               <Select
-                value={role === 'super_admin' ? '' : department}
-                onChange={e => setDepartment(e.target.value)}
+                value={role === 'super_admin' ? undefined : department}
+                onValueChange={setDepartment}
                 disabled={role === 'super_admin'}
-                wrapperClassName="block" className="h-9 text-sm"
               >
-                {role === 'super_admin'
-                  ? <option value="">— (all)</option>
-                  : DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
+                <SelectTrigger><SelectValue placeholder="— (all)" /></SelectTrigger>
+                <SelectContent>
+                  {DEPARTMENTS.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                </SelectContent>
               </Select>
             </div>
           </div>
@@ -340,32 +341,14 @@ function AddUserModal({ onClose, onError, onAdded }) {
             </div>
           )}
           <div className="flex justify-end gap-2 pt-1">
-            <button type="button" onClick={onClose} className="h-9 px-4 rounded-md border border-hairline-strong dark:border-white/8 text-sm font-medium text-body dark:text-on-dark-soft hover:border-ink/30 transition-colors">
-              Cancel
-            </button>
-            <button type="submit" disabled={saving} className="h-9 px-4 flex items-center gap-2 rounded-md bg-[#2940BE] text-white text-sm font-medium hover:bg-[#2338A6] disabled:opacity-60 transition-colors">
+            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+            <Button type="submit" disabled={saving}>
               {saving ? <Loader2 size={15} className="animate-spin" /> : <UserPlus size={15} />}
               Add User
-            </button>
+            </Button>
           </div>
         </form>
       </div>
-    </div>
-  )
-}
-
-// Consistent dropdown: strips native OS styling so it matches our inputs
-// (radius, border, focus ring) and uses a custom chevron.
-function Select({ wrapperClassName = 'inline-block', className = '', children, ...props }) {
-  return (
-    <div className={`relative ${wrapperClassName}`}>
-      <select
-        {...props}
-        className={`appearance-none w-full pl-2.5 pr-7 bg-canvas dark:bg-surface-dark border border-hairline-strong dark:border-white/8 rounded-md focus:outline-none focus:border-ink dark:focus:border-white/30 text-ink dark:text-on-dark disabled:opacity-40 ${className}`}
-      >
-        {children}
-      </select>
-      <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
     </div>
   )
 }

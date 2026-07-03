@@ -15,7 +15,7 @@ const DEFAULT_DATE_RANGE = {
 }
 
 export function DashboardProvider({ children }) {
-  const { allowedGroupIds } = useAuth()
+  const { allowedGroupIds, allowedKeywordIds, keywordGroupMap } = useAuth()
   const [dateRange, setDateRange] = useState(DEFAULT_DATE_RANGE)
   const [selectedKeywords, setSelectedKeywords] = useState([])
   const [selectedGroups, setSelectedGroups] = useState([])
@@ -75,43 +75,58 @@ export function DashboardProvider({ children }) {
 
   useEffect(() => {
     const loadKeywords = async () => {
-      const [{ data: groups }, { data: kws }, { data: allKws }] = await Promise.all([
+      const [{ data: groups }, { data: kws }] = await Promise.all([
         supabase.from('keyword_groups').select('*').order('created_at'),
-        supabase.from('keywords').select('*').eq('is_active', true).order('created_at'),
-        supabase.from('keywords').select('id, term, group_id').order('created_at'),
+        supabase.from('keywords').select('id, term, group_id, match_type').eq('is_active', true).order('created_at'),
       ])
-      if (groups && kws) {
-        setKeywordGroups(groups.map(g => ({
-          ...g,
-          keywords: kws.filter(k => k.group_id === g.id).map(k => ({
-            id: k.id,
-            term: k.term,
-            matchType: k.match_type,
-            groupId: g.id,
-            groupColor: g.color,
-          })),
-        })))
-      }
-      if (allKws) setAllKeywordsFlat(allKws)
+      if (groups) setKeywordGroups(groups)
+      if (kws) setAllKeywordsFlat(kws)
     }
     loadKeywords()
   }, [])
 
-  // ── Department scoping ──────────────────────────────────────────────────
-  // A user only sees mentions / keywords / groups belonging to the keyword
-  // groups their department is granted (department_group_access). This mirrors
-  // the RLS policies on the DB, so it's UX, not the security boundary.
+  // ── Tenant scoping ──────────────────────────────────────────────────────
+  // Visibility is keyword-level: a tenant sees a mention if any keyword it
+  // matched is tagged to that tenant (keyword_tenants). The mention's folder
+  // is then remapped to that tenant's folder for display/grouping.
+  // Falls back to the legacy group model when tenant tags aren't available.
+  const effKeywordIds = useMemo(() => {
+    if (allowedKeywordIds) return new Set(allowedKeywordIds)
+    return new Set(allKeywordsFlat.filter(k => allowedGroupIds.includes(k.group_id)).map(k => k.id))
+  }, [allowedKeywordIds, allKeywordsFlat, allowedGroupIds])
+
+  const effGroupMap = useMemo(() => {
+    if (keywordGroupMap) return keywordGroupMap
+    const m = {}
+    for (const k of allKeywordsFlat) m[k.id] = k.group_id
+    return m
+  }, [keywordGroupMap, allKeywordsFlat])
+
   const scopedMentions = useMemo(
-    () => allMentionsData.filter(m => allowedGroupIds.includes(m.keywordGroup)),
-    [allMentionsData, allowedGroupIds]
-  )
-  const scopedKeywordGroups = useMemo(
-    () => keywordGroups.filter(g => allowedGroupIds.includes(g.id)),
-    [keywordGroups, allowedGroupIds]
+    () => allMentionsData
+      .filter(m => (m.keywordMatched || []).some(id => effKeywordIds.has(id)))
+      .map(m => {
+        const g = (m.keywordMatched || []).map(id => effGroupMap[id]).find(Boolean)
+        return g && g !== m.keywordGroup ? { ...m, keywordGroup: g } : m
+      }),
+    [allMentionsData, effKeywordIds, effGroupMap]
   )
   const scopedKeywordsFlat = useMemo(
-    () => allKeywordsFlat.filter(k => allowedGroupIds.includes(k.group_id)),
-    [allKeywordsFlat, allowedGroupIds]
+    () => allKeywordsFlat
+      .filter(k => effKeywordIds.has(k.id))
+      .map(k => ({ ...k, group_id: effGroupMap[k.id] || k.group_id })),
+    [allKeywordsFlat, effKeywordIds, effGroupMap]
+  )
+  const scopedKeywordGroups = useMemo(
+    () => keywordGroups
+      .filter(g => allowedGroupIds.includes(g.id))
+      .map(g => ({
+        ...g,
+        keywords: scopedKeywordsFlat
+          .filter(k => k.group_id === g.id)
+          .map(k => ({ id: k.id, term: k.term, matchType: k.match_type, groupId: g.id, groupColor: g.color })),
+      })),
+    [keywordGroups, allowedGroupIds, scopedKeywordsFlat]
   )
 
   // Mentions with all filters applied except source — used for accurate source counts

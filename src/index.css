@@ -2,6 +2,51 @@
 @tailwind components;
 @tailwind utilities;
 
+/* shadcn/ui design tokens — mapped to the Edgenta brand palette.
+   Values are HSL channels so Tailwind's <alpha-value> (e.g. bg-primary/90) works. */
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 9%;
+    --primary: 231 64% 45%;            /* #2940BE */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 9% 95%;           /* surface-strong */
+    --secondary-foreground: 0 0% 9%;
+    --muted-foreground: 220 5% 47%;
+    --accent: 240 9% 95%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 22 81% 55%;         /* brand negative #E97132 */
+    --destructive-foreground: 0 0% 100%;
+    --border: 240 3% 90%;              /* hairline */
+    --input: 240 3% 90%;
+    --ring: 231 64% 45%;
+  }
+  .dark {
+    --background: 0 0% 9%;
+    --foreground: 0 0% 100%;
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 100%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 231 70% 63%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 100%;
+    --muted-foreground: 213 6% 71%;
+    --accent: 0 0% 15%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 22 81% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 231 70% 63%;
+  }
+}
+
 @keyframes slideUp {
   from { transform: translateY(100%); }
   to   { transform: translateY(0); }
@@ -10,6 +55,18 @@
 @keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
+}
+
+/* Login — slow drifting aurora blobs on the brand panel */
+@keyframes aurora {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(24px, -32px) scale(1.18); }
+}
+
+/* Login — sign-in card entrance */
+@keyframes login-rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 /* Safe area padding for bottom nav — value is naturally 0px in Safari browser, ~34px in PWA */

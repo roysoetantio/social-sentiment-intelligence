@@ -26,15 +26,19 @@ const PRESET_CHART = {
 }
 
 export default function Overview() {
-  const { globalFilteredMentions: filteredMentions, activePreset, setDateRange } = useDashboard()
-  const { fullName } = useAuth()
+  const { globalFilteredMentions: filteredMentions, activePreset, setDateRange, allKeywordsFlat } = useDashboard()
+  const { fullName, isSuperAdmin, viewDepartment, department } = useAuth()
   const navigate = useNavigate()
   const { days, granularity } = PRESET_CHART[activePreset] || PRESET_CHART['1m']
   const [digest, setDigest] = useState(undefined)
 
+  // The tenant whose digest we show: super admins follow the department switcher.
+  const currentDepartment = isSuperAdmin ? viewDepartment : department
+
   useEffect(() => {
-    fetchAIDigest().then(data => setDigest(data ?? null))
-  }, [])
+    setDigest(undefined)
+    fetchAIDigest(currentDepartment).then(data => setDigest(data ?? null))
+  }, [currentDepartment])
 
   const handleTimelineClick = useCallback((dateKey) => {
     let start, end
@@ -87,7 +91,11 @@ export default function Overview() {
     [filteredMentions]
   )
 
-  const topKeyword = allKeywords.find(k => k.id === kpis.topKeyword)
+  // Prefer the real (tenant-scoped) keywords from Supabase; fall back to the
+  // hardcoded offline list only if not found there.
+  const topKeyword =
+    allKeywordsFlat.find(k => k.id === kpis.topKeyword) ||
+    allKeywords.find(k => k.id === kpis.topKeyword)
 
   const greeting = (() => {
     const h = parseInt(new Date().toLocaleString('en-US', { hour: 'numeric', hour12: false, timeZone: 'Asia/Kuala_Lumpur' }), 10)

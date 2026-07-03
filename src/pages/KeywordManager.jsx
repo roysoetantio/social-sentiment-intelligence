@@ -6,9 +6,11 @@ import {
 } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useDashboard } from '../context/DashboardContext'
+import { useAuth } from '../context/AuthContext'
 import isPWA from '../utils/isPWA'
 import { supabase } from '../lib/supabase'
 import { BRAND_COLORS, SENTIMENT_COLORS, STATUS_COLORS } from '../constants/colors'
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import clsx from 'clsx'
 
 const getHealthStatus = (total, positive, negative) => {
@@ -170,55 +172,21 @@ function GroupNameEditor({ group, onSave, onCancel }) {
   )
 }
 
-function DeleteKeywordModal({ keyword, mentionCount, onConfirm, onCancel, saving }) {
-  const [choice, setChoice] = useState(null)
-
+function DeleteKeywordModal({ keyword, mentionCount, tenant, onConfirm, onCancel, saving }) {
   return (
     <div className="fixed inset-0 z-50 flex justify-center bg-black/40 px-4 animate-fade-in" style={{ alignItems: 'flex-start', paddingTop: '8vh' }}>
       <div className="bg-white dark:bg-surface-dark-elevated rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-transparent dark:border-white/8 animate-modal-in">
         <div className="p-5 border-b border-hairline dark:border-white/8">
-          <h3 className="text-sm font-semibold text-ink dark:text-on-dark">Delete "{keyword.term}"</h3>
-          <p className="text-xs text-muted dark:text-on-dark-soft mt-0.5">
-            This keyword has <span className="font-semibold text-body dark:text-on-dark-soft">{mentionCount} mention{mentionCount !== 1 ? 's' : ''}</span> in the database. What should happen to them?
-          </p>
+          <h3 className="text-sm font-semibold text-ink dark:text-on-dark">Remove "{keyword.term}"{tenant ? ` from ${tenant}` : ''}?</h3>
         </div>
 
-        <div className="p-5 space-y-3">
-          <button
-            onClick={() => setChoice('hide')}
-            className={clsx(
-              'w-full text-left rounded-xl border-2 p-4 transition-all',
-              choice === 'hide' ? 'border-ink dark:border-white/30 bg-surface-strong dark:bg-white/8' : 'border-hairline dark:border-white/8 hover:border-hairline-strong dark:hover:border-white/20'
-            )}
-          >
-            <div className="flex items-center gap-3">
-              <div className={clsx('w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0', choice === 'hide' ? 'border-ink dark:border-white/50' : 'border-gray-300 dark:border-white/20')}>
-                {choice === 'hide' && <div className="w-2 h-2 rounded-full bg-ink dark:bg-on-dark" />}
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-ink dark:text-on-dark">Keep &amp; Hide</p>
-                <p className="text-xs text-muted dark:text-on-dark-soft mt-0.5">Mentions stay in Supabase but are hidden from all views and charts. Reversible.</p>
-              </div>
-            </div>
-          </button>
-
-          <button
-            onClick={() => setChoice('delete')}
-            className={clsx(
-              'w-full text-left rounded-xl border-2 p-4 transition-all',
-              choice === 'delete' ? 'border-red-400 bg-red-50 dark:bg-red-950/30' : 'border-hairline dark:border-white/8 hover:border-hairline-strong dark:hover:border-white/20'
-            )}
-          >
-            <div className="flex items-center gap-3">
-              <div className={clsx('w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0', choice === 'delete' ? 'border-red-400' : 'border-gray-300 dark:border-white/20')}>
-                {choice === 'delete' && <div className="w-2 h-2 rounded-full bg-red-400" />}
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-red-600">Delete permanently</p>
-                <p className="text-xs text-muted dark:text-on-dark-soft mt-0.5">Removes all {mentionCount} mention{mentionCount !== 1 ? 's' : ''} from Supabase. This cannot be undone.</p>
-              </div>
-            </div>
-          </button>
+        <div className="p-5">
+          <p className="text-xs leading-relaxed text-body dark:text-on-dark-soft">
+            This un-tags the keyword from {tenant || 'this tenant'} — it disappears from your views.
+            The keyword and its <span className="font-semibold text-ink dark:text-on-dark">{mentionCount} mention{mentionCount !== 1 ? 's' : ''}</span> are
+            kept for any other tenant that tracks it. If no tenant references it anymore, it's deactivated automatically.
+            Nothing is permanently deleted.
+          </p>
         </div>
 
         <div className="px-5 pb-5 flex gap-2">
@@ -229,15 +197,12 @@ function DeleteKeywordModal({ keyword, mentionCount, onConfirm, onCancel, saving
             Cancel
           </button>
           <button
-            onClick={() => onConfirm(choice)}
-            disabled={!choice || saving}
-            className={clsx(
-              'flex-1 py-2 text-xs font-medium text-on-dark rounded-lg transition-colors flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed',
-              choice === 'delete' ? 'bg-red-500 hover:bg-red-600' : 'bg-ink hover:bg-primary-active'
-            )}
+            onClick={onConfirm}
+            disabled={saving}
+            className="flex-1 py-2 text-xs font-medium text-on-dark rounded-lg transition-colors flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed bg-ink hover:bg-primary-active"
           >
             {saving && <Loader size={12} className="animate-spin" />}
-            {choice === 'delete' ? 'Remove Keyword & Delete Mentions' : choice === 'hide' ? 'Remove Keyword & Hide Mentions' : 'Select an option above'}
+            Remove from {tenant || 'tenant'}
           </button>
         </div>
       </div>
@@ -354,7 +319,10 @@ export default function KeywordManager() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const mobileGroupId = searchParams.get('g')
-  const { allMentions: filteredMentions, updateMentionGroups, reloadMentions } = useDashboard()
+  const { allMentions: filteredMentions, reloadMentions } = useDashboard()
+  const { isSuperAdmin, viewDepartment, department, refreshGroupAccess } = useAuth()
+  // The tenant this page is managing: super admins follow the sidebar switcher; others their own dept.
+  const currentDepartment = isSuperAdmin ? viewDepartment : department
   const { running, logs, fetchingIds, run: runIngest } = useIngest({ onDone: reloadMentions })
   const [showLog, setShowLog] = useState(false)
   const [groups, setGroups] = useState([])
@@ -378,21 +346,38 @@ export default function KeywordManager() {
     setTimeout(() => setToast(null), 3000)
   }
 
-  // Load from Supabase
+  // Load from Supabase — scoped to the current tenant (department).
+  // Folders come from department_group_access; keyword placement from keyword_tenants
+  // (falls back to keywords.group_id when the tenant-tags table isn't present yet).
   const loadKeywords = useCallback(async () => {
+    if (!currentDepartment) { setGroups([]); setSelectedGroup(null); setLoading(false); return }
     setLoading(true)
-    const [{ data: groupData }, { data: kwData }] = await Promise.all([
+
+    const [accessRes, tagsRes, groupRes, kwRes] = await Promise.all([
+      supabase.from('department_group_access').select('group_id').eq('department', currentDepartment),
+      supabase.from('keyword_tenants').select('keyword_id, group_id').eq('department', currentDepartment),
       supabase.from('keyword_groups').select('*').order('created_at'),
       supabase.from('keywords').select('*').eq('is_active', true).order('created_at'),
     ])
 
-    if (groupData) {
-      const merged = groupData.map(g => ({
+    const allowedIds = new Set((accessRes.data || []).map(a => a.group_id))
+    const groupData = groupRes.data || []
+    const kwData = kwRes.data || []
+    const useTags = !tagsRes.error && tagsRes.data != null
+    const tagGroupOf = new Map((tagsRes.data || []).map(t => [t.keyword_id, t.group_id]))
+    // Which folder a keyword sits in for this tenant.
+    const folderOf = (k) => (useTags ? tagGroupOf.get(k.id) : k.group_id)
+    // In tag mode only keywords tagged to this tenant are managed here.
+    const inTenant = (k) => (useTags ? tagGroupOf.has(k.id) : allowedIds.has(k.group_id))
+
+    const merged = groupData
+      .filter(g => allowedIds.has(g.id))
+      .map(g => ({
         id: g.id,
         name: g.name,
         color: g.color,
-        keywords: (kwData || [])
-          .filter(k => k.group_id === g.id)
+        keywords: kwData
+          .filter(k => inTenant(k) && folderOf(k) === g.id)
           .map(k => ({
             id: k.id,
             term: k.term,
@@ -401,12 +386,12 @@ export default function KeywordManager() {
             syncPaused: k.sync_paused || false,
           })),
       }))
-      setGroups(merged)
-      const fromUrl = mobileGroupId ? merged.find(g => String(g.id) === mobileGroupId) : null
-      if (!selectedGroup) setSelectedGroup(fromUrl || merged[0])
-    }
+    setGroups(merged)
+    const fromUrl = mobileGroupId ? merged.find(g => String(g.id) === mobileGroupId) : null
+    // Keep the current selection if it's still in scope, otherwise fall back to the first group.
+    setSelectedGroup(prev => (prev && merged.some(g => g.id === prev.id)) ? prev : (fromUrl || merged[0] || null))
     setLoading(false)
-  }, [])
+  }, [currentDepartment, mobileGroupId])
 
   useEffect(() => { loadKeywords() }, [loadKeywords])
 
@@ -439,22 +424,32 @@ export default function KeywordManager() {
   const handleSaveKeyword = async (groupId, kwData) => {
     setSaving(true)
     const isNew = !kwData.id || kwData.id.startsWith('kw-')
-    const payload = {
-      id: isNew ? crypto.randomUUID() : kwData.id,
-      group_id: groupId,
-      term: kwData.term,
-      aliases: kwData.aliases || [],
-      match_type: 'exact',
-      is_active: true,
+    let error
+    if (isNew) {
+      // Find-or-create the shared keyword and tag it for this tenant + folder.
+      // If the term already exists, this just adds the tag → instant access to
+      // its existing mentions, no re-crawl.
+      const res = await supabase.rpc('add_keyword', {
+        p_term: kwData.term,
+        p_aliases: kwData.aliases || [],
+        p_department: currentDepartment,
+        p_group_id: groupId,
+      })
+      error = res.error
+    } else {
+      // Editing term/aliases updates the shared keyword (affects every tenant tracking it).
+      const res = await supabase.from('keywords')
+        .update({ term: kwData.term, aliases: kwData.aliases || [] })
+        .eq('id', kwData.id)
+      error = res.error
     }
-
-    const { error } = await supabase.from('keywords').upsert(payload, { onConflict: 'id' })
 
     if (error) {
       console.error('[KeywordManager] save error:', error)
       showToast(`Failed: ${error.message}`, 'error')
     } else {
       showToast(`"${kwData.term}" saved`)
+      await refreshGroupAccess?.()
       await loadKeywords()
     }
     setSaving(false)
@@ -464,35 +459,39 @@ export default function KeywordManager() {
 
   const handleMoveKeyword = async (kwId, kwTerm, targetGroupId) => {
     const targetGroup = groups.find(g => g.id === targetGroupId)
-    const [{ error: kwError }, { error: mentionError }] = await Promise.all([
-      supabase.from('keywords').update({ group_id: targetGroupId }).eq('id', kwId),
-      supabase.from('mentions').update({ keyword_group: targetGroupId }).contains('keyword_matched', [kwId]),
-    ])
-    if (kwError || mentionError) {
+    // Moving = re-filing the keyword into a different folder for THIS tenant only.
+    // Mentions aren't touched (their folder is derived per-tenant at display time).
+    const { error } = await supabase.from('keyword_tenants')
+      .update({ group_id: targetGroupId })
+      .eq('keyword_id', kwId)
+      .eq('department', currentDepartment)
+    if (error) {
       showToast('Failed to move keyword', 'error')
     } else {
-      updateMentionGroups(kwId, targetGroupId)
       showToast(`"${kwTerm}" moved to ${targetGroup?.name}`)
+      await refreshGroupAccess?.()
       await loadKeywords()
     }
   }
 
-  const handleDeleteKeyword = async (choice) => {
+  const handleDeleteKeyword = async () => {
     if (!deleteModal) return
     const { kwId, kwTerm } = deleteModal
     setSaving(true)
-    const res = await fetch('/api/delete-mentions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ kwId, action: choice }),
+    // Tenant-safe removal: untag this keyword from the current tenant only.
+    // The shared keyword + its mentions stay for any other tenant that tracks it;
+    // the keyword is auto-deactivated only if no tenant references it anymore.
+    const { error } = await supabase.rpc('remove_keyword_tenant', {
+      p_keyword_id: kwId,
+      p_department: currentDepartment,
     })
-    const { ok, error } = await res.json()
-    if (!ok) {
-      showToast(`Failed: ${error}`, 'error')
+    if (error) {
+      showToast(`Failed: ${error.message}`, 'error')
     } else {
-      showToast(`"${kwTerm}" ${choice === 'hide' ? 'removed & mentions hidden' : 'deleted'}`)
+      showToast(`"${kwTerm}" removed from ${currentDepartment}`)
+      await refreshGroupAccess?.()
       await loadKeywords()
-      await new Promise(r => setTimeout(r, 500))
+      await new Promise(r => setTimeout(r, 300))
       await reloadMentions()
     }
     setSaving(false)
@@ -512,12 +511,15 @@ export default function KeywordManager() {
   }
 
   const handleDeleteGroup = async (groupId, groupName) => {
+    // Remove the tenant link first (FK), then the group itself.
+    await supabase.from('department_group_access').delete().eq('group_id', groupId)
     const { error } = await supabase.from('keyword_groups').delete().eq('id', groupId)
     if (error) {
       showToast('Failed to delete group', 'error')
     } else {
       showToast(`Group "${groupName}" deleted`)
       setSelectedGroup(null)
+      await refreshGroupAccess?.()
       await loadKeywords()
     }
   }
@@ -529,18 +531,30 @@ export default function KeywordManager() {
 
   const handleCreateGroup = async () => {
     if (!newGroupName.trim()) return
+    if (!currentDepartment) { showToast('No department selected', 'error'); return }
     const name = newGroupName.trim()
-    const id = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+    const base = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+    // Namespace the id by tenant so two departments can have same-named groups without collision.
+    const id = `${currentDepartment.toLowerCase()}-${base}`
     const colors = ['#2940BE', '#1490EA', '#732BCC', '#E97132', '#19C9A5', '#F59E0B', '#EF4444']
     const color = colors[groups.length % colors.length]
     const { error } = await supabase.from('keyword_groups').insert({ id, name, color })
     if (error) {
       showToast('Failed to create group', 'error')
+      return
+    }
+    // Link the new group to the current tenant so it's scoped correctly everywhere.
+    const { error: accessError } = await supabase
+      .from('department_group_access')
+      .insert({ department: currentDepartment, group_id: id })
+    if (accessError) {
+      showToast('Group created but tenant link failed', 'error')
     } else {
       showToast(`Group "${name}" created`)
-      setAddGroupModal(false)
-      await loadKeywords()
     }
+    setAddGroupModal(false)
+    await refreshGroupAccess?.()
+    await loadKeywords()
   }
 
   const selectedGroupData = groups.find(g => g.id === selectedGroup?.id) || groups[0]
@@ -563,6 +577,7 @@ export default function KeywordManager() {
         <DeleteKeywordModal
           keyword={{ id: deleteModal.kwId, term: deleteModal.kwTerm }}
           mentionCount={deleteModal.mentionCount}
+          tenant={currentDepartment}
           saving={saving}
           onConfirm={handleDeleteKeyword}
           onCancel={() => setDeleteModal(null)}
@@ -967,22 +982,23 @@ export default function KeywordManager() {
                       </div>
                       {movingKeyword === kw.id && (
                         <div className="flex items-center gap-2 mb-3">
-                          <select
-                            autoFocus
-                            className="flex-1 text-xs border border-hairline-strong dark:border-white/8 rounded-lg px-2 py-1.5 bg-white dark:bg-surface-dark-elevated dark:text-on-dark focus:outline-none focus:border-ink dark:focus:border-white/30"
-                            defaultValue=""
-                            onChange={e => {
-                              if (e.target.value) {
-                                handleMoveKeyword(kw.id, kw.term, e.target.value)
+                          <Select
+                            onValueChange={val => {
+                              if (val) {
+                                handleMoveKeyword(kw.id, kw.term, val)
                                 setMovingKeyword(null)
                               }
                             }}
                           >
-                            <option value="" disabled>Move to group…</option>
-                            {groups.filter(g => g.id !== selectedGroupData.id).map(g => (
-                              <option key={g.id} value={g.id}>{g.name}</option>
-                            ))}
-                          </select>
+                            <SelectTrigger className="flex-1 h-8 text-xs rounded-lg bg-white dark:bg-surface-dark-elevated border-hairline-strong dark:border-white/8">
+                              <SelectValue placeholder="Move to group…" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {groups.filter(g => g.id !== selectedGroupData.id).map(g => (
+                                <SelectItem key={g.id} value={g.id} className="text-xs">{g.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                       )}
                       <div className="flex items-center gap-2 mb-2">

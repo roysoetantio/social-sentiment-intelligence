@@ -1,9 +1,15 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import path from 'node:path'
 import ingestApiPlugin from './vite-plugin-ingest-api.js'
 
 export default defineConfig({
   plugins: [react(), ingestApiPlugin()],
+  resolve: {
+    alias: {
+      '@': path.resolve(process.cwd(), './src'),
+    },
+  },
   optimizeDeps: {
     include: [
       'sentiment',
@@ -19,6 +25,8 @@ export default defineConfig({
     ],
   },
   server: {
+    // Honor a PORT env var when provided (e.g. preview harness); otherwise Vite's default.
+    port: process.env.PORT ? Number(process.env.PORT) : undefined,
     allowedHosts: 'all',
     headers: {
       'ngrok-skip-browser-warning': 'true',

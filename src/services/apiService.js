@@ -112,13 +112,17 @@ const rowToMention = (row) => ({
   source: row.source,
 })
 
-export const fetchAIDigest = async () => {
-  const { data, error } = await supabase
+export const fetchAIDigest = async (department) => {
+  let q = supabase
     .from('ai_digest')
-    .select('content, generated_at')
+    .select('content, generated_at, department')
     .order('generated_at', { ascending: false })
     .limit(1)
-    .single()
+  // Scope to the current tenant's digest. RLS also enforces this, but filtering
+  // here ensures a super admin (who can read all) gets the right department's row.
+  if (department) q = q.eq('department', department)
+
+  const { data, error } = await q.maybeSingle()
 
   if (error || !data) return null
   return data

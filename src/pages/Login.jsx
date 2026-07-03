@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
-import { Loader2, AlertCircle } from 'lucide-react'
+import { Loader2, AlertCircle, ShieldCheck } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { Button } from '@/components/ui/button'
+import LoginDotGrid from '../components/auth/LoginDotGrid'
 
 // Microsoft logo (4-square) — inline so it works offline / under strict CSP
 const MicrosoftIcon = ({ size = 18 }) => (
@@ -34,47 +36,69 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-canvas-soft dark:bg-surface-dark px-4">
-      <div className="w-full max-w-sm">
-        <div className="flex flex-col items-center mb-8">
-          <img
-            src="/assets/uemedgenta-logo.png"
-            alt="UEM Edgenta"
-            className="h-9 w-auto object-contain mb-4"
-          />
-          <h1 className="text-lg font-semibold text-ink dark:text-on-dark tracking-tight">
-            Social Sentiment Intelligence
-          </h1>
-          <p className="text-sm text-muted dark:text-on-dark-soft mt-1">
-            Sign in with your Edgenta account
-          </p>
-        </div>
+    <div className="min-h-screen w-full bg-canvas p-0 dark:bg-surface-dark sm:p-4">
+      <div className="relative flex min-h-screen items-center justify-center overflow-hidden rounded-none border-0 bg-white px-6 py-12 dark:bg-surface-dark sm:min-h-[calc(100vh-2rem)] sm:rounded-[28px] sm:border sm:border-hairline-strong sm:dark:border-white/10">
+        {/* interactive dotted background — fills the whole container */}
+        <LoginDotGrid />
 
-        <div className="rounded-xl border border-hairline-strong dark:border-white/8 bg-canvas dark:bg-surface-dark-elevated p-6">
-          <button
-            type="button"
-            onClick={signInWithMicrosoft}
-            disabled={loading}
-            className="w-full h-11 flex items-center justify-center gap-2.5 rounded-md border border-hairline-strong dark:border-white/8 bg-canvas dark:bg-surface-dark text-sm font-medium text-ink dark:text-on-dark hover:bg-surface-strong dark:hover:bg-white/8 disabled:opacity-60 transition-colors"
-          >
-            {loading ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : (
-              <MicrosoftIcon size={18} />
-            )}
-            Sign in with Microsoft
-          </button>
+        {/* centered content — white container over the dotted background */}
+        <div className="relative z-10 flex flex-col items-stretch gap-12 rounded-3xl border border-hairline-strong bg-white px-6 py-12 shadow-sm dark:border-white/10 dark:bg-surface-dark-elevated sm:px-12 sm:py-14 lg:flex-row lg:items-stretch lg:gap-20">
+          {/* brand block — logo pinned top, headline pinned bottom */}
+          <div className="flex flex-col items-start justify-between gap-10 text-left lg:gap-0">
+            <img
+              src="/assets/uemedgenta-logo.png"
+              alt="UEM Edgenta"
+              className="h-12 w-auto object-contain"
+            />
+            <h2 className="whitespace-nowrap text-2xl font-semibold leading-[1.2] tracking-tight text-ink dark:text-on-dark lg:whitespace-normal">
+              Social Sentiment <br className="hidden lg:block" />Intelligence
+            </h2>
+          </div>
 
-          {error && (
-            <div className="flex items-start gap-2 mt-4 text-xs text-[#E97132]">
-              <AlertCircle size={14} className="flex-shrink-0 mt-0.5" />
-              <span>{error}</span>
+          {/* vertical divider */}
+          <div className="hidden w-px self-stretch bg-hairline dark:bg-white/10 lg:block" />
+
+          {/* sign-in card */}
+          <div className="w-full max-w-sm" style={{ animation: 'login-rise 0.5s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+            <p className="text-sm text-muted dark:text-on-dark-soft">
+              <span className="font-semibold text-ink dark:text-on-dark">Welcome.</span> Sign in to UEM Edgenta workspace to continue.
+            </p>
+
+            <div className="mt-8">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={signInWithMicrosoft}
+                disabled={loading}
+                className="group h-12 w-full gap-3 rounded-[8px] border-hairline-strong bg-canvas text-[0.9rem] font-medium text-ink shadow-sm transition-colors hover:bg-surface-strong disabled:opacity-60 dark:border-white/10 dark:bg-surface-dark-elevated dark:text-on-dark dark:hover:bg-white/8"
+              >
+                {loading ? (
+                  <Loader2 size={18} className="animate-spin" />
+                ) : (
+                  <MicrosoftIcon size={18} />
+                )}
+                {loading ? 'Redirecting…' : 'Continue with Microsoft'}
+              </Button>
+
+              {error && (
+                <div className="mt-4 flex items-start gap-2 rounded-lg border border-[#E97132]/20 bg-[#E97132]/5 px-3 py-2.5 text-xs text-[#E97132]">
+                  <AlertCircle size={14} className="mt-0.5 flex-shrink-0" />
+                  <span>{error}</span>
+                </div>
+              )}
             </div>
-          )}
 
-          <p className="text-[0.6875rem] leading-relaxed text-muted dark:text-on-dark-soft mt-4 text-center">
-            Access is restricted to approved users. If you can't sign in, contact your administrator.
-          </p>
+            <div className="mt-6 flex items-center gap-2 text-[0.6875rem] text-muted dark:text-on-dark-soft">
+              <ShieldCheck size={13} className="flex-shrink-0" />
+              <span>Secured by Microsoft Entra ID single sign-on.</span>
+            </div>
+
+            <div className="mt-8 border-t border-hairline dark:border-white/8 pt-5">
+              <p className="text-[0.6875rem] leading-relaxed text-muted dark:text-on-dark-soft">
+                Access is restricted to approved users. If you can't sign in, contact your administrator.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>

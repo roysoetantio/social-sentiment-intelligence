@@ -30,9 +30,11 @@ export default function Layout({ children }) {
 
   const { allMentions } = useDashboard()
   const { allowedGroupIds, department } = useAuth()
-  // The Admin page manages users and isn't scoped to keyword groups, so it must
-  // render even when the current view has no groups (e.g. super admin viewing Infra).
-  const noGroups = allowedGroupIds.length === 0 && location.pathname !== '/admin'
+  // Admin (user management) and Keyword Manager (where you create the first group)
+  // must render even when the current tenant has no groups yet.
+  const noGroups = allowedGroupIds.length === 0
+    && location.pathname !== '/admin'
+    && location.pathname !== '/keywords'
 
   const earliestDate = useMemo(() => {
     if (!allMentions.length) return null

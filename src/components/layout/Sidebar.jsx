@@ -8,11 +8,10 @@ import {
   X,
   LogOut,
   Users,
-  Building2,
-  ChevronDown,
 } from 'lucide-react'
 import { useDashboard } from '../../context/DashboardContext'
 import { useAuth } from '../../context/AuthContext'
+import { Select, SelectTrigger, SelectContent, SelectItem } from '@/components/ui/select'
 import clsx from 'clsx'
 
 const navItems = [
@@ -82,50 +81,52 @@ export default function Sidebar({ isOpen, onClose }) {
     >
       <Logo onClose={onClose} />
 
-      <nav className="flex-1 p-3 space-y-0.5 pt-4" onClick={onClose}>
-        {navItems.map(({ path, label, icon: Icon }) => (
-          <NavLink
-            key={path}
-            to={path}
-            end={path === '/'}
-            className={({ isActive }) =>
-              isActive ? 'nav-item-active' : 'nav-item'
-            }
-          >
-            <Icon size={16} style={{ color: '#787881' }} />
-            <span>{label}</span>
-          </NavLink>
-        ))}
+      <nav className="flex-1 flex flex-col px-3 pt-4">
+        {/* Super admin: department view switcher — pinned above the nav */}
+        {isSuperAdmin && (
+          <div className="mb-3">
+            <Select value={viewDepartment} onValueChange={setViewDepartment}>
+              <SelectTrigger className="h-8 text-xs bg-canvas dark:bg-surface-dark border-hairline-strong dark:border-white/8">
+                <span className="truncate">
+                  <span className="text-muted dark:text-on-dark-soft">Viewing: </span>
+                  <span className="font-medium text-ink dark:text-on-dark">{viewDepartment}</span>
+                </span>
+              </SelectTrigger>
+              <SelectContent>
+                {departments.map(d => <SelectItem key={d} value={d} className="text-xs">{d}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        <div className="space-y-0.5" onClick={onClose}>
+          {navItems.map(({ path, label, icon: Icon }) => (
+            <NavLink
+              key={path}
+              to={path}
+              end={path === '/'}
+              className={({ isActive }) =>
+                isActive ? 'nav-item-active' : 'nav-item'
+              }
+            >
+              <Icon size={16} style={{ color: '#787881' }} />
+              <span>{label}</span>
+            </NavLink>
+          ))}
+        </div>
 
         {isSuperAdmin && (
-          <NavLink
-            to="/admin"
-            className={({ isActive }) => (isActive ? 'nav-item-active' : 'nav-item')}
-          >
-            <Users size={16} style={{ color: '#787881' }} />
-            <span>Admin</span>
-          </NavLink>
+          <div className="mt-auto pb-4" onClick={onClose}>
+            <NavLink
+              to="/admin"
+              className={({ isActive }) => (isActive ? 'nav-item-active' : 'nav-item')}
+            >
+              <Users size={16} style={{ color: '#787881' }} />
+              <span>Admin</span>
+            </NavLink>
+          </div>
         )}
       </nav>
-
-{/* Super admin: department view switcher */}
-      {isSuperAdmin && (
-        <div className="px-3 pb-2">
-          <label className="flex items-center gap-1.5 text-[0.625rem] font-medium uppercase tracking-wider text-muted dark:text-on-dark-soft mb-1.5 px-1">
-            <Building2 size={11} /> Viewing
-          </label>
-          <div className="relative">
-            <select
-              value={viewDepartment}
-              onChange={e => setViewDepartment(e.target.value)}
-              className="appearance-none w-full h-8 pl-2 pr-7 text-xs bg-canvas dark:bg-surface-dark border border-hairline-strong dark:border-white/8 rounded-md focus:outline-none focus:border-ink dark:focus:border-white/30 text-ink dark:text-on-dark"
-            >
-              {departments.map(d => <option key={d} value={d}>{d}</option>)}
-            </select>
-            <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
-          </div>
-        </div>
-      )}
 
       <div className="p-4 border-t border-hairline dark:border-white/8">
         <div className="flex items-center gap-2.5">

@@ -22,6 +22,9 @@ export default function TopBar({ title, shortTitle, onMenuClick }) {
   const showBack = location.pathname === '/keywords'
   const inGroupDetail = showBack && searchParams.has('g')
   const handleBack = () => inGroupDetail ? navigate('/keywords') : navigate('/more')
+  // Keyword Manager doesn't use the search/date filters — show them visually disabled.
+  const filtersDisabled = location.pathname === '/keywords'
+  const FILTERS_NA_MSG = "Search & date filters don't apply to Keyword Manager"
   const {
     searchQuery, setSearchQuery,
     dateRange, setDateRange,
@@ -57,13 +60,14 @@ export default function TopBar({ title, shortTitle, onMenuClick }) {
     const handler = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault()
+        if (filtersDisabled) return
         desktopSearchRef.current?.focus()
         desktopSearchRef.current?.select()
       }
     }
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
-  }, [])
+  }, [filtersDisabled])
 
   // Auto-focus search input when expanded
   useEffect(() => {
@@ -132,8 +136,11 @@ export default function TopBar({ title, shortTitle, onMenuClick }) {
             setMobileSearchOpen(v => !v)
             if (mobileSearchOpen) setSearchQuery('')
           }}
+          disabled={filtersDisabled}
+          title={filtersDisabled ? FILTERS_NA_MSG : undefined}
           className={clsx(
             'md:hidden flex-shrink-0 h-9 w-9 flex items-center justify-center rounded-md border transition-colors',
+            filtersDisabled && 'opacity-40 cursor-not-allowed',
             mobileSearchOpen || searchQuery
               ? 'border-ink text-ink bg-canvas dark:border-on-dark dark:text-on-dark'
               : 'border-hairline-strong text-muted hover:border-ink/30 dark:border-white/8 dark:text-on-dark-soft'
@@ -146,8 +153,11 @@ export default function TopBar({ title, shortTitle, onMenuClick }) {
         <div className="relative md:hidden flex-shrink-0" ref={presetDropdownRef}>
           <button
             onClick={() => setPresetDropdownOpen(v => !v)}
+            disabled={filtersDisabled}
+            title={filtersDisabled ? FILTERS_NA_MSG : undefined}
             className={clsx(
               'flex items-center gap-1 h-9 px-2.5 text-xs font-medium border rounded-md transition-colors',
+              filtersDisabled && 'opacity-40 cursor-not-allowed',
               presetDropdownOpen
                 ? 'border-ink text-ink bg-canvas dark:border-on-dark dark:text-on-dark'
                 : 'border-hairline-strong text-body bg-canvas hover:border-ink/30 dark:border-white/8 dark:text-on-dark-soft'
@@ -180,8 +190,11 @@ export default function TopBar({ title, shortTitle, onMenuClick }) {
         <div className="relative md:hidden flex-shrink-0" ref={mobilePickerRef}>
           <button
             onClick={openCalendar}
+            disabled={filtersDisabled}
+            title={filtersDisabled ? FILTERS_NA_MSG : undefined}
             className={clsx(
               'flex-shrink-0 h-9 w-9 flex items-center justify-center rounded-md border transition-colors',
+              filtersDisabled && 'opacity-40 cursor-not-allowed',
               pickerOpen
                 ? 'border-ink text-ink bg-canvas dark:border-on-dark dark:text-on-dark'
                 : 'border-hairline-strong text-muted hover:border-ink/30 dark:border-white/8 dark:text-on-dark-soft'
@@ -210,7 +223,10 @@ export default function TopBar({ title, shortTitle, onMenuClick }) {
         {/* ── Desktop controls (hidden on mobile) ── */}
 
         {/* Search — desktop */}
-        <div className="relative w-64 hidden md:block">
+        <div
+          className={clsx('relative w-64 hidden md:block', filtersDisabled && 'opacity-40 cursor-not-allowed')}
+          title={filtersDisabled ? FILTERS_NA_MSG : undefined}
+        >
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
           <input
             ref={desktopSearchRef}
@@ -218,7 +234,11 @@ export default function TopBar({ title, shortTitle, onMenuClick }) {
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             placeholder="Search mentions..."
-            className="w-full h-9 pl-8 pr-14 text-sm bg-canvas dark:bg-surface-dark-elevated border border-hairline-strong dark:border-white/8 rounded-md focus:outline-none focus:border-ink dark:focus:border-white/30 transition-colors text-ink dark:text-on-dark placeholder-muted"
+            disabled={filtersDisabled}
+            className={clsx(
+              'w-full h-9 pl-8 pr-14 text-sm bg-canvas dark:bg-surface-dark-elevated border border-hairline-strong dark:border-white/8 rounded-md focus:outline-none focus:border-ink dark:focus:border-white/30 transition-colors text-ink dark:text-on-dark placeholder-muted',
+              filtersDisabled && 'pointer-events-none'
+            )}
           />
           {searchQuery ? (
             <button onClick={() => setSearchQuery('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-ink">
@@ -232,13 +252,21 @@ export default function TopBar({ title, shortTitle, onMenuClick }) {
         </div>
 
         {/* Date presets — desktop */}
-        <div className="hidden md:flex items-center gap-1 h-9 bg-canvas dark:bg-surface-dark-elevated border border-hairline-strong dark:border-white/8 rounded-md p-1">
+        <div
+          className={clsx(
+            'hidden md:flex items-center gap-1 h-9 bg-canvas dark:bg-surface-dark-elevated border border-hairline-strong dark:border-white/8 rounded-md p-1',
+            filtersDisabled && 'opacity-40 cursor-not-allowed'
+          )}
+          title={filtersDisabled ? FILTERS_NA_MSG : undefined}
+        >
           {presets.map(p => (
             <button
               key={p.value}
               onClick={() => setDatePreset(p.value)}
+              disabled={filtersDisabled}
               className={clsx(
                 'px-3 py-1 text-xs font-medium rounded transition-all',
+                filtersDisabled && 'pointer-events-none',
                 activePreset === p.value
                   ? 'bg-ink text-on-dark dark:bg-on-dark dark:text-ink'
                   : 'text-body dark:text-on-dark-soft hover:text-ink dark:hover:text-on-dark'
@@ -250,11 +278,17 @@ export default function TopBar({ title, shortTitle, onMenuClick }) {
         </div>
 
         {/* Date range picker — desktop */}
-        <div className="relative flex-shrink-0 hidden md:block" ref={pickerRef}>
+        <div
+          className={clsx('relative flex-shrink-0 hidden md:block', filtersDisabled && 'opacity-40 cursor-not-allowed')}
+          title={filtersDisabled ? FILTERS_NA_MSG : undefined}
+          ref={pickerRef}
+        >
           <button
             onClick={() => setPickerOpen(v => !v)}
+            disabled={filtersDisabled}
             className={clsx(
               'flex items-center justify-between gap-1.5 h-9 text-xs border rounded-md px-3 w-56 transition-colors',
+              filtersDisabled && 'pointer-events-none',
               pickerOpen
                 ? 'border-ink dark:border-on-dark text-ink dark:text-on-dark bg-canvas dark:bg-surface-dark-elevated'
                 : 'border-hairline-strong dark:border-white/8 text-body dark:text-on-dark-soft bg-canvas dark:bg-surface-dark-elevated hover:border-ink/30'

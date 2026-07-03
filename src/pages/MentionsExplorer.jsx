@@ -18,6 +18,8 @@ import { formatNum } from '../utils/format'
 import Sentiment from 'sentiment'
 import clsx from 'clsx'
 import AICard from '../components/common/AICard'
+import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 
 const sentimentAnalyzer = new Sentiment()
 
@@ -442,12 +444,11 @@ function DetailPanel({ mention, onClose, onSaved, onPrev, onNext, hasPrev, hasNe
           {/* Reason */}
           <div>
             <p className="text-[0.625rem] text-muted dark:text-on-dark-soft mb-1.5">Reason <span className="text-gray-300 dark:text-white/30">(optional)</span></p>
-            <textarea
+            <Textarea
               value={reason}
               onChange={e => setReason(e.target.value)}
               placeholder="e.g. Farewell post is celebratory, not negative…"
               rows={2}
-              className="form-textarea w-full"
             />
           </div>
 
@@ -660,18 +661,16 @@ export default function MentionsExplorer() {
                 </span>
               )}
             </button>
-            <div className="relative">
-              <select
-                value={sortBy}
-                onChange={e => setSortBy(e.target.value)}
-                className="text-xs border border-hairline-strong dark:border-white/8 rounded-md px-3 py-1.5 bg-canvas dark:bg-surface-dark-elevated text-body dark:text-on-dark-soft appearance-none pr-7 focus:outline-none focus:border-ink dark:focus:border-white/30"
-              >
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="h-8 w-auto gap-1 text-xs bg-canvas dark:bg-surface-dark-elevated border-hairline-strong dark:border-white/8 text-body dark:text-on-dark-soft">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
                 {SORT_OPTIONS.map(o => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
+                  <SelectItem key={o.value} value={o.value} className="text-xs">{o.label}</SelectItem>
                 ))}
-              </select>
-              <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
-            </div>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
