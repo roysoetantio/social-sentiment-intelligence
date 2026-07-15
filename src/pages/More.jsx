@@ -42,27 +42,31 @@ export default function More() {
         </div>
       </div>
 
-      {/* Menu */}
-      <div className="rounded-xl border border-hairline dark:border-white/8 bg-white dark:bg-white/4 overflow-hidden">
-        <button
-          onClick={() => navigate('/keywords')}
-          className="w-full flex items-center gap-3 px-4 py-4 hover:bg-surface-strong dark:hover:bg-white/8 transition-colors"
-        >
-          <Tags size={17} className="text-body dark:text-on-dark-soft flex-shrink-0" />
-          <span className="flex-1 text-sm text-left text-ink dark:text-on-dark">Keyword Manager</span>
-          <ChevronRight size={15} className="text-muted" />
-        </button>
-        {isSuperAdmin && (
-          <button
-            onClick={() => navigate('/admin')}
-            className="w-full flex items-center gap-3 px-4 py-4 border-t border-hairline dark:border-white/8 hover:bg-surface-strong dark:hover:bg-white/8 transition-colors"
-          >
-            <Users size={17} className="text-body dark:text-on-dark-soft flex-shrink-0" />
-            <span className="flex-1 text-sm text-left text-ink dark:text-on-dark">User Management</span>
-            <ChevronRight size={15} className="text-muted" />
-          </button>
-        )}
-      </div>
+      {/* Menu — viewers don't manage keywords */}
+      {(role !== 'viewer' || isSuperAdmin) && (
+        <div className="rounded-xl border border-hairline dark:border-white/8 bg-white dark:bg-white/4 overflow-hidden">
+          {role !== 'viewer' && (
+            <button
+              onClick={() => navigate('/keywords')}
+              className="w-full flex items-center gap-3 px-4 py-4 hover:bg-surface-strong dark:hover:bg-white/8 transition-colors"
+            >
+              <Tags size={17} className="text-body dark:text-on-dark-soft flex-shrink-0" />
+              <span className="flex-1 text-sm text-left text-ink dark:text-on-dark">Keyword Manager</span>
+              <ChevronRight size={15} className="text-muted" />
+            </button>
+          )}
+          {isSuperAdmin && (
+            <button
+              onClick={() => navigate('/admin')}
+              className="w-full flex items-center gap-3 px-4 py-4 border-t border-hairline dark:border-white/8 hover:bg-surface-strong dark:hover:bg-white/8 transition-colors first:border-t-0"
+            >
+              <Users size={17} className="text-body dark:text-on-dark-soft flex-shrink-0" />
+              <span className="flex-1 text-sm text-left text-ink dark:text-on-dark">User Management</span>
+              <ChevronRight size={15} className="text-muted" />
+            </button>
+          )}
+        </div>
+      )}
 
 {/* Settings */}
       <div>

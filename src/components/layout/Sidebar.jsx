@@ -100,7 +100,9 @@ export default function Sidebar({ isOpen, onClose }) {
         )}
 
         <div className="space-y-0.5" onClick={onClose}>
-          {navItems.map(({ path, label, icon: Icon }) => (
+          {navItems
+            .filter(({ path }) => path !== '/keywords' || role !== 'viewer')
+            .map(({ path, label, icon: Icon }) => (
             <NavLink
               key={path}
               to={path}

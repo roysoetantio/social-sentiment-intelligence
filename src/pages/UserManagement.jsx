@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import {
-  UserPlus, Trash2, Loader2, AlertCircle, Check, X, Search,
+  UserPlus, Trash2, Loader2, AlertCircle, X, Search,
   ArrowUp, ArrowDown, ChevronsUpDown,
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
@@ -13,6 +13,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Switch } from '@/components/ui/switch'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 
 const relTime = (ts) => (ts ? formatDistanceToNow(new Date(ts), { addSuffix: true }) : 'Never')
@@ -22,6 +23,10 @@ const ROLES = [
   { value: 'admin', label: 'Admin' },
   { value: 'super_admin', label: 'Super Admin' },
 ]
+
+// The master owner is a normal super admin on paper, but is protected: only they
+// can create/deactivate/remove other super admins, and they can never be touched.
+const MASTER_OWNER = 'roy.soetantio@edgenta.com'
 
 const roleBadge = {
   super_admin: 'bg-[#2940BE]/10 text-[#2940BE]',
@@ -41,6 +46,7 @@ const DEPT_FILTERS = ['All', ...DEPARTMENTS]
 
 export default function Admin() {
   const { user: me, isSuperAdmin } = useAuth()
+  const iAmMaster = me?.email === MASTER_OWNER
 
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
@@ -202,6 +208,18 @@ export default function Admin() {
             <TableBody>
               {visibleUsers.map(u => {
                 const isMe = u.email === me?.email
+                const isMaster = u.email === MASTER_OWNER
+                const isSuper = u.role === 'super_admin'
+                // Master owner is untouchable by everyone (incl. themselves).
+                // Other super admins can only be managed by the master owner.
+                const locked = isMaster || (isSuper ? !iAmMaster : isMe)
+                const lockReason = isMaster
+                  ? 'The master owner is protected'
+                  : isSuper
+                    ? 'Only the master owner can manage super admins'
+                    : isMe
+                      ? "You can't do this to yourself"
+                      : null
                 return (
                   <TableRow key={u.email}>
                     <TableCell>
@@ -215,23 +233,26 @@ export default function Admin() {
                     </TableCell>
                     <TableCell className="text-body dark:text-on-dark-soft">{u.department || '—'}</TableCell>
                     <TableCell>
-                      <button
-                        onClick={() => toggleActive(u)} disabled={isMe}
-                        title={isMe ? "You can't deactivate yourself" : (u.is_active ? 'Deactivate' : 'Activate')}
-                        className={`inline-flex items-center gap-1 h-6 px-2 rounded-md text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
-                          u.is_active ? 'bg-[#19C9A5]/10 text-[#0f9e80]' : 'bg-surface-strong text-muted dark:bg-white/8'
-                        }`}
-                      >
-                        {u.is_active ? <><Check size={11} /> Active</> : 'Inactive'}
-                      </button>
+                      <div className="inline-flex items-center gap-2">
+                        <Switch
+                          checked={u.is_active}
+                          onCheckedChange={() => toggleActive(u)}
+                          disabled={locked}
+                          aria-label={u.is_active ? 'Deactivate user' : 'Activate user'}
+                          title={lockReason || (u.is_active ? 'Deactivate' : 'Activate')}
+                        />
+                        <span className={`inline-block w-14 text-xs font-medium ${u.is_active ? 'text-[#0f9e80]' : 'text-muted'}`}>
+                          {u.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
                     </TableCell>
                     <TableCell className="text-body dark:text-on-dark-soft whitespace-nowrap" title={u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleString() : 'Never signed in'}>
                       {relTime(u.last_sign_in_at)}
                     </TableCell>
                     <TableCell className="text-right">
                       <button
-                        onClick={() => removeUser(u)} disabled={isMe}
-                        title={isMe ? "You can't remove yourself" : 'Remove user'}
+                        onClick={() => removeUser(u)} disabled={locked}
+                        title={lockReason || 'Remove user'}
                         className="h-7 w-7 inline-flex items-center justify-center rounded-md text-muted hover:text-error hover:bg-error/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                       >
                         <Trash2 size={14} />
@@ -247,6 +268,7 @@ export default function Admin() {
 
       {showAdd && (
         <AddUserModal
+          canAddSuperAdmin={iAmMaster}
           onClose={() => setShowAdd(false)}
           onError={setError}
           onAdded={() => { setShowAdd(false); load() }}
@@ -269,18 +291,25 @@ function Th({ label, sortKey, sort, onSort }) {
   )
 }
 
-function AddUserModal({ onClose, onError, onAdded }) {
+function AddUserModal({ canAddSuperAdmin, onClose, onError, onAdded }) {
   const [email, setEmail] = useState('')
   const [department, setDepartment] = useState(DEPARTMENTS[0])
   const [role, setRole] = useState('viewer')
   const [saving, setSaving] = useState(false)
   const [localErr, setLocalErr] = useState('')
 
+  // Only the master owner may create super admins.
+  const roleOptions = canAddSuperAdmin ? ROLES : ROLES.filter(r => r.value !== 'super_admin')
+
   const submit = async (e) => {
     e.preventDefault()
     setLocalErr('')
     const clean = email.trim().toLowerCase()
     if (!clean) return
+    if (role === 'super_admin' && !canAddSuperAdmin) {
+      setLocalErr('Only the master owner can add super admins.')
+      return
+    }
     const dept = role === 'super_admin' ? null : department
     setSaving(true)
     const { error } = await supabase.from('app_users').insert({ email: clean, department: dept, role })
@@ -310,7 +339,7 @@ function AddUserModal({ onClose, onError, onAdded }) {
               <Select value={role} onValueChange={setRole}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {ROLES.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
+                  {roleOptions.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
