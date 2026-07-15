@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import {
-  UserPlus, Trash2, ShieldCheck, Loader2, AlertCircle, Check, X, Search,
-  Users, SlidersHorizontal, Building2, ScrollText, ArrowUp, ArrowDown, ChevronsUpDown,
+  UserPlus, Trash2, Loader2, AlertCircle, Check, X, Search,
+  ArrowUp, ArrowDown, ChevronsUpDown,
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { supabase } from '../lib/supabase'
@@ -10,6 +10,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 
 const relTime = (ts) => (ts ? formatDistanceToNow(new Date(ts), { addSuffix: true }) : 'Never')
 
@@ -27,10 +31,10 @@ const roleBadge = {
 
 // Top-level admin sections. Only User Management is live; the rest are placeholders.
 const MAIN_TABS = [
-  { id: 'users', label: 'User Management', icon: Users, enabled: true },
-  { id: 'departments', label: 'Departments', icon: Building2, enabled: false },
-  { id: 'audit', label: 'Audit Log', icon: ScrollText, enabled: false },
-  { id: 'settings', label: 'Settings', icon: SlidersHorizontal, enabled: false },
+  { id: 'users', label: 'User Management', enabled: true },
+  { id: 'departments', label: 'Departments', enabled: false },
+  { id: 'audit', label: 'Audit Log', enabled: false },
+  { id: 'settings', label: 'Settings', enabled: false },
 ]
 
 const DEPT_FILTERS = ['All', ...DEPARTMENTS]
@@ -120,28 +124,21 @@ export default function Admin() {
 
   return (
     <div className="w-full space-y-5">
-      {/* Full-width main tab bar */}
-      <div className="flex items-stretch gap-1 border-b border-hairline dark:border-white/8">
-        {MAIN_TABS.map(t => {
-          const Icon = t.icon
-          const active = t.id === 'users'
-          return (
-            <button
+      {/* Main tab bar (shadcn Tabs) */}
+      <Tabs value="users">
+        <TabsList className="h-auto flex-wrap">
+          {MAIN_TABS.map(t => (
+            <TabsTrigger
               key={t.id}
+              value={t.id}
               disabled={!t.enabled}
               title={t.enabled ? undefined : 'Coming soon'}
-              className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 -mb-px transition-colors ${
-                active
-                  ? 'border-[#2940BE] text-[#2940BE] dark:text-[#6B80FF] dark:border-[#6B80FF]'
-                  : 'border-transparent text-muted dark:text-on-dark-soft cursor-not-allowed opacity-60'
-              }`}
             >
-              <Icon size={14} />
               {t.label}
-            </button>
-          )
-        })}
-      </div>
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
 
       {/* Summary */}
       <div className="flex flex-wrap gap-3">
@@ -191,63 +188,60 @@ export default function Admin() {
         ) : visibleUsers.length === 0 ? (
           <div className="py-12 text-center text-sm text-muted">No users{deptFilter !== 'All' ? ` in ${deptFilter}` : ''}.</div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-hairline dark:border-white/8 text-left">
-                  <Th label="Email" sortKey="email" sort={sort} onSort={toggleSort} />
-                  <Th label="Role" sortKey="role" sort={sort} onSort={toggleSort} />
-                  <Th label="Department" sortKey="department" sort={sort} onSort={toggleSort} />
-                  <Th label="Status" sortKey="status" sort={sort} onSort={toggleSort} />
-                  <Th label="Last login" sortKey="lastlogin" sort={sort} onSort={toggleSort} />
-                  <th className="px-4 py-2.5 w-10"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {visibleUsers.map(u => {
-                  const isMe = u.email === me?.email
-                  return (
-                    <tr key={u.email} className="border-b border-hairline dark:border-white/8 last:border-0 hover:bg-surface-strong/40 dark:hover:bg-white/4">
-                      <td className="px-4 py-3">
-                        <span className="font-medium text-ink dark:text-on-dark">{u.email}</span>
-                        {isMe && <span className="ml-1.5 text-[0.625rem] text-muted">(you)</span>}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[0.625rem] font-medium capitalize ${roleBadge[u.role] || roleBadge.viewer}`}>
-                          {u.role === 'super_admin' && <ShieldCheck size={10} />}
-                          {u.role.replace('_', ' ')}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-body dark:text-on-dark-soft">{u.department || '—'}</td>
-                      <td className="px-4 py-3">
-                        <button
-                          onClick={() => toggleActive(u)} disabled={isMe}
-                          title={isMe ? "You can't deactivate yourself" : (u.is_active ? 'Deactivate' : 'Activate')}
-                          className={`inline-flex items-center gap-1 h-6 px-2 rounded-md text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
-                            u.is_active ? 'bg-[#19C9A5]/10 text-[#0f9e80]' : 'bg-surface-strong text-muted dark:bg-white/8'
-                          }`}
-                        >
-                          {u.is_active ? <><Check size={11} /> Active</> : 'Inactive'}
-                        </button>
-                      </td>
-                      <td className="px-4 py-3 text-body dark:text-on-dark-soft whitespace-nowrap" title={u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleString() : 'Never signed in'}>
-                        {relTime(u.last_sign_in_at)}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <button
-                          onClick={() => removeUser(u)} disabled={isMe}
-                          title={isMe ? "You can't remove yourself" : 'Remove user'}
-                          className="h-7 w-7 inline-flex items-center justify-center rounded-md text-muted hover:text-error hover:bg-error/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <Th label="Email" sortKey="email" sort={sort} onSort={toggleSort} />
+                <Th label="Role" sortKey="role" sort={sort} onSort={toggleSort} />
+                <Th label="Department" sortKey="department" sort={sort} onSort={toggleSort} />
+                <Th label="Status" sortKey="status" sort={sort} onSort={toggleSort} />
+                <Th label="Last login" sortKey="lastlogin" sort={sort} onSort={toggleSort} />
+                <TableHead className="w-10" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {visibleUsers.map(u => {
+                const isMe = u.email === me?.email
+                return (
+                  <TableRow key={u.email}>
+                    <TableCell>
+                      <span className="font-medium text-ink dark:text-on-dark">{u.email}</span>
+                      {isMe && <span className="ml-1.5 text-[0.625rem] text-muted">(you)</span>}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary" className={`capitalize whitespace-nowrap ${roleBadge[u.role] || roleBadge.viewer}`}>
+                        {u.role.replace('_', ' ')}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-body dark:text-on-dark-soft">{u.department || '—'}</TableCell>
+                    <TableCell>
+                      <button
+                        onClick={() => toggleActive(u)} disabled={isMe}
+                        title={isMe ? "You can't deactivate yourself" : (u.is_active ? 'Deactivate' : 'Activate')}
+                        className={`inline-flex items-center gap-1 h-6 px-2 rounded-md text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                          u.is_active ? 'bg-[#19C9A5]/10 text-[#0f9e80]' : 'bg-surface-strong text-muted dark:bg-white/8'
+                        }`}
+                      >
+                        {u.is_active ? <><Check size={11} /> Active</> : 'Inactive'}
+                      </button>
+                    </TableCell>
+                    <TableCell className="text-body dark:text-on-dark-soft whitespace-nowrap" title={u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleString() : 'Never signed in'}>
+                      {relTime(u.last_sign_in_at)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <button
+                        onClick={() => removeUser(u)} disabled={isMe}
+                        title={isMe ? "You can't remove yourself" : 'Remove user'}
+                        className="h-7 w-7 inline-flex items-center justify-center rounded-md text-muted hover:text-error hover:bg-error/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
         )}
       </div>
 
@@ -266,12 +260,12 @@ function Th({ label, sortKey, sort, onSort }) {
   const active = sort.key === sortKey
   const Icon = !active ? ChevronsUpDown : sort.dir === 'asc' ? ArrowUp : ArrowDown
   return (
-    <th className="px-4 py-2.5 font-medium text-muted dark:text-on-dark-soft">
+    <TableHead>
       <button onClick={() => onSort(sortKey)} className="inline-flex items-center gap-1 hover:text-ink dark:hover:text-on-dark transition-colors">
         {label}
         <Icon size={12} className={active ? 'text-ink dark:text-on-dark' : 'opacity-50'} />
       </button>
-    </th>
+    </TableHead>
   )
 }
 
@@ -355,9 +349,11 @@ function AddUserModal({ onClose, onError, onAdded }) {
 
 function StatCard({ label, value }) {
   return (
-    <div className="rounded-xl border border-hairline dark:border-white/8 bg-white dark:bg-white/4 px-4 py-3 min-w-[120px]">
-      <div className="text-xl font-semibold text-ink dark:text-on-dark leading-none">{value}</div>
-      <div className="text-[0.6875rem] text-muted dark:text-on-dark-soft mt-1">{label}</div>
-    </div>
+    <Card className="min-w-[120px]">
+      <CardContent className="px-4 py-3">
+        <div className="text-xl font-semibold text-ink dark:text-on-dark leading-none">{value}</div>
+        <div className="text-[0.6875rem] text-muted dark:text-on-dark-soft mt-1">{label}</div>
+      </CardContent>
+    </Card>
   )
 }
