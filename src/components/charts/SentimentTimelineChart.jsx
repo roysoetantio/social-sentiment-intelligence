@@ -54,8 +54,11 @@ const CustomLegend = ({ hidden, onToggle }) => (
   </div>
 )
 
-export default function SentimentTimelineChart({ mentions, days = 30, granularity = 'day', height = '100%', onPointClick }) {
-  const data = useMemo(() => getTimelineData(mentions || [], days, granularity), [mentions, days, granularity])
+export default function SentimentTimelineChart({ mentions, start, end, granularity, height = '100%', onPointClick }) {
+  const data = useMemo(
+    () => getTimelineData(mentions || [], { start, end, granularity }),
+    [mentions, start && +new Date(start), end && +new Date(end), granularity]
+  )
   const [hidden, setHidden] = useState([])
 
   const handleToggle = (key) => {

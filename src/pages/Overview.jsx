@@ -4,7 +4,7 @@ import { MessageSquare, TrendingUp, TrendingDown, AlertTriangle, Tag, BarChart2,
 import { parseISO, startOfMonth, endOfMonth, startOfWeek, endOfWeek, startOfDay, endOfDay, startOfHour, endOfHour, parse } from 'date-fns'
 import { useDashboard } from '../context/DashboardContext'
 import { useAuth } from '../context/AuthContext'
-import { getKPIs } from '../data/analytics'
+import { getKPIs, pickGranularity } from '../data/analytics'
 import { getAllKeywords, getGroupById } from '../data/fallbackKeywords'
 import KPICard from '../components/common/KPICard'
 import MentionCard from '../components/common/MentionCard'
@@ -17,19 +17,12 @@ import { formatNum } from '../utils/format'
 import AICard from '../components/common/AICard'
 import { fetchAIDigest } from '../services/apiService'
 
-const PRESET_CHART = {
-  'today': { days: 1,   granularity: 'hour'  },
-  '7d':    { days: 7,   granularity: 'day'   },
-  '1m':    { days: 30,  granularity: 'day'   },
-  '3m':    { days: 90,  granularity: 'week'  },
-  '1y':    { days: 365, granularity: 'month' },
-}
-
 export default function Overview() {
-  const { globalFilteredMentions: filteredMentions, activePreset, setDateRange, allKeywordsFlat } = useDashboard()
+  const { globalFilteredMentions: filteredMentions, dateRange, setDateRange, allKeywordsFlat } = useDashboard()
   const { fullName, isSuperAdmin, viewDepartment, department } = useAuth()
   const navigate = useNavigate()
-  const { days, granularity } = PRESET_CHART[activePreset] || PRESET_CHART['1m']
+  // Bucket size follows the actual selected range, so presets and manual ranges match.
+  const granularity = useMemo(() => pickGranularity(dateRange.start, dateRange.end), [dateRange])
   const [digest, setDigest] = useState(undefined)
 
   // The tenant whose digest we show: super admins follow the department switcher.
@@ -210,7 +203,7 @@ export default function Overview() {
               <span className="text-xs text-muted">{filteredMentions.length} mentions in period</span>
             </div>
             <div className="flex-1 min-h-0">
-              <SentimentTimelineChart mentions={filteredMentions} days={days} granularity={granularity} onPointClick={handleTimelineClick} />
+              <SentimentTimelineChart mentions={filteredMentions} start={dateRange.start} end={dateRange.end} granularity={granularity} onPointClick={handleTimelineClick} />
             </div>
           </div>
           <div className="flex flex-col sm:flex-row gap-3 lg:gap-4 lg:flex-1 lg:min-h-[290px] lg:max-h-[600px]">

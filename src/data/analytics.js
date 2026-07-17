@@ -23,20 +23,33 @@ const tally = (arr) => ({
 })
 
 // granularity: 'hour' | 'day' | 'week' | 'month'
-export const getTimelineData = (mentions, days = 30, granularity = 'day') => {
-  const end = new Date()
-  const start = subDays(end, days)
+// Pick a sensible bucket size from the span of the selected range.
+export const pickGranularity = (start, end) => {
+  const span = Math.round((new Date(end).getTime() - new Date(start).getTime()) / 86400000)
+  if (span <= 1) return 'hour'
+  if (span <= 31) return 'day'
+  if (span <= 120) return 'week'
+  return 'month'
+}
+
+// Build a sentiment timeline over an explicit [start, end] window so that both
+// presets and manually-picked ranges bucket over exactly what was selected.
+// opts: { start, end, granularity } — granularity defaults to the span-derived one.
+export const getTimelineData = (mentions, opts = {}) => {
+  const end = opts.end ? new Date(opts.end) : new Date()
+  const start = opts.start ? new Date(opts.start) : subDays(end, 30)
+  const granularity = opts.granularity || pickGranularity(start, end)
   const inRange = mentions.filter(m => {
     const d = new Date(m.publishedAt)
     return d >= start && d <= end
   })
 
   if (granularity === 'hour') {
-    const todayStart = startOfDay(end)
+    const dayStart = startOfDay(start)
     const buckets = bucketMentions(inRange, d => format(startOfHour(d), 'yyyy-MM-dd HH'))
     const result = []
     for (let h = 0; h < 24; h++) {
-      const slot = new Date(todayStart.getTime() + h * 60 * 60 * 1000)
+      const slot = new Date(dayStart.getTime() + h * 60 * 60 * 1000)
       const key = format(slot, 'yyyy-MM-dd HH')
       result.push({ date: key, displayDate: format(slot, 'ha'), ...tally(buckets[key] || []) })
     }
@@ -45,13 +58,12 @@ export const getTimelineData = (mentions, days = 30, granularity = 'day') => {
 
   if (granularity === 'month') {
     const buckets = bucketMentions(inRange, d => format(startOfMonth(d), 'yyyy-MM'))
-    // Build month slots from start to end
     const result = []
     let cursor = startOfMonth(start)
     while (cursor <= end) {
       const key = format(cursor, 'yyyy-MM')
       result.push({ date: key, displayDate: format(cursor, 'MMM yyyy'), ...tally(buckets[key] || []) })
-      cursor = startOfMonth(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))
+      cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1)
     }
     return result
   }
@@ -69,12 +81,14 @@ export const getTimelineData = (mentions, days = 30, granularity = 'day') => {
   }
 
   // day
+  const buckets = bucketMentions(inRange, d => format(startOfDay(d), 'yyyy-MM-dd'))
   const result = []
-  for (let i = days - 1; i >= 0; i--) {
-    const date = subDays(end, i)
-    const dateStr = format(date, 'yyyy-MM-dd')
-    const dayMentions = inRange.filter(m => format(new Date(m.publishedAt), 'yyyy-MM-dd') === dateStr)
-    result.push({ date: dateStr, displayDate: format(date, 'MMM d'), ...tally(dayMentions) })
+  let cursor = startOfDay(start)
+  const endDay = startOfDay(end)
+  while (cursor <= endDay) {
+    const key = format(cursor, 'yyyy-MM-dd')
+    result.push({ date: key, displayDate: format(cursor, 'MMM d'), ...tally(buckets[key] || []) })
+    cursor = new Date(cursor.getTime() + 24 * 60 * 60 * 1000)
   }
   return result
 }

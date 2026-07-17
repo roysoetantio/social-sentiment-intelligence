@@ -87,7 +87,7 @@ function useSentimentLegend() {
 }
 
 export default function SentimentAnalytics() {
-  const { globalFilteredMentions: filteredMentions, setHeatmapFilter } = useDashboard()
+  const { globalFilteredMentions: filteredMentions, dateRange, setHeatmapFilter } = useDashboard()
   const navigate = useNavigate()
   const [platformHidden, togglePlatform] = useSentimentLegend()
   const [groupHidden, toggleGroup] = useSentimentLegend()
@@ -100,7 +100,10 @@ export default function SentimentAnalytics() {
   const platformData = useMemo(() => getPlatformBreakdown(filteredMentions), [filteredMentions])
   const groupStats = useMemo(() => getKeywordGroupStats(filteredMentions), [filteredMentions])
   const topEmotions = useMemo(() => getTopEmotions(filteredMentions), [filteredMentions])
-  const timelineData = useMemo(() => getTimelineData(filteredMentions, 90), [filteredMentions])
+  const timelineData = useMemo(
+    () => getTimelineData(filteredMentions, { start: dateRange.start, end: dateRange.end }),
+    [filteredMentions, dateRange]
+  )
 
   const groupBarData = useMemo(() => {
     return KEYWORD_GROUPS.map(g => ({
@@ -177,7 +180,7 @@ export default function SentimentAnalytics() {
 
         <div className="card">
           <h2 className="text-base font-semibold text-ink tracking-tight mb-4">Sentiment Over Time</h2>
-          <SentimentTimelineChart mentions={filteredMentions} days={90} height={240} />
+          <SentimentTimelineChart mentions={filteredMentions} start={dateRange.start} end={dateRange.end} height={240} />
         </div>
       </div>
 

@@ -78,6 +78,17 @@
   }
 }
 
+/* Theme toggle (View Transitions API): the new theme reveals as a circle that
+   expands from the click point. Disable the default cross-fade so only the
+   clip-path circle (animated in JS) drives the effect; keep the new view on top. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-old(root) { z-index: 0; }
+::view-transition-new(root) { z-index: 1; }
+
 @keyframes slideUp {
   from { transform: translateY(100%); }
   to   { transform: translateY(0); }
