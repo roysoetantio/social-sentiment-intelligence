@@ -29,22 +29,22 @@ const CustomTooltip = ({ active, payload, label }) => {
   const total = payload.reduce((s, p) => s + (p.value || 0), 0)
   return (
     <div className="chart-tooltip min-w-[150px]">
-      <p className="font-semibold text-ink dark:text-on-dark mb-2">{label}</p>
+      <p className="font-semibold text-ink mb-2">{label}</p>
       {payload.filter(p => p.value > 0).map(p => {
         const group = KEYWORD_GROUPS.find(g => g.id === p.dataKey)
         return (
           <div key={p.dataKey} className="flex items-center justify-between gap-3 mb-1">
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.fill }} />
-              <span className="text-body dark:text-on-dark-soft">{group?.name || p.dataKey}</span>
+              <span className="text-body">{group?.name || p.dataKey}</span>
             </div>
-            <span className="font-medium dark:text-on-dark">{p.value}</span>
+            <span className="font-medium">{p.value}</span>
           </div>
         )
       })}
-      <div className="mt-1.5 pt-1.5 border-t border-hairline dark:border-white/8 flex justify-between">
-        <span className="text-body dark:text-on-dark-soft">Total</span>
-        <span className="font-semibold dark:text-on-dark">{total}</span>
+      <div className="mt-1.5 pt-1.5 border-t border-hairline flex justify-between">
+        <span className="text-body">Total</span>
+        <span className="font-semibold">{total}</span>
       </div>
     </div>
   )
@@ -63,7 +63,7 @@ export default function MentionVolumeChart({ mentions, height = 260 }) {
             onClick={() => setPeriod(p)}
             className={clsx(
               'px-3 py-1 text-xs font-medium rounded-md transition-all capitalize',
-              period === p ? 'bg-ink dark:bg-on-dark text-on-dark dark:text-ink' : 'bg-surface-strong dark:bg-white/8 text-body dark:text-on-dark-soft hover:bg-hairline-strong dark:hover:bg-white/15'
+              period === p ? 'bg-ink dark:bg-on-dark text-on-dark dark:text-[#171717]' : 'bg-surface-strong text-body hover:bg-hairline-strong dark:hover:bg-white/15'
             )}
           >
             {p}
@@ -75,7 +75,7 @@ export default function MentionVolumeChart({ mentions, height = 260 }) {
       ) : (
         <ResponsiveContainer width="100%" height={height}>
           <BarChart data={data} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
             <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#9ca3af' }} tickLine={false} axisLine={{ stroke: '#e5e7eb' }} />
             <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} tickLine={false} axisLine={false} />
             <Tooltip content={<CustomTooltip />} />

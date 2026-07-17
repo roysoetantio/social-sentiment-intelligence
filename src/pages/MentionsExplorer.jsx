@@ -45,14 +45,14 @@ function AfinnTooltip({ text, fullText }) {
   }, [text, fullText])
 
   return (
-    <div className="absolute left-0 top-full mt-2 z-50 bg-white dark:bg-surface-dark-elevated border border-hairline-strong dark:border-white/8 rounded-xl shadow-xl p-3 w-72">
+    <div className="absolute left-0 top-full mt-2 z-50 bg-surface-card border border-hairline-strong rounded-xl shadow-xl p-3 w-72">
       <p className="section-label mb-2">How AFINN calculated this</p>
       <div className="flex items-center gap-3 mb-3">
         <div className="text-center">
-          <p className="text-lg font-bold text-ink dark:text-on-dark">{result.score}</p>
-          <p className="text-[0.625rem] text-muted dark:text-on-dark-soft">Raw score</p>
+          <p className="text-lg font-bold text-ink">{result.score}</p>
+          <p className="text-[0.625rem] text-muted">Raw score</p>
         </div>
-        <div className="flex-1 text-xs text-body dark:text-on-dark-soft leading-relaxed">
+        <div className="flex-1 text-xs text-body leading-relaxed">
           Each matched word has a value from −5 to +5. Scores are summed, then divided by 10 and clamped to [−1, 1].
         </div>
       </div>
@@ -79,7 +79,7 @@ function AfinnTooltip({ text, fullText }) {
       {result.positive.length === 0 && result.negative.length === 0 && (
         <p className="text-xs text-muted">No AFINN-recognised words found in this text.</p>
       )}
-      <p className="text-[0.625rem] text-gray-300 dark:text-white/30 mt-2 border-t border-hairline dark:border-white/8 pt-2">
+      <p className="text-[0.625rem] text-gray-300 dark:text-white/30 mt-2 border-t border-hairline pt-2">
         Threshold: &gt;+0.05 = Positive · &lt;−0.05 = Negative · else Neutral
       </p>
     </div>
@@ -181,34 +181,34 @@ function DetailPanel({ mention, onClose, onSaved, onPrev, onNext, hasPrev, hasNe
   }
 
   return (
-    <div className={`fixed inset-0 z-50 md:top-16 md:inset-x-auto md:right-0 md:bottom-0 md:w-96 md:z-30 bg-canvas dark:bg-surface-dark-elevated border-l border-hairline-strong dark:border-white/8 flex flex-col shadow-xl ${closing ? 'slide-out-right' : 'slide-in-right'}`}>
-      <div className="flex items-center gap-2 px-4 border-b border-hairline dark:border-white/8 h-14 flex-shrink-0">
+    <div className={`fixed inset-0 z-50 md:top-16 md:inset-x-auto md:right-0 md:bottom-0 md:w-96 md:z-30 bg-canvas border-l border-hairline-strong flex flex-col shadow-xl ${closing ? 'slide-out-right' : 'slide-in-right'}`}>
+      <div className="flex items-center gap-2 px-4 border-b border-hairline h-14 flex-shrink-0">
         {/* Back — mobile only */}
-        <button onClick={handleClose} className="md:hidden p-1 text-muted hover:text-ink dark:hover:text-on-dark transition-colors flex-shrink-0">
+        <button onClick={handleClose} className="md:hidden p-1 text-muted hover:text-ink transition-colors flex-shrink-0">
           <ArrowLeft size={18} />
         </button>
-        <h3 className="flex-1 text-base md:text-lg font-semibold text-ink dark:text-on-dark tracking-tight truncate">Mention Detail</h3>
+        <h3 className="flex-1 text-base md:text-lg font-semibold text-ink tracking-tight truncate">Mention Detail</h3>
         <div className="flex items-center gap-1 flex-shrink-0">
           <button
             onClick={onPrev}
             disabled={!hasPrev}
-            className="md:hidden p-1.5 rounded-md hover:bg-surface-strong dark:hover:bg-white/8 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            className="md:hidden p-1.5 rounded-md hover:bg-surface-strong transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             title="Previous mention"
           >
-            <ChevronUp size={16} className="text-body dark:text-on-dark-soft" />
+            <ChevronUp size={16} className="text-body" />
           </button>
           <button
             onClick={onNext}
             disabled={!hasNext}
-            className="md:hidden p-1.5 rounded-md hover:bg-surface-strong dark:hover:bg-white/8 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            className="md:hidden p-1.5 rounded-md hover:bg-surface-strong transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             title="Next mention"
           >
-            <ChevronDown size={16} className="text-body dark:text-on-dark-soft" />
+            <ChevronDown size={16} className="text-body" />
           </button>
           {/* Close — desktop only */}
           <button
             onClick={handleClose}
-            className="hidden md:flex p-1.5 rounded-md hover:bg-surface-strong dark:hover:bg-white/8 transition-colors text-muted hover:text-ink dark:hover:text-on-dark ml-1"
+            className="hidden md:flex p-1.5 rounded-md hover:bg-surface-strong transition-colors text-muted hover:text-ink ml-1"
             title="Close"
           >
             <X size={16} />
@@ -220,24 +220,24 @@ function DetailPanel({ mention, onClose, onSaved, onPrev, onNext, hasPrev, hasNe
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-sm font-semibold text-ink dark:text-on-dark">{mention.author.name}</p>
-            {isSocialUrl(mention.url) && <p className="text-xs text-muted dark:text-on-dark-soft">@{mention.author.handle}</p>}
+            <p className="text-sm font-semibold text-ink">{mention.author.name}</p>
+            {isSocialUrl(mention.url) && <p className="text-xs text-muted">@{mention.author.handle}</p>}
           </div>
           <div className="text-right">
-            <p className="text-xs text-muted dark:text-on-dark-soft">{mention.platform}</p>
-            <p className="text-[0.625rem] text-muted dark:text-on-dark-soft">{formatDateTime(mention.publishedAt)}</p>
+            <p className="text-xs text-muted">{mention.platform}</p>
+            <p className="text-[0.625rem] text-muted">{formatDateTime(mention.publishedAt)}</p>
           </div>
         </div>
 
         {/* Full text */}
-        <div className="bg-surface-strong dark:bg-white/8 rounded-lg p-3">
-          <p className="text-sm text-ink dark:text-on-dark leading-relaxed">{mention.text}</p>
+        <div className="bg-surface-strong rounded-lg p-3">
+          <p className="text-sm text-ink leading-relaxed">{mention.text}</p>
         </div>
 
         {/* AI Summary */}
         {mention.summary && (
           <AICard label="AI Summary">
-            <p className="text-sm text-ink dark:text-on-dark leading-relaxed">{mention.summary}</p>
+            <p className="text-sm text-ink leading-relaxed">{mention.summary}</p>
           </AICard>
         )}
 
@@ -254,14 +254,14 @@ function DetailPanel({ mention, onClose, onSaved, onPrev, onNext, hasPrev, hasNe
               />
               {showAfinn && <AfinnTooltip text={mention.text} fullText={mention.fullText} />}
             </div>
-            <span className="text-xs text-muted dark:text-on-dark-soft">Confidence: {Math.round(calcLiveConfidence(mention.text, mention.fullText) * 100)}%</span>
+            <span className="text-xs text-muted">Confidence: {Math.round(calcLiveConfidence(mention.text, mention.fullText) * 100)}%</span>
             {displayFlag && (
               <span className="text-[0.625rem] text-muted italic">
                 was <span className="font-medium">{mention.sentiment.originalLabel || mention.sentiment.label}</span>
               </span>
             )}
           </div>
-          <div className="mt-2 h-1.5 bg-surface-strong dark:bg-white/8 rounded-full overflow-hidden">
+          <div className="mt-2 h-1.5 bg-surface-strong rounded-full overflow-hidden">
             <div
               className="h-full rounded-full"
               style={{
@@ -326,7 +326,7 @@ function DetailPanel({ mention, onClose, onSaved, onPrev, onNext, hasPrev, hasNe
             <p className="section-label mb-1.5">Topics</p>
             <div className="flex flex-wrap gap-1">
               {mention.topics.map(t => (
-                <span key={t} className="px-2 py-0.5 bg-surface-strong dark:bg-white/8 text-body dark:text-on-dark-soft rounded text-xs">{t}</span>
+                <span key={t} className="px-2 py-0.5 bg-surface-strong text-body rounded text-xs">{t}</span>
               ))}
             </div>
           </div>
@@ -342,11 +342,11 @@ function DetailPanel({ mention, onClose, onSaved, onPrev, onNext, hasPrev, hasNe
               { icon: MessageCircle, label: 'Comments', value: mention.engagement.comments },
               { icon: Eye, label: 'Reach', value: mention.engagement.reach },
             ].map(({ icon: Icon, label, value }) => (
-              <div key={label} className="bg-surface-strong dark:bg-white/8 rounded-lg p-2.5 flex items-center gap-2">
-                <Icon size={13} className="text-muted dark:text-on-dark-soft" />
+              <div key={label} className="bg-surface-strong rounded-lg p-2.5 flex items-center gap-2">
+                <Icon size={13} className="text-muted" />
                 <div>
-                  <p className="text-[0.625rem] text-muted dark:text-on-dark-soft">{label}</p>
-                  <p className="text-xs font-semibold text-ink dark:text-on-dark">{formatNum(value)}</p>
+                  <p className="text-[0.625rem] text-muted">{label}</p>
+                  <p className="text-xs font-semibold text-ink">{formatNum(value)}</p>
                 </div>
               </div>
             ))}
@@ -360,7 +360,7 @@ function DetailPanel({ mention, onClose, onSaved, onPrev, onNext, hasPrev, hasNe
           <div>
             <p className="section-label mb-1.5">Source</p>
             <div className="flex items-center gap-1.5">
-              <span className="text-xs px-2 py-1 rounded-md bg-surface-strong dark:bg-white/8 border border-hairline-strong dark:border-white/8 text-body dark:text-on-dark-soft font-medium">
+              <span className="text-xs px-2 py-1 rounded-md bg-surface-strong border border-hairline-strong text-body font-medium">
                 {{
                   twitter135:    '🐦 Twitter',
                   serper_news:   '📰 Google News (Serper)',
@@ -381,7 +381,7 @@ function DetailPanel({ mention, onClose, onSaved, onPrev, onNext, hasPrev, hasNe
         )}
 
         {/* Analyst Review */}
-        <div className="border border-hairline-strong dark:border-white/8 rounded-xl p-3 space-y-3">
+        <div className="border border-hairline-strong rounded-xl p-3 space-y-3">
           <div className="flex items-center justify-between">
             <p className="section-label">Analyst Review</p>
             {reviewed && (
@@ -419,7 +419,7 @@ function DetailPanel({ mention, onClose, onSaved, onPrev, onNext, hasPrev, hasNe
 
           {/* Override sentiment buttons */}
           <div>
-            <p className="text-[0.625rem] text-muted dark:text-on-dark-soft mb-1.5">Override sentiment</p>
+            <p className="text-[0.625rem] text-muted mb-1.5">Override sentiment</p>
             <div className="flex gap-1.5">
               {SENTIMENT_OPTIONS.map(opt => (
                 <button
@@ -443,7 +443,7 @@ function DetailPanel({ mention, onClose, onSaved, onPrev, onNext, hasPrev, hasNe
 
           {/* Reason */}
           <div>
-            <p className="text-[0.625rem] text-muted dark:text-on-dark-soft mb-1.5">Reason <span className="text-gray-300 dark:text-white/30">(optional)</span></p>
+            <p className="text-[0.625rem] text-muted mb-1.5">Reason <span className="text-gray-300 dark:text-white/30">(optional)</span></p>
             <Textarea
               value={reason}
               onChange={e => setReason(e.target.value)}
@@ -465,7 +465,7 @@ function DetailPanel({ mention, onClose, onSaved, onPrev, onNext, hasPrev, hasNe
           {/* Exclude / Unexclude */}
           <div className={clsx(
             'rounded-lg px-3 py-2.5 flex items-center justify-between border',
-            excluded ? 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800/40' : 'bg-surface-strong dark:bg-white/8 border-hairline-strong dark:border-white/8'
+            excluded ? 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800/40' : 'bg-surface-strong border-hairline-strong'
           )}>
             <div>
               <p className={clsx('text-xs font-semibold', excluded ? 'text-red-600' : 'text-body')}>
@@ -481,7 +481,7 @@ function DetailPanel({ mention, onClose, onSaved, onPrev, onNext, hasPrev, hasNe
               className={clsx(
                 'text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-40',
                 excluded
-                  ? 'text-body dark:text-on-dark-soft border-gray-300 dark:border-white/20 bg-white dark:bg-white/8 hover:bg-surface-strong dark:hover:bg-white/12'
+                  ? 'text-body border-gray-300 dark:border-white/20 bg-surface-card hover:bg-surface-strong dark:hover:bg-white/12'
                   : 'text-red-600 border-red-300 dark:border-red-700/50 bg-white dark:bg-transparent hover:bg-red-50 dark:hover:bg-red-950/30'
               )}
             >
@@ -491,12 +491,12 @@ function DetailPanel({ mention, onClose, onSaved, onPrev, onNext, hasPrev, hasNe
         </div>
       </div>
 
-      <div className="p-4 border-t border-hairline dark:border-white/8">
+      <div className="p-4 border-t border-hairline">
         <a
           href={mention.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center justify-center gap-1.5 w-full py-2 text-sm font-medium text-ink dark:text-on-dark border border-hairline-strong dark:border-white/8 rounded-md hover:bg-surface-strong dark:hover:bg-white/8 transition-colors"
+          className="flex items-center justify-center gap-1.5 w-full py-2 text-sm font-medium text-ink border border-hairline-strong rounded-md hover:bg-surface-strong transition-colors"
         >
           <ExternalLink size={13} />
           View Original
@@ -621,13 +621,13 @@ export default function MentionsExplorer() {
 
       {/* Mobile filter drawer — slides up from bottom */}
       <div className={clsx(
-        'md:hidden fixed inset-x-0 bottom-0 z-50 bg-canvas dark:bg-surface-dark rounded-t-2xl shadow-2xl transition-transform duration-300 ease-out max-h-[85vh] flex flex-col',
+        'md:hidden fixed inset-x-0 bottom-0 z-50 bg-canvas rounded-t-2xl shadow-2xl transition-transform duration-300 ease-out max-h-[85vh] flex flex-col',
         filterDrawerOpen ? 'translate-y-0' : 'translate-y-full'
       )}>
         {/* Handle + header */}
-        <div className="flex items-center justify-between px-5 pb-3 border-b border-hairline dark:border-white/8 flex-shrink-0 pt-5">
+        <div className="flex items-center justify-between px-5 pb-3 border-b border-hairline flex-shrink-0 pt-5">
           <div className="absolute left-1/2 -translate-x-1/2 top-3 w-10 h-1 rounded-full bg-hairline-strong dark:bg-white/20" />
-          <span className="text-sm font-semibold text-ink dark:text-on-dark">Filters</span>
+          <span className="text-sm font-semibold text-ink">Filters</span>
           <button onClick={() => setFilterDrawerOpen(false)} className="p-1.5 rounded-md hover:bg-surface-strong text-muted">
             <X size={16} />
           </button>
@@ -640,8 +640,8 @@ export default function MentionsExplorer() {
       {/* Main feed */}
       <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${selectedMention ? 'md:pr-96' : ''}`}>
         {/* Feed header — sticky */}
-        <div className="flex items-center justify-between mb-3 sticky top-0 z-10 bg-canvas dark:bg-surface-dark py-2 -mt-2">
-          <span className="text-xs text-muted dark:text-on-dark-soft">{filteredMentions.length} mentions</span>
+        <div className="flex items-center justify-between mb-3 sticky top-0 z-10 bg-canvas py-2 -mt-2">
+          <span className="text-xs text-muted">{filteredMentions.length} mentions</span>
           <div className="flex items-center gap-2">
             {/* Filters button — mobile only */}
             <button
@@ -650,7 +650,7 @@ export default function MentionsExplorer() {
                 'md:hidden flex items-center gap-1.5 text-xs rounded-md px-3 py-1.5 transition-colors border',
                 activeFilterCount > 0
                   ? 'border-[#2940BE] text-[#2940BE] bg-[#2940BE]/8 font-semibold'
-                  : 'border-hairline-strong dark:border-white/8 bg-canvas dark:bg-surface-dark-elevated text-body dark:text-on-dark-soft hover:border-ink/30'
+                  : 'border-hairline-strong bg-canvas text-body hover:border-ink/30'
               )}
             >
               <SlidersHorizontal size={12} />
@@ -662,7 +662,7 @@ export default function MentionsExplorer() {
               )}
             </button>
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="h-8 w-auto gap-1 text-xs bg-canvas dark:bg-surface-dark-elevated border-hairline-strong dark:border-white/8 text-body dark:text-on-dark-soft">
+              <SelectTrigger className="h-8 w-auto gap-1 text-xs bg-canvas border-hairline-strong text-body">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

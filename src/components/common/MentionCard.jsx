@@ -36,10 +36,10 @@ export default function MentionCard({ mention, onClick, selected }) {
     <div
       onClick={() => onClick?.(mention)}
       className={clsx(
-        'bg-canvas dark:bg-surface-dark-elevated rounded-lg border cursor-pointer transition-all',
+        'bg-canvas rounded-lg border cursor-pointer transition-all',
         selected
           ? 'border-[#2940BE] shadow-card ring-1 ring-[#2940BE]/20'
-          : 'border-hairline-strong dark:border-white/8 hover:shadow-card hover:border-ink/20'
+          : 'border-hairline-strong hover:shadow-card hover:border-ink/20'
       )}
     >
       <div className="p-4">
@@ -47,7 +47,7 @@ export default function MentionCard({ mention, onClick, selected }) {
         <div className="flex items-start justify-between gap-2 mb-2">
           <div className="flex items-center gap-2 min-w-0">
             <PlatformIcon platform={mention.platform} />
-            <span className="text-sm font-semibold text-ink dark:text-on-dark truncate">{mention.author.name}</span>
+            <span className="text-sm font-semibold text-ink truncate">{mention.author.name}</span>
             {isSocialUrl(mention.url) && <span className="text-[0.8125rem] text-muted truncate">@{mention.author.handle}</span>}
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -59,7 +59,7 @@ export default function MentionCard({ mention, onClick, selected }) {
         </div>
 
         {/* Text */}
-        <p className="text-sm text-body dark:text-on-dark-soft leading-relaxed line-clamp-2 mb-3">
+        <p className="text-sm text-body leading-relaxed line-clamp-2 mb-3">
           {mention.text}
         </p>
 
@@ -71,13 +71,13 @@ export default function MentionCard({ mention, onClick, selected }) {
               ? keywordPills.map(kw => (
                   <span
                     key={kw.id}
-                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[0.6875rem] font-normal border border-hairline-strong dark:border-white/8 bg-surface-strong dark:bg-white/8 text-muted dark:text-on-dark-soft"
+                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[0.6875rem] font-normal border border-hairline-strong bg-surface-strong text-muted"
                   >
                     {kw.term}
                   </span>
                 ))
               : group && (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[0.6875rem] font-normal border border-hairline-strong dark:border-white/8 bg-surface-strong dark:bg-white/8 text-muted dark:text-on-dark-soft">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[0.6875rem] font-normal border border-hairline-strong bg-surface-strong text-muted">
                     {group.name}
                   </span>
                 )

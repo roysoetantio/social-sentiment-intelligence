@@ -59,7 +59,7 @@ export default function Layout({ children }) {
   const closeSidebar = useCallback(() => setSidebarOpen(false), [])
 
   return (
-    <div className="flex h-screen overflow-hidden bg-canvas-soft dark:bg-surface-dark">
+    <div className="flex h-screen overflow-hidden bg-canvas-soft">
       {sidebarOpen && (
         <div
           className="fixed inset-0 z-20 bg-black/40 lg:hidden"
@@ -95,10 +95,10 @@ export default function Layout({ children }) {
               <div className="flex-1 flex items-center justify-center py-16">
                 <div className="max-w-sm text-center">
                   <Info size={28} className="mx-auto mb-3 text-muted" />
-                  <p className="text-sm font-semibold text-ink dark:text-on-dark mb-1">
+                  <p className="text-sm font-semibold text-ink mb-1">
                     No keyword groups assigned yet
                   </p>
-                  <p className="text-sm text-muted dark:text-on-dark-soft">
+                  <p className="text-sm text-muted">
                     Your department{department ? ` (${department})` : ''} doesn't have any keyword groups
                     assigned. Contact your administrator to get set up.
                   </p>

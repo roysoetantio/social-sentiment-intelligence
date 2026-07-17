@@ -173,7 +173,7 @@ export default function FilterBar({ inline = false }) {
             }}
             className={clsx(
               'mt-2 w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-all text-left',
-              riskOnly ? 'font-medium text-[#2940BE] bg-[#2940BE]/10' : 'text-body dark:text-on-dark-soft hover:bg-surface-strong dark:hover:bg-white/8'
+              riskOnly ? 'font-medium text-[#2940BE] bg-[#2940BE]/10' : 'text-body hover:bg-surface-strong'
             )}
           >
             <div className={clsx(
@@ -201,10 +201,10 @@ export default function FilterBar({ inline = false }) {
                     disabled={isEmpty}
                     className={clsx(
                       'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md border text-xs font-medium transition-all text-left',
-                      isEmpty ? 'opacity-35 cursor-not-allowed bg-canvas dark:bg-white/8 text-body dark:text-on-dark-soft border-hairline-strong dark:border-white/8' :
+                      isEmpty ? 'opacity-35 cursor-not-allowed bg-canvas dark:bg-white/8 text-body border-hairline-strong' :
                       isSelected
                         ? 'bg-[#2940BE] text-white border-[#2940BE]'
-                        : 'bg-canvas dark:bg-white/8 text-body dark:text-on-dark-soft border-hairline-strong dark:border-white/8 hover:border-ink/30 dark:hover:border-white/20'
+                        : 'bg-canvas dark:bg-white/8 text-body border-hairline-strong hover:border-ink/30 dark:hover:border-white/20'
                     )}
                   >
                     {g.name}
@@ -212,7 +212,7 @@ export default function FilterBar({ inline = false }) {
                       'ml-auto text-[0.625rem] font-semibold rounded-full px-1.5 py-0.5',
                       isSelected
                         ? 'bg-white/20 text-on-dark border border-transparent'
-                        : 'bg-canvas dark:bg-white/8 border border-hairline-strong dark:border-white/8 text-muted dark:text-on-dark-soft'
+                        : 'bg-canvas dark:bg-white/8 border border-hairline-strong text-muted'
                     )}>
                       {count}
                     </span>
@@ -263,7 +263,7 @@ export default function FilterBar({ inline = false }) {
         </button>
 
         {advancedOpen && (
-          <div className="mt-3 space-y-5 pt-3 border-t border-hairline dark:border-white/8">
+          <div className="mt-3 space-y-5 pt-3 border-t border-hairline">
 
             {/* Sources */}
             {Object.keys(sourceCounts).length > 0 && (
@@ -302,17 +302,17 @@ export default function FilterBar({ inline = false }) {
                           disabled={isEmpty}
                           className={clsx(
                             'w-full flex items-center justify-between px-2.5 py-1.5 rounded-md border text-left transition-all',
-                            isEmpty ? 'opacity-35 cursor-not-allowed bg-canvas dark:bg-white/8 border-hairline-strong dark:border-white/8' :
+                            isEmpty ? 'opacity-35 cursor-not-allowed bg-canvas dark:bg-white/8 border-hairline-strong' :
                             group.active
                               ? 'bg-[#2940BE] border-[#2940BE] text-on-dark'
-                              : 'bg-canvas dark:bg-white/8 border-hairline-strong dark:border-white/8 hover:border-ink/30 dark:hover:border-white/20'
+                              : 'bg-canvas dark:bg-white/8 border-hairline-strong hover:border-ink/30 dark:hover:border-white/20'
                           )}
                         >
-                          <span className={clsx('flex items-center gap-1.5 text-xs', group.active ? 'text-on-dark' : 'text-body dark:text-on-dark-soft')}>
+                          <span className={clsx('flex items-center gap-1.5 text-xs', group.active ? 'text-on-dark' : 'text-body')}>
                             <group.Icon size={12} />
                             <span>{group.label}</span>
                           </span>
-                          <span className={clsx('text-[0.625rem] font-semibold rounded-full px-1.5 py-0.5', group.active ? 'bg-white/20 text-on-dark border border-transparent' : 'bg-canvas dark:bg-white/8 border border-hairline-strong dark:border-white/8 text-muted dark:text-on-dark-soft')}>
+                          <span className={clsx('text-[0.625rem] font-semibold rounded-full px-1.5 py-0.5', group.active ? 'bg-white/20 text-on-dark border border-transparent' : 'bg-canvas dark:bg-white/8 border border-hairline-strong text-muted')}>
                             {group.count}
                           </span>
                         </button>
@@ -374,7 +374,7 @@ export default function FilterBar({ inline = false }) {
                 onClick={() => setShowExcluded(v => !v)}
                 className={clsx(
                   'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-all text-left',
-                  showExcluded ? 'font-medium text-[#2940BE] bg-[#2940BE]/10' : 'text-body dark:text-on-dark-soft hover:bg-surface-strong dark:hover:bg-white/8'
+                  showExcluded ? 'font-medium text-[#2940BE] bg-[#2940BE]/10' : 'text-body hover:bg-surface-strong'
                 )}
               >
                 <div className={clsx(
@@ -414,11 +414,11 @@ export default function FilterBar({ inline = false }) {
   }
 
   return (
-    <div className="bg-canvas dark:bg-surface-dark-elevated rounded-lg border border-hairline-strong dark:border-white/8 h-[calc(100%-1rem)] flex flex-col">
+    <div className="bg-canvas rounded-lg border border-hairline-strong h-[calc(100%-1rem)] flex flex-col">
       {/* Sticky header */}
       <div className="flex items-center justify-between px-4 pt-4 pb-3 flex-shrink-0">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-ink dark:text-on-dark">Filters</span>
+          <span className="text-sm font-semibold text-ink">Filters</span>
           {activeFilterCount > 0 && (
             <span className="px-2.5 py-0.5 text-[0.625rem] font-bold bg-[#2940BE] text-white rounded-full">
               {activeFilterCount}

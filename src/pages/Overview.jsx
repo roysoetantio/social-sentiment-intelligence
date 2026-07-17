@@ -185,7 +185,7 @@ export default function Overview() {
           value={kpis.atRiskCount}
           icon={AlertTriangle}
           iconColor={kpis.atRiskCount > 5 ? SENTIMENT_COLORS.negative : '#f59e0b'}
-          valueColor={kpis.atRiskCount > 5 ? SENTIMENT_COLORS.negative : BRAND_COLORS.darkText}
+          valueColor={kpis.atRiskCount > 5 ? SENTIMENT_COLORS.negative : undefined}
           subtitle="Flagged for review"
           tooltip="Negative mentions with Medium or High risk. Excludes Low risk."
         />
@@ -206,8 +206,8 @@ export default function Overview() {
         <div className="lg:col-span-4 flex flex-col gap-3 lg:gap-4 lg:min-h-0">
           <div className="card h-[320px] lg:flex-1 lg:h-auto lg:min-h-[290px] lg:max-h-[600px] flex flex-col">
             <div className="flex items-center justify-between mb-4 flex-shrink-0">
-              <h2 className="text-base font-semibold text-ink dark:text-on-dark tracking-tight">Sentiment Timeline</h2>
-              <span className="text-xs text-muted dark:text-on-dark-soft">{filteredMentions.length} mentions in period</span>
+              <h2 className="text-base font-semibold text-ink tracking-tight">Sentiment Timeline</h2>
+              <span className="text-xs text-muted">{filteredMentions.length} mentions in period</span>
             </div>
             <div className="flex-1 min-h-0">
               <SentimentTimelineChart mentions={filteredMentions} days={days} granularity={granularity} onPointClick={handleTimelineClick} />
@@ -215,13 +215,13 @@ export default function Overview() {
           </div>
           <div className="flex flex-col sm:flex-row gap-3 lg:gap-4 lg:flex-1 lg:min-h-[290px] lg:max-h-[600px]">
             <div className="card h-[320px] sm:h-auto sm:flex-1 flex flex-col min-h-0">
-              <h2 className="text-base font-semibold text-ink dark:text-on-dark tracking-tight mb-4 flex-shrink-0">Platform Breakdown</h2>
+              <h2 className="text-base font-semibold text-ink tracking-tight mb-4 flex-shrink-0">Platform Breakdown</h2>
               <div className="flex-1 min-h-0">
                 <PlatformBreakdownChart mentions={filteredMentions} />
               </div>
             </div>
             <div className="card h-[320px] sm:h-auto sm:flex-1 flex flex-col min-h-0">
-              <h2 className="text-base font-semibold text-ink dark:text-on-dark tracking-tight mb-4 flex-shrink-0">Keyword Comparison</h2>
+              <h2 className="text-base font-semibold text-ink tracking-tight mb-4 flex-shrink-0">Keyword Comparison</h2>
               <div className="flex-1 min-h-0">
                 <KeywordComparisonChart mentions={filteredMentions} />
               </div>
@@ -235,11 +235,11 @@ export default function Overview() {
           {/* Desktop inner absolute fill */}
           <div className="lg:absolute lg:inset-0 flex flex-col lg:pt-5 lg:px-5 lg:pb-0 overflow-hidden lg:overflow-hidden">
             <div className="flex items-center justify-between mb-4 flex-shrink-0">
-              <h2 className="text-base font-semibold text-ink dark:text-on-dark tracking-tight">Recent At-Risk Mentions</h2>
-              <span className="text-xs text-muted dark:text-on-dark-soft">{kpis.atRiskCount} total mentions</span>
+              <h2 className="text-base font-semibold text-ink tracking-tight">Recent At-Risk Mentions</h2>
+              <span className="text-xs text-muted">{kpis.atRiskCount} total mentions</span>
             </div>
             {highRiskMentions.length === 0 ? (
-              <div className="text-center py-8 text-sm text-muted dark:text-on-dark-soft">No at-risk mentions</div>
+              <div className="text-center py-8 text-sm text-muted">No at-risk mentions</div>
             ) : (
               <div className="relative lg:flex-1 lg:min-h-0">
                 {riskScrolled && (

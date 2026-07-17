@@ -6,6 +6,22 @@
    Values are HSL channels so Tailwind's <alpha-value> (e.g. bg-primary/90) works. */
 @layer base {
   :root {
+    /* Semantic brand tokens — space-separated RGB channels so Tailwind's
+       rgb(var(--token) / <alpha-value>) supports opacity utilities. */
+    --canvas: 255 255 255;
+    --canvas-soft: 250 250 250;
+    --surface-card: 255 255 255;
+    --surface-strong: 240 240 243;
+    --ink: 23 23 23;
+    --body: 96 100 108;
+    --muted: 120 120 129;
+    --hairline: 230 230 232;
+    --hairline-strong: 230 230 232;
+    --ai-hatch: rgba(207, 231, 255, 0.6);
+    --chart-grid: #eceded;         /* dotted grid / axis lines */
+    --cal-selected: #2940BE;       /* date picker selected day */
+    --cal-range: #dde3f8;          /* date picker in-range fill */
+
     --background: 0 0% 100%;
     --foreground: 0 0% 9%;
     --card: 0 0% 100%;
@@ -26,6 +42,21 @@
     --ring: 231 64% 45%;
   }
   .dark {
+    /* Refined neutral dark scale: layered surfaces, softened (not pure white) text */
+    --canvas-soft: 13 13 15;       /* app background (deepest) */
+    --canvas: 22 22 24;            /* primary surface — top bar, content, base cards */
+    --surface-card: 29 29 32;      /* elevated cards */
+    --surface-strong: 41 42 46;    /* fills, hovers, pills */
+    --ink: 244 245 246;            /* primary text */
+    --body: 182 186 193;           /* secondary text */
+    --muted: 139 144 153;          /* tertiary text */
+    --hairline: 41 42 46;          /* borders */
+    --hairline-strong: 58 59 64;   /* stronger borders */
+    --ai-hatch: rgba(107, 128, 255, 0.12);
+    --chart-grid: #313236;         /* muted grid in dark, not jarring white */
+    --cal-selected: #6B80FF;
+    --cal-range: rgba(107, 128, 255, 0.20);
+
     --background: 0 0% 9%;
     --foreground: 0 0% 100%;
     --card: 0 0% 10%;
@@ -78,13 +109,13 @@
 @layer base {
   html {
     font-family: 'Inter', sans-serif;
-    background-color: #fafafa;
-    color: #171717;
+    background-color: rgb(var(--canvas-soft));
+    color: rgb(var(--ink));
   }
 
   html.dark {
-    background-color: #171717;
-    color: #ffffff;
+    background-color: rgb(var(--canvas-soft));
+    color: rgb(var(--ink));
   }
 
   * {
@@ -97,16 +128,16 @@
   }
 
   ::-webkit-scrollbar-track {
-    background: #fafafa;
+    background: rgb(var(--canvas-soft));
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #E6E6E8;
+    background: rgb(var(--hairline-strong));
     border-radius: 3px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: #999999;
+    background: rgb(var(--muted));
   }
 }
 
@@ -119,11 +150,11 @@
     display: none;
   }
 
-  /* Card — white bg, 12px radius, hairline-strong border, hover shadow */
+  /* Card — matches KPI cards: canvas bg, 12px radius, strong hairline border */
   .card {
-    background-color: #ffffff;
+    background-color: rgb(var(--canvas));
     border-radius: 12px;
-    border: 1px solid #E6E6E8;
+    border: 1px solid rgb(var(--hairline-strong));
     padding: 12px;
     transition: box-shadow 200ms;
   }
@@ -189,44 +220,44 @@
   .btn-primary:hover { background-color: #1a1a1a; }
 
   .btn-secondary {
-    background-color: #ffffff;
-    color: #171717;
-    border: 1px solid #E6E6E8;
+    background-color: rgb(var(--surface-card));
+    color: rgb(var(--ink));
+    border: 1px solid rgb(var(--hairline));
     @apply px-4 py-2 rounded-md text-sm font-medium transition-colors;
   }
-  .btn-secondary:hover { background-color: #f0f0f3; }
+  .btn-secondary:hover { background-color: rgb(var(--surface-strong)); }
 
   .btn-ghost {
-    color: #60646c;
+    color: rgb(var(--body));
     @apply px-3 py-2 rounded-md text-sm font-medium transition-colors;
   }
-  .btn-ghost:hover { background-color: #f0f0f3; }
+  .btn-ghost:hover { background-color: rgb(var(--surface-strong)); }
 
   /* Nav items */
   .nav-item {
     @apply flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer;
-    color: #5B5B64;
+    color: rgb(var(--body));
   }
-  .nav-item:hover { background-color: #f0f0f3; }
+  .nav-item:hover { background-color: rgb(var(--surface-strong)); }
 
   .nav-item-active {
     @apply flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer;
-    background-color: #f0f0f3;
-    color: #1C1C1D;
+    background-color: rgb(var(--surface-strong));
+    color: rgb(var(--ink));
   }
 
   /* Section label — 11px Inter 600 muted */
   .section-label {
     font-size: 11px;
     font-weight: 600;
-    color: rgb(120,120,129);
+    color: rgb(var(--muted));
   }
 
   /* Nav group heading */
   .nav-section-label {
     font-size: 11px;
     font-weight: 600;
-    color: rgb(120,120,129);
+    color: rgb(var(--muted));
   }
 
   /* Tag chip */
@@ -236,33 +267,34 @@
 
   /* Form inputs */
   .form-input {
-    background-color: #ffffff;
-    border: 1px solid #E6E6E8;
-    color: #171717;
+    background-color: rgb(var(--canvas));
+    border: 1px solid rgb(var(--hairline));
+    color: rgb(var(--ink));
     @apply w-full px-3 h-11 text-sm rounded-md focus:outline-none transition-colors;
   }
-  .form-input:focus { border-color: #171717; }
+  .form-input::placeholder { color: rgb(var(--muted)); }
+  .form-input:focus { border-color: rgb(var(--ink)); }
 
   .form-textarea {
-    background-color: #f0f0f3;
-    border: 1px solid #E6E6E8;
-    color: #60646c;
+    background-color: rgb(var(--surface-strong));
+    border: 1px solid rgb(var(--hairline));
+    color: rgb(var(--body));
     @apply w-full px-3 py-2 text-xs rounded-md focus:outline-none resize-none;
   }
-  .form-textarea::placeholder { color: #cccccc; }
-  .form-textarea:focus { border-color: #171717; }
+  .form-textarea::placeholder { color: rgb(var(--muted)); }
+  .form-textarea:focus { border-color: rgb(var(--ink)); }
 
   /* Chart tooltip */
   .chart-tooltip {
-    background-color: #ffffff;
-    border: 1px solid #E6E6E8;
+    background-color: rgb(var(--surface-card));
+    border: 1px solid rgb(var(--hairline));
     box-shadow: 0 4px 12px rgba(0,0,0,0.04);
     @apply rounded-lg p-3 text-xs;
   }
 
   .chart-empty {
     @apply flex items-center justify-center text-sm;
-    color: rgb(120,120,129);
+    color: rgb(var(--muted));
   }
 
   /* Sky gradient wash for hero areas */
@@ -276,59 +308,8 @@
   }
 }
 
-/* Dark mode overrides for component classes */
-html.dark .card {
-  background-color: #1a1a1a;
-  border-color: rgba(255, 255, 255, 0.08);
-}
-
-html.dark .nav-item {
-  color: #b0b4ba;
-}
-html.dark .nav-item:hover {
-  background-color: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
-}
-
-html.dark .nav-item-active {
-  color: #ffffff;
-  background-color: rgba(255, 255, 255, 0.08);
-}
-
-html.dark .section-label,
-html.dark .nav-section-label {
-  color: #b0b4ba;
-}
-
-html.dark .form-input {
-  background-color: #171717;
-  border-color: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
-}
-html.dark .form-input::placeholder {
-  color: #b0b4ba;
-}
-html.dark .form-input:focus {
-  border-color: rgba(255, 255, 255, 0.3);
-}
-
-html.dark .form-textarea {
-  background-color: #171717;
-  border-color: rgba(255, 255, 255, 0.08);
-  color: #b0b4ba;
-}
-html.dark .form-textarea::placeholder {
-  color: #b0b4ba;
-}
-html.dark .form-textarea:focus {
-  border-color: rgba(255, 255, 255, 0.3);
-}
-
-html.dark .chart-tooltip {
-  background-color: #1a1a1a;
-  border-color: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
-}
+/* Component classes above are token-based (rgb(var(--…))) and flip automatically
+   with the .dark class — no per-component dark overrides needed. */
 
 /* Animated counter */
 @keyframes countUp {

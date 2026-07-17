@@ -48,9 +48,14 @@ export default function Login() {
             <img
               src="/assets/uemedgenta-logo.png"
               alt="UEM Edgenta"
-              className="h-12 w-auto object-contain"
+              className="h-12 w-auto object-contain dark:hidden"
             />
-            <h2 className="whitespace-nowrap text-2xl font-semibold leading-[1.2] tracking-tight text-ink dark:text-on-dark lg:whitespace-normal">
+            <img
+              src="/assets/uemedgenta-logo-white.png"
+              alt="UEM Edgenta"
+              className="hidden h-12 w-auto object-contain dark:block"
+            />
+            <h2 className="whitespace-nowrap text-2xl font-semibold leading-[1.2] tracking-tight text-ink lg:whitespace-normal">
               Social Sentiment <br className="hidden lg:block" />Intelligence
             </h2>
           </div>
@@ -60,8 +65,8 @@ export default function Login() {
 
           {/* sign-in card */}
           <div className="w-full max-w-sm" style={{ animation: 'login-rise 0.5s cubic-bezier(0.16, 1, 0.3, 1)' }}>
-            <p className="text-sm text-muted dark:text-on-dark-soft">
-              <span className="font-semibold text-ink dark:text-on-dark">Welcome.</span> Sign in to UEM Edgenta workspace to continue.
+            <p className="text-sm text-muted">
+              <span className="font-semibold text-ink">Welcome.</span> Sign in to UEM Edgenta workspace to continue.
             </p>
 
             <div className="mt-8">
@@ -70,7 +75,7 @@ export default function Login() {
                 variant="outline"
                 onClick={signInWithMicrosoft}
                 disabled={loading}
-                className="group h-12 w-full gap-3 rounded-[8px] border-hairline-strong bg-canvas text-[0.9rem] font-medium text-ink shadow-sm transition-colors hover:bg-surface-strong disabled:opacity-60 dark:border-white/10 dark:bg-surface-dark-elevated dark:text-on-dark dark:hover:bg-white/8"
+                className="group h-12 w-full gap-3 rounded-[8px] border-hairline-strong bg-canvas text-[0.9rem] font-medium text-ink shadow-sm transition-colors hover:bg-surface-strong disabled:opacity-60 dark:border-white/10 dark:bg-surface-dark-elevated dark:hover:bg-white/8"
               >
                 {loading ? (
                   <Loader2 size={18} className="animate-spin" />
@@ -88,13 +93,13 @@ export default function Login() {
               )}
             </div>
 
-            <div className="mt-6 flex items-center gap-2 text-[0.6875rem] text-muted dark:text-on-dark-soft">
+            <div className="mt-6 flex items-center gap-2 text-[0.6875rem] text-muted">
               <ShieldCheck size={13} className="flex-shrink-0" />
               <span>Secured by Microsoft Entra ID single sign-on.</span>
             </div>
 
-            <div className="mt-8 border-t border-hairline dark:border-white/8 pt-5">
-              <p className="text-[0.6875rem] leading-relaxed text-muted dark:text-on-dark-soft">
+            <div className="mt-8 border-t border-hairline pt-5">
+              <p className="text-[0.6875rem] leading-relaxed text-muted">
                 Access is restricted to approved users. If you can't sign in, contact your administrator.
               </p>
             </div>

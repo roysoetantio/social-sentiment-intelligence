@@ -17,19 +17,19 @@ const CustomTooltip = ({ active, payload, label, granularity }) => {
     : 'Click to explore this day'
   return (
     <div className="chart-tooltip min-w-[160px]">
-      <p className="font-semibold text-ink dark:text-on-dark mb-2">{label}</p>
+      <p className="font-semibold text-ink mb-2">{label}</p>
       {payload.map(p => (
         <div key={p.dataKey} className="flex items-center justify-between gap-4 mb-1">
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: p.color }} />
-            <span className="capitalize text-body dark:text-on-dark-soft">{p.dataKey}</span>
+            <span className="capitalize text-body">{p.dataKey}</span>
           </div>
-          <span className="font-medium text-ink dark:text-on-dark">{p.value}</span>
+          <span className="font-medium text-ink">{p.value}</span>
         </div>
       ))}
-      <div className="mt-1.5 pt-1.5 border-t border-hairline dark:border-white/8 flex justify-between">
-        <span className="text-body dark:text-on-dark-soft">Total</span>
-        <span className="font-semibold dark:text-on-dark">{total}</span>
+      <div className="mt-1.5 pt-1.5 border-t border-hairline flex justify-between">
+        <span className="text-body">Total</span>
+        <span className="font-semibold">{total}</span>
       </div>
       <div className="mt-2 rounded bg-gray-100 dark:bg-white/8 px-2 py-1">
         <p className="text-[0.625rem] text-muted">{hint}</p>
@@ -100,7 +100,7 @@ export default function SentimentTimelineChart({ mentions, days = 30, granularit
                 </linearGradient>
               ))}
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
             <XAxis
               dataKey="displayDate"
               tick={{ fontSize: 11, fill: '#9ca3af' }}
@@ -130,8 +130,8 @@ export default function SentimentTimelineChart({ mentions, days = 30, granularit
             <Brush
               dataKey="displayDate"
               height={20}
-              stroke="#e5e7eb"
-              fill="#f9fafb"
+              stroke="var(--chart-grid)"
+              fill="rgb(var(--surface-strong))"
               travellerWidth={6}
             />
           </AreaChart>

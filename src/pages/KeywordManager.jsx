@@ -33,12 +33,12 @@ function Modal({ title, onClose, children, width = 'max-w-md' }) {
       onClick={onClose}
     >
       <div
-        className={clsx('bg-white dark:bg-surface-dark-elevated rounded-2xl shadow-2xl w-full border border-transparent dark:border-white/8 overflow-hidden animate-modal-in', width)}
+        className={clsx('bg-surface-card rounded-2xl shadow-2xl w-full border border-transparent dark:border-white/8 overflow-hidden animate-modal-in', width)}
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-hairline dark:border-white/8">
-          <h3 className="text-sm font-semibold text-ink dark:text-on-dark">{title}</h3>
-          <button onClick={onClose} className="p-1 rounded-md hover:bg-surface-strong dark:hover:bg-white/8 transition-colors">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-hairline">
+          <h3 className="text-sm font-semibold text-ink">{title}</h3>
+          <button onClick={onClose} className="p-1 rounded-md hover:bg-surface-strong transition-colors">
             <X size={14} className="text-muted" />
           </button>
         </div>
@@ -161,7 +161,7 @@ function GroupNameEditor({ group, onSave, onCancel }) {
         />
       </div>
       <div className="flex gap-2 pt-1">
-        <button onClick={onCancel} className="flex-1 py-2 text-xs font-medium text-body dark:text-on-dark-soft border border-hairline-strong dark:border-white/8 rounded-lg hover:bg-surface-strong dark:hover:bg-white/8 transition-colors">
+        <button onClick={onCancel} className="flex-1 py-2 text-xs font-medium text-body border border-hairline-strong rounded-lg hover:bg-surface-strong transition-colors">
           Cancel
         </button>
         <button onClick={() => onSave(name)} disabled={!name.trim()} className="flex-1 py-2 text-xs font-medium text-white bg-[#2940BE] rounded-lg hover:bg-[#2940BE]/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
@@ -175,15 +175,15 @@ function GroupNameEditor({ group, onSave, onCancel }) {
 function DeleteKeywordModal({ keyword, mentionCount, tenant, onConfirm, onCancel, saving }) {
   return (
     <div className="fixed inset-0 z-50 flex justify-center bg-black/40 px-4 animate-fade-in" style={{ alignItems: 'flex-start', paddingTop: '8vh' }}>
-      <div className="bg-white dark:bg-surface-dark-elevated rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-transparent dark:border-white/8 animate-modal-in">
-        <div className="p-5 border-b border-hairline dark:border-white/8">
-          <h3 className="text-sm font-semibold text-ink dark:text-on-dark">Remove "{keyword.term}"{tenant ? ` from ${tenant}` : ''}?</h3>
+      <div className="bg-surface-card rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-transparent dark:border-white/8 animate-modal-in">
+        <div className="p-5 border-b border-hairline">
+          <h3 className="text-sm font-semibold text-ink">Remove "{keyword.term}"{tenant ? ` from ${tenant}` : ''}?</h3>
         </div>
 
         <div className="p-5">
-          <p className="text-xs leading-relaxed text-body dark:text-on-dark-soft">
+          <p className="text-xs leading-relaxed text-body">
             This un-tags the keyword from {tenant || 'this tenant'} — it disappears from your views.
-            The keyword and its <span className="font-semibold text-ink dark:text-on-dark">{mentionCount} mention{mentionCount !== 1 ? 's' : ''}</span> are
+            The keyword and its <span className="font-semibold text-ink">{mentionCount} mention{mentionCount !== 1 ? 's' : ''}</span> are
             kept for any other tenant that tracks it. If no tenant references it anymore, it's deactivated automatically.
             Nothing is permanently deleted.
           </p>
@@ -192,7 +192,7 @@ function DeleteKeywordModal({ keyword, mentionCount, tenant, onConfirm, onCancel
         <div className="px-5 pb-5 flex gap-2">
           <button
             onClick={onCancel}
-            className="flex-1 py-2 text-xs font-medium text-body dark:text-on-dark-soft border border-hairline-strong dark:border-white/8 rounded-lg hover:bg-surface-strong dark:hover:bg-white/8 transition-colors"
+            className="flex-1 py-2 text-xs font-medium text-body border border-hairline-strong rounded-lg hover:bg-surface-strong transition-colors"
           >
             Cancel
           </button>
@@ -229,23 +229,23 @@ function GearPopover({ keyword, onDelete, onClose }) {
   }
 
   return (
-    <div ref={ref} className="absolute right-0 top-8 z-40 bg-white dark:bg-surface-dark-elevated border border-hairline-strong dark:border-white/8 rounded-xl shadow-xl w-52 overflow-hidden">
+    <div ref={ref} className="absolute right-0 top-8 z-40 bg-surface-card border border-hairline-strong rounded-xl shadow-xl w-52 overflow-hidden">
       <div className="p-1">
         <button
           onClick={handlePauseToggle}
           disabled={toggling}
-          className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-surface-strong dark:hover:bg-white/8 transition-colors"
+          className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-surface-strong transition-colors"
         >
           <div className="flex items-center gap-2">
             {paused ? <Play size={13} className="text-teal" /> : <Pause size={13} className="text-muted" />}
-            <span className="text-xs text-ink dark:text-on-dark font-medium">{paused ? 'Resume syncing' : 'Pause syncing'}</span>
+            <span className="text-xs text-ink font-medium">{paused ? 'Resume syncing' : 'Pause syncing'}</span>
           </div>
           <div className={clsx('w-8 h-4 rounded-full transition-colors relative', paused ? 'bg-orange' : 'bg-gray-200')}>
             <div className={clsx('absolute top-0.5 w-3 h-3 rounded-full bg-white shadow transition-all', paused ? 'left-4' : 'left-0.5')} />
           </div>
         </button>
 
-        <div className="border-t border-hairline dark:border-white/8 my-1" />
+        <div className="border-t border-hairline my-1" />
 
         <button
           onClick={() => { onClose(); onDelete() }}
@@ -299,7 +299,7 @@ function KeywordForm({ keyword, groupColor, onSave, onCancel, saving }) {
         <p className="text-[0.625rem] text-muted mt-1">Each alias will be searched separately but grouped under this keyword.</p>
       </div>
       <div className="flex gap-2 pt-1">
-        <button onClick={onCancel} className="flex-1 py-2 text-xs font-medium text-body dark:text-on-dark-soft border border-hairline-strong dark:border-white/8 rounded-lg hover:bg-surface-strong dark:hover:bg-white/8 transition-colors">
+        <button onClick={onCancel} className="flex-1 py-2 text-xs font-medium text-body border border-hairline-strong rounded-lg hover:bg-surface-strong transition-colors">
           Cancel
         </button>
         <button
@@ -598,8 +598,8 @@ export default function KeywordManager() {
       {/* Delete group alert modal */}
       {groupDeleteAlert && (
         <Modal title="Cannot Delete Group" onClose={() => setGroupDeleteAlert(false)}>
-          <p className="text-sm text-body dark:text-on-dark-soft mb-4">
-            This group still has <span className="font-semibold text-ink dark:text-on-dark">{selectedGroupData?.keywords.length} keyword{selectedGroupData?.keywords.length !== 1 ? 's' : ''}</span> inside. Please delete all keywords within the group before deleting the group itself.
+          <p className="text-sm text-body mb-4">
+            This group still has <span className="font-semibold text-ink">{selectedGroupData?.keywords.length} keyword{selectedGroupData?.keywords.length !== 1 ? 's' : ''}</span> inside. Please delete all keywords within the group before deleting the group itself.
           </p>
           <button
             onClick={() => setGroupDeleteAlert(false)}
@@ -654,7 +654,7 @@ export default function KeywordManager() {
             <div className="flex gap-2 pt-1">
               <button
                 onClick={() => setAddGroupModal(false)}
-                className="flex-1 py-2 text-xs font-medium text-body dark:text-on-dark-soft border border-hairline-strong dark:border-white/8 rounded-lg hover:bg-surface-strong dark:hover:bg-white/8 transition-colors"
+                className="flex-1 py-2 text-xs font-medium text-body border border-hairline-strong rounded-lg hover:bg-surface-strong transition-colors"
               >
                 Cancel
               </button>
@@ -688,12 +688,12 @@ export default function KeywordManager() {
 
       {/* Mobile group selector sheet */}
       <div className={clsx(
-        'md:hidden fixed inset-x-0 bottom-0 z-50 bg-canvas dark:bg-surface-dark rounded-t-2xl shadow-2xl transition-transform duration-300 ease-out',
+        'md:hidden fixed inset-x-0 bottom-0 z-50 bg-canvas rounded-t-2xl shadow-2xl transition-transform duration-300 ease-out',
         groupSheetOpen ? 'translate-y-0' : 'translate-y-full'
       )}>
-        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-hairline dark:border-white/8">
+        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-hairline">
           <div className="absolute left-1/2 -translate-x-1/2 top-3 w-10 h-1 rounded-full bg-hairline-strong dark:bg-white/20" />
-          <p className="text-base font-bold text-ink dark:text-on-dark">Keyword Groups</p>
+          <p className="text-base font-bold text-ink">Keyword Groups</p>
           <button onClick={() => setGroupSheetOpen(false)} className="p-1.5 rounded-md hover:bg-surface-strong text-muted">
             <X size={18} />
           </button>
@@ -707,7 +707,7 @@ export default function KeywordManager() {
                 'w-full flex items-center justify-between px-4 h-14 rounded-xl border text-sm font-medium transition-all text-left',
                 selectedGroup?.id === g.id
                   ? 'bg-[#2940BE] border-[#2940BE] text-white'
-                  : 'bg-canvas dark:bg-white/8 text-ink dark:text-on-dark border-hairline-strong dark:border-white/8 hover:border-ink/30 dark:hover:border-white/20'
+                  : 'bg-canvas dark:bg-white/8 text-ink border-hairline-strong hover:border-ink/30 dark:hover:border-white/20'
               )}
             >
               <span>{g.name}</span>
@@ -715,13 +715,13 @@ export default function KeywordManager() {
                 'text-xs font-bold rounded-full w-7 h-7 flex items-center justify-center flex-shrink-0',
                 selectedGroup?.id === g.id
                   ? 'bg-white/20 text-white'
-                  : 'border border-hairline-strong dark:border-white/8 text-muted dark:text-on-dark-soft'
+                  : 'border border-hairline-strong text-muted'
               )}>{g.keywords.length}</span>
             </button>
           ))}
           <button
             onClick={() => { handleAddGroup(); setGroupSheetOpen(false) }}
-            className="w-full flex items-center justify-center gap-2 px-4 h-14 rounded-xl border border-dashed border-hairline-strong dark:border-white/8 text-sm font-medium text-ink dark:text-on-dark hover:bg-surface-strong dark:hover:bg-white/8 transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-4 h-14 rounded-xl border border-dashed border-hairline-strong text-sm font-medium text-ink hover:bg-surface-strong transition-colors"
           >
             <Plus size={15} /> New Group
           </button>
@@ -737,7 +737,7 @@ export default function KeywordManager() {
               {false && <button
                 onClick={() => { setShowLog(true); runIngest() }}
                 disabled={running}
-                className="flex items-center gap-1 text-[0.625rem] text-ink dark:text-on-dark font-medium px-2 py-1 rounded-md hover:bg-surface-strong dark:hover:bg-white/8 transition-colors disabled:opacity-40"
+                className="flex items-center gap-1 text-[0.625rem] text-ink font-medium px-2 py-1 rounded-md hover:bg-surface-strong transition-colors disabled:opacity-40"
                 title="Fetch all keywords"
               >
                 {running && fetchingIds.length === 0 ? <Loader size={11} className="animate-spin" /> : <Download size={11} />}
@@ -760,7 +760,7 @@ export default function KeywordManager() {
                   'w-full flex items-center justify-between px-2.5 py-1.5 rounded-md border text-xs font-medium transition-all text-left',
                   isSelected
                     ? 'bg-[#2940BE] text-white border-[#2940BE]'
-                    : 'bg-canvas dark:bg-white/8 text-body dark:text-on-dark-soft border-hairline-strong dark:border-white/8 hover:border-ink/30 dark:hover:border-white/20'
+                    : 'bg-canvas dark:bg-white/8 text-body border-hairline-strong hover:border-ink/30 dark:hover:border-white/20'
                 )}
                 onClick={() => setSelectedGroup(g)}
               >
@@ -769,7 +769,7 @@ export default function KeywordManager() {
                   'ml-auto text-[0.625rem] font-semibold rounded-full px-1.5 py-0.5',
                   isSelected
                     ? 'bg-white/20 text-on-dark border border-transparent'
-                    : 'bg-canvas dark:bg-white/8 border border-hairline-strong dark:border-white/8 text-muted dark:text-on-dark-soft'
+                    : 'bg-canvas dark:bg-white/8 border border-hairline-strong text-muted'
                 )}>
                   {g.keywords.length}
                 </span>
@@ -779,7 +779,7 @@ export default function KeywordManager() {
 
           <button
             onClick={handleAddGroup}
-            className="flex items-center justify-center gap-1.5 w-full text-xs text-ink dark:text-on-dark hover:bg-surface-strong dark:hover:bg-white/8 px-2 py-2 rounded-md border border-dashed border-hairline-strong dark:border-white/8 transition-colors mt-1"
+            className="flex items-center justify-center gap-1.5 w-full text-xs text-ink hover:bg-surface-strong px-2 py-2 rounded-md border border-dashed border-hairline-strong transition-colors mt-1"
           >
             <Plus size={13} /> New Group
           </button>
@@ -797,10 +797,10 @@ export default function KeywordManager() {
               <button
                 key={g.id}
                 onClick={() => { setSelectedGroup(g); navigate(`/keywords?g=${g.id}&name=${encodeURIComponent(g.name)}`) }}
-                className="w-full flex items-center justify-between px-4 h-16 rounded-xl border border-hairline-strong dark:border-white/8 bg-white dark:bg-white/4 hover:bg-surface-strong dark:hover:bg-white/8 transition-colors text-left"
+                className="w-full flex items-center justify-between px-4 h-16 rounded-xl border border-hairline-strong bg-surface-card hover:bg-surface-strong transition-colors text-left"
               >
                 <div>
-                  <p className="text-sm font-semibold text-ink dark:text-on-dark">{g.name}</p>
+                  <p className="text-sm font-semibold text-ink">{g.name}</p>
                   <p className="text-xs text-muted mt-0.5">{g.keywords.length} keyword{g.keywords.length !== 1 ? 's' : ''} · {stats.total || 0} mentions</p>
                 </div>
                 <ChevronDown size={16} className="text-muted -rotate-90" />
@@ -809,7 +809,7 @@ export default function KeywordManager() {
           })}
           <button
             onClick={handleAddGroup}
-            className="w-full flex items-center justify-center gap-2 px-4 h-14 rounded-xl border border-dashed border-hairline-strong dark:border-white/8 text-sm font-medium text-ink dark:text-on-dark hover:bg-surface-strong dark:hover:bg-white/8 transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-4 h-14 rounded-xl border border-dashed border-hairline-strong text-sm font-medium text-ink hover:bg-surface-strong transition-colors"
           >
             <Plus size={15} /> New Group
           </button>
@@ -831,8 +831,8 @@ export default function KeywordManager() {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <div>
-                    <h2 className="hidden md:block text-base font-semibold text-ink dark:text-on-dark">{selectedGroupData.name}</h2>
-                    <p className="text-xs text-muted dark:text-on-dark-soft">{selectedGroupData.keywords.length} keywords tracked</p>
+                    <h2 className="hidden md:block text-base font-semibold text-ink">{selectedGroupData.name}</h2>
+                    <p className="text-xs text-muted">{selectedGroupData.keywords.length} keywords tracked</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
@@ -871,7 +871,7 @@ export default function KeywordManager() {
                   ].map(stat => (
                     <div key={stat.label} className="bg-surface-strong dark:bg-[#171717] rounded-lg p-3 text-center border border-transparent dark:border-white/8">
                       <div className="kpi-number text-xl font-bold" style={{ color: stat.color }}>{stat.value}</div>
-                      <div className="text-[0.625rem] text-body dark:text-on-dark-soft mt-0.5">{stat.label}</div>
+                      <div className="text-[0.625rem] text-body mt-0.5">{stat.label}</div>
                     </div>
                   ))
                 })()}
@@ -881,12 +881,12 @@ export default function KeywordManager() {
             {/* Keywords */}
             <div className="card">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold text-ink dark:text-on-dark">Keywords</h3>
+                <h3 className="text-sm font-semibold text-ink">Keywords</h3>
                 <div className="flex items-center gap-2">
                   {false && <button
                     onClick={() => { setShowLog(true); runIngest(selectedGroupData.keywords.map(k => k.id)) }}
                     disabled={running || selectedGroupData.keywords.length === 0}
-                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-hairline-strong dark:border-white/8 text-body dark:text-on-dark-soft hover:bg-surface-strong dark:hover:bg-white/8 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-hairline-strong text-body hover:bg-surface-strong transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     {running && fetchingIds.length > 0 && fetchingIds.every(id => selectedGroupData.keywords.map(k=>k.id).includes(id))
                       ? <Loader size={12} className="animate-spin" />
@@ -895,7 +895,7 @@ export default function KeywordManager() {
                   </button>}
                   <button
                     onClick={() => setAddingToGroup(selectedGroupData.id)}
-                    className="flex items-center gap-1.5 text-xs text-white px-3 py-1.5 rounded-lg transition-colors bg-ink dark:bg-on-dark dark:text-ink hover:bg-ink/80"
+                    className="flex items-center gap-1.5 text-xs text-white dark:text-[#171717] px-3 py-1.5 rounded-lg transition-colors bg-ink dark:bg-on-dark hover:bg-ink/80"
                   >
                     <Plus size={13} /> Add Keyword
                   </button>
@@ -904,7 +904,7 @@ export default function KeywordManager() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {selectedGroupData.keywords.length === 0 && (
-                  <p className="text-sm text-muted dark:text-on-dark-soft text-center py-6 col-span-2">No keywords yet. Add one above.</p>
+                  <p className="text-sm text-muted text-center py-6 col-span-2">No keywords yet. Add one above.</p>
                 )}
                 {selectedGroupData.keywords.map(kw => {
                   const ks = getKeywordStats(kw.id)
@@ -912,17 +912,17 @@ export default function KeywordManager() {
                   const HealthIcon = health.icon
 
                   return (
-                    <div key={kw.id} className="border border-hairline dark:border-white/8 rounded-xl p-4">
+                    <div key={kw.id} className="border border-hairline rounded-xl p-4">
                       <div className="flex items-start gap-2 justify-between mb-3">
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <HealthIcon size={14} style={{ color: health.color }} />
-                            <span className="text-sm font-semibold text-ink dark:text-on-dark break-words">{kw.term}</span>
+                            <span className="text-sm font-semibold text-ink break-words">{kw.term}</span>
                           </div>
                           {kw.aliases?.length > 0 && (
                             <div className="flex flex-wrap gap-1 mt-1 ml-5">
                               {kw.aliases.map(alias => (
-                                <span key={alias} className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-surface-strong dark:bg-white/8 text-[0.625rem] text-muted dark:text-on-dark-soft border border-hairline dark:border-white/8">
+                                <span key={alias} className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-surface-strong text-[0.625rem] text-muted border border-hairline">
                                   {alias}
                                 </span>
                               ))}
@@ -939,7 +939,7 @@ export default function KeywordManager() {
                               {false && <button
                                 onClick={() => { setShowLog(true); runIngest([kw.id]) }}
                                 disabled={running}
-                                className="p-1.5 rounded-lg hover:bg-surface-strong dark:hover:bg-white/8 transition-colors disabled:opacity-40"
+                                className="p-1.5 rounded-lg hover:bg-surface-strong transition-colors disabled:opacity-40"
                                 title="Fetch mentions for this keyword"
                               >
                                 {running && fetchingIds.includes(kw.id)
@@ -948,14 +948,14 @@ export default function KeywordManager() {
                               </button>}
                               <button
                                 onClick={() => setMovingKeyword(kw.id)}
-                                className="p-1.5 rounded-lg hover:bg-surface-strong dark:hover:bg-white/8 transition-colors"
+                                className="p-1.5 rounded-lg hover:bg-surface-strong transition-colors"
                                 title="Move to group"
                               >
                                 <FolderInput size={13} className="text-muted" />
                               </button>
                               <button
                                 onClick={() => setEditingKeyword({ groupId: selectedGroupData.id, kw })}
-                                className="p-1.5 rounded-lg hover:bg-surface-strong dark:hover:bg-white/8 transition-colors"
+                                className="p-1.5 rounded-lg hover:bg-surface-strong transition-colors"
                                 title="Edit"
                               >
                                 <Edit2 size={13} className="text-muted" />
@@ -963,7 +963,7 @@ export default function KeywordManager() {
                               <div className="relative">
                                 <button
                                   onClick={() => setGearOpen(gearOpen === kw.id ? null : kw.id)}
-                                  className="p-1.5 rounded-lg hover:bg-surface-strong dark:hover:bg-white/8 transition-colors"
+                                  className="p-1.5 rounded-lg hover:bg-surface-strong transition-colors"
                                   title="More options"
                                 >
                                   <Settings size={13} className="text-muted" />
@@ -990,7 +990,7 @@ export default function KeywordManager() {
                               }
                             }}
                           >
-                            <SelectTrigger className="flex-1 h-8 text-xs rounded-lg bg-white dark:bg-surface-dark-elevated border-hairline-strong dark:border-white/8">
+                            <SelectTrigger className="flex-1 h-8 text-xs rounded-lg bg-surface-card border-hairline-strong">
                               <SelectValue placeholder="Move to group…" />
                             </SelectTrigger>
                             <SelectContent>
@@ -1003,7 +1003,7 @@ export default function KeywordManager() {
                       )}
                       <div className="flex items-center gap-2 mb-2">
                         <Activity size={12} className="text-muted" />
-                        <span className="text-xs text-body dark:text-on-dark-soft">{health.label}</span>
+                        <span className="text-xs text-body">{health.label}</span>
                       </div>
                       {ks.total === 0 ? null : (
                         <KeywordMiniBar {...ks} />

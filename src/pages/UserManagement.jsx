@@ -31,7 +31,7 @@ const MASTER_OWNER = 'roy.soetantio@edgenta.com'
 const roleBadge = {
   super_admin: 'bg-[#2940BE]/10 text-[#2940BE]',
   admin: 'bg-[#732BCC]/10 text-[#732BCC]',
-  viewer: 'bg-surface-strong text-body dark:bg-white/8 dark:text-on-dark-soft',
+  viewer: 'bg-surface-strong text-body dark:bg-white/8',
 }
 
 // Top-level admin sections. Only User Management is live; the rest are placeholders.
@@ -121,8 +121,8 @@ export default function Admin() {
       <div className="flex-1 flex items-center justify-center py-16 text-center">
         <div>
           <AlertCircle size={26} className="mx-auto mb-3 text-[#E97132]" />
-          <p className="text-sm font-semibold text-ink dark:text-on-dark">Restricted</p>
-          <p className="text-sm text-muted dark:text-on-dark-soft">Only super admins can access this page.</p>
+          <p className="text-sm font-semibold text-ink">Restricted</p>
+          <p className="text-sm text-muted">Only super admins can access this page.</p>
         </div>
       </div>
     )
@@ -161,9 +161,9 @@ export default function Admin() {
       )}
 
       {/* Content container */}
-      <div className="rounded-xl border border-hairline dark:border-white/8 bg-white dark:bg-white/4 overflow-hidden">
+      <div className="rounded-xl border border-hairline bg-surface-card overflow-hidden">
         {/* Toolbar */}
-        <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-hairline dark:border-white/8">
+        <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-hairline">
           <div className="flex items-center gap-2">
             <div className="relative">
               <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none z-10" />
@@ -223,7 +223,7 @@ export default function Admin() {
                 return (
                   <TableRow key={u.email}>
                     <TableCell>
-                      <span className="font-medium text-ink dark:text-on-dark">{u.email}</span>
+                      <span className="font-medium text-ink">{u.email}</span>
                       {isMe && <span className="ml-1.5 text-[0.625rem] text-muted">(you)</span>}
                     </TableCell>
                     <TableCell>
@@ -231,7 +231,7 @@ export default function Admin() {
                         {u.role.replace('_', ' ')}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-body dark:text-on-dark-soft">{u.department || '—'}</TableCell>
+                    <TableCell className="text-body">{u.department || '—'}</TableCell>
                     <TableCell>
                       <div className="inline-flex items-center gap-2">
                         <Switch
@@ -246,7 +246,7 @@ export default function Admin() {
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-body dark:text-on-dark-soft whitespace-nowrap" title={u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleString() : 'Never signed in'}>
+                    <TableCell className="text-body whitespace-nowrap" title={u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleString() : 'Never signed in'}>
                       {relTime(u.last_sign_in_at)}
                     </TableCell>
                     <TableCell className="text-right">
@@ -283,9 +283,9 @@ function Th({ label, sortKey, sort, onSort }) {
   const Icon = !active ? ChevronsUpDown : sort.dir === 'asc' ? ArrowUp : ArrowDown
   return (
     <TableHead>
-      <button onClick={() => onSort(sortKey)} className="inline-flex items-center gap-1 hover:text-ink dark:hover:text-on-dark transition-colors">
+      <button onClick={() => onSort(sortKey)} className="inline-flex items-center gap-1 hover:text-ink transition-colors">
         {label}
-        <Icon size={12} className={active ? 'text-ink dark:text-on-dark' : 'opacity-50'} />
+        <Icon size={12} className={active ? 'text-ink' : 'opacity-50'} />
       </button>
     </TableHead>
   )
@@ -320,10 +320,10 @@ function AddUserModal({ canAddSuperAdmin, onClose, onError, onAdded }) {
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 px-4" onClick={onClose}>
-      <div className="w-full max-w-md rounded-xl border border-hairline-strong dark:border-white/8 bg-canvas dark:bg-surface-dark shadow-2xl" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-4 py-3 border-b border-hairline dark:border-white/8">
-          <span className="text-sm font-semibold text-ink dark:text-on-dark">Add User</span>
-          <button onClick={onClose} className="text-muted hover:text-ink dark:hover:text-on-dark"><X size={16} /></button>
+      <div className="w-full max-w-md rounded-xl border border-hairline-strong bg-canvas shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-hairline">
+          <span className="text-sm font-semibold text-ink">Add User</span>
+          <button onClick={onClose} className="text-muted hover:text-ink"><X size={16} /></button>
         </div>
         <form onSubmit={submit} className="p-4 space-y-3">
           <div className="space-y-1.5">
@@ -380,8 +380,8 @@ function StatCard({ label, value }) {
   return (
     <Card className="min-w-[120px]">
       <CardContent className="px-4 py-3">
-        <div className="text-xl font-semibold text-ink dark:text-on-dark leading-none">{value}</div>
-        <div className="text-[0.6875rem] text-muted dark:text-on-dark-soft mt-1">{label}</div>
+        <div className="text-xl font-semibold text-ink leading-none">{value}</div>
+        <div className="text-[0.6875rem] text-muted mt-1">{label}</div>
       </CardContent>
     </Card>
   )

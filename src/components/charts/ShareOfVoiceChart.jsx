@@ -7,9 +7,9 @@ const CustomTooltip = ({ active, payload }) => {
   const d = payload[0].payload
   return (
     <div className="chart-tooltip">
-      <p className="font-semibold text-ink dark:text-on-dark mb-1">{d.name}</p>
-      <p className="text-body dark:text-on-dark-soft">Mentions: <span className="font-medium">{d.count}</span></p>
-      <p className="text-body dark:text-on-dark-soft">Share: <span className="font-medium">{d.percent}%</span></p>
+      <p className="font-semibold text-ink mb-1">{d.name}</p>
+      <p className="text-body">Mentions: <span className="font-medium">{d.count}</span></p>
+      <p className="text-body">Share: <span className="font-medium">{d.percent}%</span></p>
     </div>
   )
 }

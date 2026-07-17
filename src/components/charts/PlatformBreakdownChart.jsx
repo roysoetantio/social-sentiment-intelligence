@@ -10,8 +10,8 @@ const CustomTooltip = ({ active, payload }) => {
   const d = payload[0].payload
   return (
     <div className="chart-tooltip">
-      <p className="font-semibold text-ink dark:text-on-dark mb-1.5">{d.name}</p>
-      <p className="text-body dark:text-on-dark-soft">Mentions: <span className="font-medium text-ink dark:text-on-dark">{d.total}</span></p>
+      <p className="font-semibold text-ink mb-1.5">{d.name}</p>
+      <p className="text-body">Mentions: <span className="font-medium text-ink">{d.total}</span></p>
       <p className="text-teal">Positive: <span className="font-medium">{d.positive}</span></p>
       <p className="text-orange">Negative: <span className="font-medium">{d.negative}</span></p>
     </div>
@@ -52,6 +52,8 @@ export default function PlatformBreakdownChart({ mentions, height = '100%' }) {
           labelLine={false}
           label={renderCustomLabel}
           paddingAngle={2}
+          stroke="rgb(var(--canvas))"
+          strokeWidth={1.5}
         >
           {data.map((entry, index) => (
             <Cell key={entry.name} fill={COLORS[index % COLORS.length]} />

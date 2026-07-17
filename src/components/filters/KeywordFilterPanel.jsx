@@ -32,7 +32,7 @@ export default function KeywordFilterPanel() {
             className={clsx(
               'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-all text-left',
               isEmpty ? 'opacity-35 cursor-not-allowed' :
-              isSelected ? 'font-medium text-[#2940BE] bg-[#2940BE]/10' : 'text-body dark:text-on-dark-soft hover:bg-surface-strong dark:hover:bg-white/8'
+              isSelected ? 'font-medium text-[#2940BE] bg-[#2940BE]/10' : 'text-body hover:bg-surface-strong'
             )}
           >
             <div className={clsx(
@@ -44,7 +44,7 @@ export default function KeywordFilterPanel() {
             <span className="truncate flex-1">{kw.term}</span>
             <span className={clsx(
               'text-[0.625rem] font-semibold rounded-full px-1.5 py-0.5 border flex-shrink-0',
-              isSelected ? 'bg-white/20 text-[#2940BE] border-transparent bg-[#2940BE]/20' : 'bg-canvas dark:bg-white/8 border-hairline-strong dark:border-white/8 text-muted dark:text-on-dark-soft'
+              isSelected ? 'bg-white/20 text-[#2940BE] border-transparent bg-[#2940BE]/20' : 'bg-canvas dark:bg-white/8 border-hairline-strong text-muted'
             )}>
               {count}
             </span>

@@ -49,7 +49,7 @@ export default function KeywordComparisonChart({ mentions, height = '100%' }) {
       <div className="flex-1">
         <ResponsiveContainer width="100%" height="100%">
           <RadarChart data={radarData} margin={{ top: 0, right: 10, bottom: 0, left: 10 }} outerRadius="75%">
-            <PolarGrid stroke="#e5e7eb" />
+            <PolarGrid stroke="var(--chart-grid)" />
             <PolarAngleAxis
               dataKey="subject"
               tick={{ fontSize: 10, fill: '#9ca3af' }}

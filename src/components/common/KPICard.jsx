@@ -54,7 +54,7 @@ export default function KPICard({
       'group relative rounded-lg border p-3 transition-shadow duration-200 hover:shadow-card flex flex-col justify-between',
       dark
         ? 'bg-surface-dark-elevated border-white/8 text-on-dark'
-        : 'bg-canvas dark:bg-surface-dark-elevated border-hairline-strong dark:border-white/8',
+        : 'bg-canvas border-hairline-strong',
       className
     )}>
       {tooltip && (
@@ -66,19 +66,19 @@ export default function KPICard({
         <div className="flex-1 min-w-0">
           <p className={clsx(
             'text-xs font-semibold mb-1 truncate',
-            dark ? 'text-on-dark-soft' : 'text-muted dark:text-on-dark-soft'
+            dark ? 'text-on-dark-soft' : 'text-muted'
           )}>
             {title}
           </p>
           <div className="flex items-baseline gap-1">
-            {prefix && <span className={clsx('text-sm font-medium', dark ? 'text-on-dark-soft' : 'text-muted dark:text-on-dark-soft')}>{prefix}</span>}
+            {prefix && <span className={clsx('text-sm font-medium', dark ? 'text-on-dark-soft' : 'text-muted')}>{prefix}</span>}
             <span
-              className={clsx('kpi-number font-semibold leading-none tracking-tight dark:text-on-dark', compact ? 'text-xl' : 'text-3xl')}
-              style={{ color: valueColor || (dark ? '#ffffff' : '#171717') }}
+              className={clsx('kpi-number font-semibold leading-none tracking-tight', dark ? 'text-on-dark' : 'text-ink', compact ? 'text-xl' : 'text-3xl')}
+              style={valueColor ? { color: valueColor } : undefined}
             >
               {displayValue}
             </span>
-            {unit && <span className={clsx('text-sm font-medium', dark ? 'text-on-dark-soft' : 'text-muted dark:text-on-dark-soft')}>{unit}</span>}
+            {unit && <span className={clsx('text-sm font-medium', dark ? 'text-on-dark-soft' : 'text-muted')}>{unit}</span>}
           </div>
         </div>
         {Icon && (
@@ -89,7 +89,7 @@ export default function KPICard({
       </div>
 
       {subtitle && (
-        <p className={clsx('text-xs truncate', dark ? 'text-on-dark-soft' : 'text-body dark:text-on-dark-soft')}>{subtitle}</p>
+        <p className={clsx('text-xs truncate', dark ? 'text-on-dark-soft' : 'text-body')}>{subtitle}</p>
       )}
     </div>
   )

@@ -11,22 +11,26 @@ export default {
   theme: {
     extend: {
       colors: {
+        // ── Theme-aware semantic tokens (flip via CSS vars on .dark) ──
         // Canvas
-        canvas: '#ffffff',
-        'canvas-soft': '#fafafa',
+        canvas: 'rgb(var(--canvas) / <alpha-value>)',
+        'canvas-soft': 'rgb(var(--canvas-soft) / <alpha-value>)',
         // Surfaces
-        'surface-card': '#ffffff',
-        'surface-strong': '#f0f0f3',
+        'surface-card': 'rgb(var(--surface-card) / <alpha-value>)',
+        'surface-strong': 'rgb(var(--surface-strong) / <alpha-value>)',
+        // Text
+        ink: 'rgb(var(--ink) / <alpha-value>)',
+        body: 'rgb(var(--body) / <alpha-value>)',
+        muted: 'rgb(var(--muted) / <alpha-value>)',
+        // Borders
+        hairline: 'rgb(var(--hairline) / <alpha-value>)',
+        'hairline-strong': 'rgb(var(--hairline-strong) / <alpha-value>)',
+        // ── Fixed tokens ──
+        'muted-soft': '#cccccc',
+        // Legacy dark-surface tokens — retained for the few intentional dark-only
+        // accents (gradients, inverting buttons) that still reference them.
         'surface-dark': '#171717',
         'surface-dark-elevated': '#1a1a1a',
-        // Text
-        ink: '#171717',
-        body: '#60646c',
-        muted: 'rgb(120, 120, 129)',
-        'muted-soft': '#cccccc',
-        // Borders
-        hairline: '#E6E6E8',
-        'hairline-strong': '#E6E6E8',
         // Primary — DEFAULT now maps to the brand (shadcn `--primary`); `active` kept for existing usages
         primary: {
           DEFAULT: 'hsl(var(--primary) / <alpha-value>)',

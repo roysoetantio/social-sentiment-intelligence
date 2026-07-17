@@ -7,7 +7,7 @@ import {
 import clsx from 'clsx'
 
 const DAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
-const PRIMARY = '#171717'
+const PRIMARY = 'var(--cal-selected)'
 
 function CalendarMonth({ month, startDate, endDate, hoverDate, onDayClick, onDayHover, onDayLeave, selectingEnd, mentionDates, large }) {
   const today = startOfDay(new Date())
@@ -39,7 +39,7 @@ function CalendarMonth({ month, startDate, endDate, hoverDate, onDayClick, onDay
               end: isBefore(startDate, rangeEnd) ? rangeEnd : startDate,
             })
 
-          const RANGE_BG = '#dde3f8'
+          const RANGE_BG = 'var(--cal-range)'
           const hasRange = startDate && rangeEnd && !isSameDay(startDate, rangeEnd)
           const isFuture = isAfter(day, today)
 
@@ -191,7 +191,7 @@ export default function DateRangePicker({ startDate, endDate, onApply, onCancel,
                   onClick={() => switchMode(opt.value)}
                   className={clsx(
                     'px-3 h-8 text-xs font-medium rounded-md transition-all',
-                    mode === opt.value ? 'bg-white text-ink shadow-sm' : 'text-body hover:text-ink'
+                    mode === opt.value ? 'bg-canvas text-ink shadow-sm' : 'text-body hover:text-ink'
                   )}
                 >
                   {opt.label}
@@ -207,7 +207,7 @@ export default function DateRangePicker({ startDate, endDate, onApply, onCancel,
                   className={clsx(
                     'flex-1 py-2 rounded-lg text-xs font-medium border transition-colors',
                     mobileStep === 'start'
-                      ? 'border-ink bg-ink text-white'
+                      ? 'border-primary bg-primary text-white'
                       : pickedStart
                         ? 'border-hairline-strong bg-surface-strong text-ink'
                         : 'border-hairline text-muted'
@@ -220,7 +220,7 @@ export default function DateRangePicker({ startDate, endDate, onApply, onCancel,
                   className={clsx(
                     'flex-1 py-2 rounded-lg text-xs font-medium border transition-colors',
                     mobileStep === 'end'
-                      ? 'border-ink bg-ink text-white'
+                      ? 'border-primary bg-primary text-white'
                       : pickedEnd
                         ? 'border-hairline-strong bg-surface-strong text-ink'
                         : 'border-hairline text-muted'
@@ -292,7 +292,7 @@ export default function DateRangePicker({ startDate, endDate, onApply, onCancel,
             onClick={() => switchMode(opt.value)}
             className={clsx(
               `${mode === 'single' ? 'flex-1' : ''} px-3 h-7 text-xs font-medium rounded-md transition-all`,
-              mode === opt.value ? 'bg-white text-ink shadow-sm' : 'text-body hover:text-ink'
+              mode === opt.value ? 'bg-canvas text-ink shadow-sm' : 'text-body hover:text-ink'
             )}
           >
             {opt.label}

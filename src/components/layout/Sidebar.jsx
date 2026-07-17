@@ -22,14 +22,19 @@ const navItems = [
 ]
 
 const Logo = ({ onClose }) => (
-  <div className="flex items-center justify-between px-4 border-b border-hairline dark:border-white/8 flex-shrink-0" style={{ height: '64px' }}>
+  <div className="flex items-center justify-between px-4 border-b border-hairline flex-shrink-0" style={{ height: '64px' }}>
     <div className="flex items-center gap-3 min-w-0">
       <img
         src="/assets/uemedgenta-logo.png"
         alt="UEM Edgenta"
-        className="h-7 w-auto object-contain object-left flex-shrink-0"
+        className="h-7 w-auto object-contain object-left flex-shrink-0 dark:hidden"
       />
-      <div className="text-xs font-semibold text-body dark:text-on-dark-soft leading-tight">Social Sentiment<br />Intelligence</div>
+      <img
+        src="/assets/uemedgenta-logo-white.png"
+        alt="UEM Edgenta"
+        className="h-7 w-auto object-contain object-left flex-shrink-0 hidden dark:block"
+      />
+      <div className="text-xs font-semibold text-body leading-tight">Social Sentiment<br />Intelligence</div>
     </div>
     {onClose && (
       <button onClick={onClose} className="lg:hidden ml-2 p-1 rounded-md hover:bg-surface-strong text-muted">
@@ -40,9 +45,9 @@ const Logo = ({ onClose }) => (
 )
 
 const StatPill = ({ label, value, color }) => (
-  <div className="flex items-center justify-between px-3 py-2.5 rounded-md bg-surface-strong dark:bg-white/8">
-    <span className="text-xs text-body dark:text-on-dark-soft">{label}</span>
-    <span className="text-sm font-semibold dark:text-on-dark" style={{ color }}>{value}</span>
+  <div className="flex items-center justify-between px-3 py-2.5 rounded-md bg-surface-strong">
+    <span className="text-xs text-body">{label}</span>
+    <span className="text-sm font-semibold" style={{ color }}>{value}</span>
   </div>
 )
 
@@ -73,7 +78,7 @@ export default function Sidebar({ isOpen, onClose }) {
   return (
     <aside
       className={clsx(
-        'w-[300px] lg:w-[220px] h-full bg-canvas-soft dark:bg-surface-dark border-r border-hairline dark:border-white/8 flex flex-col flex-shrink-0 overflow-y-auto',
+        'w-[300px] lg:w-[220px] h-full bg-canvas-soft border-r border-hairline flex flex-col flex-shrink-0 overflow-y-auto',
         // On mobile/tablet: fixed drawer overlay
         'fixed inset-y-0 left-0 z-30 transition-transform duration-250 ease-in-out lg:relative lg:translate-x-0 lg:z-auto',
         isOpen ? 'translate-x-0' : '-translate-x-full'
@@ -86,10 +91,10 @@ export default function Sidebar({ isOpen, onClose }) {
         {isSuperAdmin && (
           <div className="mb-3">
             <Select value={viewDepartment} onValueChange={setViewDepartment}>
-              <SelectTrigger className="h-8 text-xs bg-canvas dark:bg-surface-dark border-hairline-strong dark:border-white/8">
+              <SelectTrigger className="h-8 text-xs bg-canvas border-hairline-strong">
                 <span className="truncate">
-                  <span className="text-muted dark:text-on-dark-soft">Viewing: </span>
-                  <span className="font-medium text-ink dark:text-on-dark">{viewDepartment}</span>
+                  <span className="text-muted">Viewing: </span>
+                  <span className="font-medium text-ink">{viewDepartment}</span>
                 </span>
               </SelectTrigger>
               <SelectContent>
@@ -130,21 +135,21 @@ export default function Sidebar({ isOpen, onClose }) {
         )}
       </nav>
 
-      <div className="p-4 border-t border-hairline dark:border-white/8">
+      <div className="p-4 border-t border-hairline">
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-full bg-surface-strong dark:bg-white/8 flex items-center justify-center flex-shrink-0">
-            <span className="text-xs font-semibold text-ink dark:text-on-dark">{initials}</span>
+          <div className="w-7 h-7 rounded-full bg-surface-strong flex items-center justify-center flex-shrink-0">
+            <span className="text-xs font-semibold text-ink">{initials}</span>
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-xs font-medium text-ink dark:text-on-dark truncate" title={email}>{email}</div>
-            <div className="text-[0.625rem] text-muted dark:text-on-dark-soft">
+            <div className="text-xs font-medium text-ink truncate" title={email}>{email}</div>
+            <div className="text-[0.625rem] text-muted">
               {subLabel}
             </div>
           </div>
           <button
             onClick={signOut}
             title="Sign out"
-            className="flex-shrink-0 p-1.5 rounded-md text-muted hover:text-ink dark:hover:text-on-dark hover:bg-surface-strong dark:hover:bg-white/8 transition-colors"
+            className="flex-shrink-0 p-1.5 rounded-md text-muted hover:text-ink hover:bg-surface-strong transition-colors"
           >
             <LogOut size={15} />
           </button>

@@ -4,7 +4,7 @@ import { getHeatmapData } from '../../data/analytics'
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 const getRatioColor = (ratio, total) => {
-  if (total === 0) return '#f3f4f6'
+  if (total === 0) return 'rgb(var(--surface-strong))'
   if (ratio <= 0) return '#19C9A5'
   if (ratio < 0.2) return '#74dcc3'
   if (ratio < 0.4) return '#fbbf24'
@@ -94,14 +94,14 @@ export default function SentimentHeatmap({ mentions, onCellClick }) {
       {/* Tooltip */}
       {tooltip && (
         <div
-          className="fixed z-50 bg-canvas dark:bg-surface-dark-elevated rounded-lg shadow-card border border-hairline-strong dark:border-white/8 p-2.5 text-xs pointer-events-none"
+          className="fixed z-50 bg-canvas rounded-lg shadow-card border border-hairline-strong p-2.5 text-xs pointer-events-none"
           style={{ left: tooltip.x + 12, top: tooltip.y - 40 }}
         >
-          <p className="font-semibold text-ink dark:text-on-dark">{tooltip.day} {tooltip.hour}</p>
-          <p className="text-body dark:text-on-dark-soft">Mentions: <span className="font-medium text-ink dark:text-on-dark">{tooltip.total}</span></p>
+          <p className="font-semibold text-ink">{tooltip.day} {tooltip.hour}</p>
+          <p className="text-body">Mentions: <span className="font-medium text-ink">{tooltip.total}</span></p>
           <p className="text-orange">Negative: <span className="font-medium">{tooltip.negative}</span></p>
           {tooltip.total > 0 && (
-            <p className="text-muted dark:text-on-dark-soft">Neg rate: {Math.round(tooltip.negative / tooltip.total * 100)}%</p>
+            <p className="text-muted">Neg rate: {Math.round(tooltip.negative / tooltip.total * 100)}%</p>
           )}
         </div>
       )}
