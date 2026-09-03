@@ -4,6 +4,7 @@ import { formatDateTime } from '../../utils/format'
 import { format } from 'date-fns'
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { useDashboard } from '../../context/DashboardContext'
+import { useSocialFilter } from '../../context/SocialFilterContext'
 import { useTheme } from '../../context/ThemeContext'
 import DateRangePicker from '../ui/DateRangePicker'
 import clsx from 'clsx'
@@ -16,6 +17,10 @@ const presets = [
   { label: '1Y', value: '1y' },
 ]
 
+// Social Feed holds our full publishing history, so it gets a ceiling the
+// mentions pages don't — those are windowed by design.
+const socialPresets = [...presets, { label: 'All', value: 'all' }]
+
 export default function TopBar({ title, shortTitle, onMenuClick }) {
   const navigate = useNavigate()
   const location = useLocation()
@@ -23,18 +28,33 @@ export default function TopBar({ title, shortTitle, onMenuClick }) {
   const showBack = location.pathname === '/keywords'
   const inGroupDetail = showBack && searchParams.has('g')
   const handleBack = () => inGroupDetail ? navigate('/keywords') : navigate('/more')
-  // Keyword Manager doesn't use the search/date filters — show them visually disabled.
-  const filtersDisabled = location.pathname === '/keywords'
-  const FILTERS_NA_MSG = "Search & date filters don't apply to Keyword Manager"
+  // Pages with nothing to filter show the controls visually disabled rather
+  // than live-but-inert: Keyword Manager, and Facebook until it has a source.
+  const filtersDisabled =
+    location.pathname === '/keywords' || location.pathname === '/social/facebook'
+  const FILTERS_NA_MSG = location.pathname === '/social/facebook'
+    ? 'Facebook is not connected yet — nothing to filter'
+    : "Search & date filters don't apply to Keyword Manager"
+
+  const dashboard = useDashboard()
+  const social = useSocialFilter()
+  // Social Feed reuses these exact controls, just pointed at its own store, so
+  // the page needs no second set of range tabs of its own.
+  const onSocial = location.pathname.startsWith('/social')
+  const filters = onSocial ? social : dashboard
+
   const {
     searchQuery, setSearchQuery,
     dateRange, setDateRange,
     setDatePreset,
     activePreset, setActivePreset,
-    allMentions,
-    setRiskOnly,
-    readIds, markRead, markAllRead,
-  } = useDashboard()
+  } = filters
+  const { allMentions, setRiskOnly, readIds, markRead, markAllRead } = dashboard
+
+  // The picker dots days that actually carry data — posts on social, mentions elsewhere.
+  const pickerItems = onSocial ? social.posts : allMentions
+  const searchPlaceholder = onSocial ? 'Search posts...' : 'Search mentions...'
+  const activePresets = onSocial ? socialPresets : presets
   const { isDark, toggleTheme } = useTheme()
 
   const [pickerOpen, setPickerOpen] = useState(false)
@@ -165,12 +185,12 @@ export default function TopBar({ title, shortTitle, onMenuClick }) {
                 : 'border-hairline-strong text-body bg-canvas hover:border-ink/30 dark:border-white/8'
             )}
           >
-            <span>{presets.find(p => p.value === activePreset)?.label ?? 'Custom'}</span>
+            <span>{activePresets.find(p => p.value === activePreset)?.label ?? 'Custom'}</span>
             <ChevronDown size={11} className={clsx('transition-transform', presetDropdownOpen && 'rotate-180')} />
           </button>
           {presetDropdownOpen && (
             <div className="absolute right-0 top-10 z-50 bg-canvas border border-hairline-strong rounded-md shadow-md overflow-hidden">
-              {presets.map(p => (
+              {activePresets.map(p => (
                 <button
                   key={p.value}
                   onClick={() => { setDatePreset(p.value); setPresetDropdownOpen(false) }}
@@ -209,7 +229,7 @@ export default function TopBar({ title, shortTitle, onMenuClick }) {
               <DateRangePicker
                 startDate={dateRange.start}
                 endDate={dateRange.end}
-                mentions={allMentions}
+                mentions={pickerItems}
                 onApply={(start, end) => {
                   end.setHours(23, 59, 59, 999)
                   setDateRange({ start, end })
@@ -235,7 +255,7 @@ export default function TopBar({ title, shortTitle, onMenuClick }) {
             type="text"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Search mentions..."
+            placeholder={searchPlaceholder}
             disabled={filtersDisabled}
             className={clsx(
               'w-full h-9 pl-8 pr-14 text-sm bg-canvas border border-hairline-strong rounded-md focus:outline-none focus:border-ink dark:focus:border-white/30 transition-colors text-ink placeholder-muted',
@@ -261,7 +281,7 @@ export default function TopBar({ title, shortTitle, onMenuClick }) {
           )}
           title={filtersDisabled ? FILTERS_NA_MSG : undefined}
         >
-          {presets.map(p => (
+          {activePresets.map(p => (
             <button
               key={p.value}
               onClick={() => setDatePreset(p.value)}
@@ -307,7 +327,7 @@ export default function TopBar({ title, shortTitle, onMenuClick }) {
             <DateRangePicker
               startDate={dateRange.start}
               endDate={dateRange.end}
-              mentions={allMentions}
+              mentions={pickerItems}
               onApply={(start, end) => {
                 end.setHours(23, 59, 59, 999)
                 setDateRange({ start, end })
@@ -442,7 +462,7 @@ export default function TopBar({ title, shortTitle, onMenuClick }) {
             type="text"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Search mentions..."
+            placeholder={searchPlaceholder}
             className="flex-1 h-full text-sm bg-transparent focus:outline-none text-ink placeholder-muted"
           />
           {searchQuery && (

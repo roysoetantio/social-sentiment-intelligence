@@ -6,8 +6,10 @@ const AuthContext = createContext(null)
 // ⚠️ DEV-ONLY auth bypass (temporary). Never set VITE_DEV_NO_AUTH in production.
 const DEV_NO_AUTH = import.meta.env.VITE_DEV_NO_AUTH === 'true'
 
-// The departments a user can belong to / a super admin can view.
-export const DEPARTMENTS = ['CCD', 'Infra']
+// Tenants (departments) live in the `tenants` table and are managed from
+// Admin → Departments. This list is only a last-resort fallback for when that
+// table can't be read (missing migration / offline), so the app still renders.
+export const FALLBACK_DEPARTMENTS = ['CCD', 'Infra']
 
 /**
  * Auth + authorization layer.
@@ -42,11 +44,15 @@ export function AuthProvider({ children }) {
   // null = table not present / not loaded yet → callers fall back to the legacy group model.
   const [keywordTenantTags, setKeywordTenantTags] = useState(null)
 
-  // Super admin: which department's data is currently being viewed (always a real dept)
-  const [viewDepartment, setViewDepartmentState] = useState(() => {
-    const stored = localStorage.getItem('view_department')
-    return DEPARTMENTS.includes(stored) ? stored : DEPARTMENTS[0]
-  })
+  // The tenant registry (from the `tenants` table). null = not loaded / unreadable
+  // → `departments` falls back to FALLBACK_DEPARTMENTS.
+  const [tenants, setTenants] = useState(null)
+
+  // Super admin: which department's data is currently being viewed. Validated
+  // against the loaded tenant list below (the list isn't known on first render).
+  const [viewDepartment, setViewDepartmentState] = useState(
+    () => localStorage.getItem('view_department') || FALLBACK_DEPARTMENTS[0]
+  )
   const setViewDepartment = useCallback((d) => {
     localStorage.setItem('view_department', d)
     setViewDepartmentState(d)
@@ -145,6 +151,26 @@ export function AuthProvider({ children }) {
     return () => { cancelled = true }
   }, [session])
 
+  // ── Tenant registry ────────────────────────────────────────────────────────
+  // Read once a session exists (RLS on `tenants` requires an active user).
+  // An empty/errored result is treated as "unreadable" (null) rather than
+  // "no tenants", so the switcher never ends up with an empty list.
+  const refreshTenants = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('tenants')
+      .select('name, is_active, created_at')
+      .order('name')
+    const rows = error ? null : (data || [])
+    setTenants(rows && rows.length ? rows : null)
+    return rows
+  }, [])
+
+  useEffect(() => {
+    if (session === undefined) return
+    if (!session && !DEV_NO_AUTH) { setTenants(null); return }
+    refreshTenants()
+  }, [session, refreshTenants])
+
   // Re-fetch the department → group access mapping without re-resolving the whole session.
   // Called after keyword groups are created/deleted so scoping stays fresh app-wide.
   const refreshGroupAccess = useCallback(async () => {
@@ -171,6 +197,21 @@ export function AuthProvider({ children }) {
     const { data: tags, error: tErr } = await tq
     setKeywordTenantTags(tErr ? null : (tags || []))
   }, [profile])
+
+  // Active tenant names — what the department switcher and Add User form offer.
+  const departments = useMemo(
+    () => (tenants ? tenants.filter(t => t.is_active).map(t => t.name) : FALLBACK_DEPARTMENTS),
+    [tenants]
+  )
+
+  // The stored/selected department may have been renamed, deactivated or deleted
+  // in another session — snap back to the first available tenant when that happens.
+  // Only once the real list has loaded: correcting against the fallback list would
+  // wrongly reset a valid selection that simply isn't in the fallback.
+  useEffect(() => {
+    if (!tenants || !departments.length) return
+    if (!departments.includes(viewDepartment)) setViewDepartment(departments[0])
+  }, [tenants, departments, viewDepartment, setViewDepartment])
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut()
@@ -239,13 +280,18 @@ export function AuthProvider({ children }) {
     allowedGroupIds,
     allowedKeywordIds,
     keywordGroupMap,
+    // The tenant whose data is currently on screen — a super admin's selected
+    // department, or the user's own. Use this for tenant-scoped UI gating.
+    currentDepartment: currentTenantDept,
     // Super admin department switcher
     viewDepartment,
     setViewDepartment,
-    departments: DEPARTMENTS,
+    departments,          // active tenant names
+    tenants,              // full rows (incl. inactive) — Admin → Departments
+    refreshTenants,
     refreshGroupAccess,
     signOut,
-  }), [status, session, user, fullName, profile, isSuperAdmin, allowedGroupIds, allowedKeywordIds, keywordGroupMap, viewDepartment, setViewDepartment, refreshGroupAccess, signOut])
+  }), [status, session, user, fullName, profile, isSuperAdmin, currentTenantDept, allowedGroupIds, allowedKeywordIds, keywordGroupMap, viewDepartment, setViewDepartment, departments, tenants, refreshTenants, refreshGroupAccess, signOut])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

@@ -149,3 +149,73 @@ export const fetchAllMentions = async () => {
   console.info(`[Dashboard] Loaded ${mentions.length} mentions from Supabase`)
   return { mentions, source: 'supabase', liveCount: mentions.length }
 }
+
+// ---------------------------------------------------------------------------
+// Social Feed — our OWN published posts (social_posts table), not mentions.
+// Deliberately a separate fetch from fetchAllMentions: owned content must never
+// reach the mentions pipeline or its counts.
+// ---------------------------------------------------------------------------
+// PostgREST caps a single response, so a flat .limit() would silently truncate
+// the feed once the account's history outgrows it — and the page's "All" range
+// would then quietly mean "all of the first page". Walk the rows in blocks.
+const SOCIAL_PAGE = 1000
+
+export const fetchSocialPosts = async ({ platform = 'instagram', limit = Infinity } = {}) => {
+  const rows = []
+
+  for (let from = 0; rows.length < limit; from += SOCIAL_PAGE) {
+    const take = Math.min(SOCIAL_PAGE, limit - rows.length)
+    let q = supabase
+      .from('social_posts')
+      .select('*')
+      .order('published_at', { ascending: false })
+      .range(from, from + take - 1)
+
+    if (platform && platform !== 'all') q = q.eq('platform', platform)
+
+    const { data, error } = await q
+
+    if (error) {
+      console.warn('[SocialFeed] Supabase fetch failed', error.message)
+      // Keep whatever we already have rather than throwing the page to an
+      // error state over a failure on page three.
+      if (rows.length === 0) return { posts: [], status: 'error', message: error.message }
+      break
+    }
+    if (!data || data.length === 0) break
+    rows.push(...data)
+    if (data.length < take) break
+  }
+
+  if (rows.length === 0) return { posts: [], status: 'empty' }
+
+  return { posts: rows.map(rowToSocialPost), status: 'ok' }
+}
+
+const rowToSocialPost = (row) => {
+  // total_interactions isn't stored as its own column — derive the engagement
+  // figure from the parts we do keep so the card and the sort agree.
+  const engagements = (row.likes || 0) + (row.comments_count || 0)
+    + (row.shares || 0) + (row.saves || 0)
+  const reach = row.reach || 0
+  return {
+    id: row.id,
+    platform: row.platform,
+    handle: row.account_handle,
+    type: row.post_type || 'POST',
+    caption: row.caption || '',
+    permalink: row.permalink,
+    thumbnail: row.thumbnail_url,
+    publishedAt: row.published_at,
+    likes: row.likes || 0,
+    comments: row.comments_count || 0,
+    shares: row.shares || 0,
+    saves: row.saves || 0,
+    reach,
+    views: row.video_views || 0,
+    engagements,
+    // Reach-based rather than follower-based: reach is what the post actually
+    // achieved, and it's the number Meta itself reports against.
+    engagementRate: reach > 0 ? (engagements / reach) * 100 : null,
+  }
+}

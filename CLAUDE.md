@@ -34,11 +34,120 @@ Each source has a `fetch*()` function that returns rows matching the Supabase sc
 | `google_cse` | `fetchGoogleCSE` | Google Custom Search |
 | `rss_my` | `fetchRSS` | Hardcoded Malaysian news RSS feeds |
 | `worldnews` | `fetchWorldNews` | World News API — global news search |
+| `instagram_comments` | `scripts/ingest-instagram-mentions.js` | Comments on our own IG posts. Needs the Meta app in **Live** mode |
+| `instagram_tags` | `scripts/ingest-instagram-mentions.js` | Posts by other accounts that @-tagged us. Blocked handles come from `blacklist` |
 | `claude_search` | Claude WebSearch tool (agent step) | Claude searches the web for each keyword and saves results directly to Supabase — run as part of Step 1 in post-ingest workflow |
 
 **Rule:** When adding a new ingest source, always update both:
 - `src/components/filters/FilterBar.jsx` → `SOURCE_GROUPS` (icon + label for filter sidebar)
 - `src/pages/MentionsExplorer.jsx` → mention card source label map
+
+## Social Feed (owned accounts)
+
+`social_posts` holds **our own published posts** — currently Instagram
+(`@uemedgenta`). It is deliberately NOT part of the mentions pipeline: owned
+content in `mentions` would inflate the headline counts, which is the same
+reason the ingest `BLACKLIST` exists. The "new source → update FilterBar +
+MentionsExplorer" rule does **not** apply here.
+
+```bash
+node scripts/ingest-instagram-owned.js            # last 12 months
+node scripts/ingest-instagram-owned.js --all      # full history
+node scripts/ingest-instagram-owned.js --dry      # preview, writes nothing
+```
+
+- Pages: `src/pages/SocialFeed.jsx` at `/social/instagram` and the Facebook
+  placeholder `src/pages/SocialFeedFacebook.jsx` at `/social/facebook`.
+  `/social` redirects to the Instagram page. In the sidebar these sit under a
+  collapsible **Social Feed** group (`children` on the nav item in
+  `Sidebar.jsx`); add a platform by adding a child there plus a route.
+- Gated to the **CCD** tenant via `departments: ['CCD']` on the nav group (and a
+  matching check in `More.jsx` for mobile). Like `/keywords` and `/admin`, this
+  is nav-level gating only — the routes stay reachable by URL, and RLS lets any
+  active user read the table.
+- Search and the date window come from the **TopBar**, not from in-page
+  controls: `SocialFilterContext` mirrors the slice of `DashboardContext` the
+  TopBar reads, and the TopBar swaps stores when the route starts with
+  `/social`. The page registers its loaded posts back into the context so the
+  date picker can mark days that have posts.
+- The TopBar gains an **All** preset on `/social` only, resolved to the oldest
+  loaded post rather than a fixed span. Its ceiling is whatever ingest pulled —
+  the default run is 12 months, so `--all` is required for real full history.
+  `fetchSocialPosts` pages the table in blocks of 1000 so a long history isn't
+  silently truncated by PostgREST's response cap.
+- The grid renders 24 posts at a time and extends on scroll (IntersectionObserver
+  on a sentinel, plus a Load more button for keyboard users and backgrounded
+  tabs, where no intersection is ever reported).
+- Insights are fetched **inline** on the media edge
+  (`insights.metric(reach,saved,shares,total_interactions,views)`), which keeps a
+  12-month pull at ~8 requests instead of ~300. `impressions` is retired.
+- The script refreshes `IG_ACCESS_TOKEN` on every run and writes the new token
+  and expiry back to `.env`, so the 60-day token never lapses while ingest runs.
+- Instagram CDN URLs are signed and expire; the cards fall back to a placeholder
+  and re-running ingest refreshes them.
+- Comment text IS available, so the page carries no "comments are unavailable"
+  caveat. Comment bodies land in `mentions` as `instagram_comments`, not on this
+  page — this page is post performance only.
+- **Comment text IS available — the app must stay in Live mode.** While the Meta
+  app was in Development mode, `/{media-id}/comments` answered `200` with
+  `data: []` *and paging cursors* (cursors on an empty array mean "filtered",
+  not "none"). Publishing the app to Live mode fixed it with no App Review:
+  comments and the `/me/tags` edge both returned full data immediately. If
+  comments ever go empty again, check the app has not been reverted to
+  Development mode before assuming a permissions problem.
+- Comment author is `from{id,username}`. A bare `username` field is accepted by
+  the API and silently returns nothing — it is not an error, just absent.
+
+### Instagram keyword attribution
+
+`ingest-instagram-mentions.js` hardcodes no keyword, brand name or owned handle
+— everything comes from `keywords` and `blacklist` at run time.
+
+- **Comments** contain no keyword (nobody writes the brand name replying to our
+  own post), so they inherit `keyword_matched` from the parent post's caption.
+  A caption matching nothing falls back to whichever keyword claims our own
+  handle. This is why a comment can carry `shaiful-subhan` — it sat on a post
+  about him, so it reaches that keyword's tenants.
+- **@-tagged posts**: the tag lives in post metadata, not caption text, so
+  caption matching alone misses it. Appearing on `/me/tags` *is* the match, and
+  it resolves through the keyword that claims `uemedgenta` as an alias. **Keep
+  that alias on the UEM Edgenta keyword** or tagged posts stop being attributed.
+- **Blocked handles** are derived from `blacklist`: `owned` rows contribute
+  their first domain label (`uemedgenta.com` → `uemedgenta`) and any row with a
+  path contributes its last segment (`instagram.com/uemgroup` → `uemgroup`).
+  Add new ones to the table, never to the script.
+- `sentiment_confidence` **0.3 exactly** is the sentinel for "AFINN only, not
+  yet judged by Claude". Re-running ingest preserves any other value, including
+  a deliberately low one — flagging a row as too ambiguous to call is a
+  decision and must not be reverted to the baseline.
+
+## Multi-tenancy (departments)
+
+A **tenant** (called a "department" in the UI) owns keyword tags, folder mappings,
+users and its own AI Digest. The tenant list lives in the **`tenants` table** — it is
+NOT hardcoded. `src/context/AuthContext.jsx` loads it at session start and exposes
+`departments` (active names) + `tenants` (full rows) from `useAuth()`.
+`FALLBACK_DEPARTMENTS` in that file is only used when the table can't be read.
+
+### Adding a new tenant
+1. **Admin → Departments → Add Department** (super admin only)
+2. Point the sidebar **department switcher** at the new tenant
+3. **Keyword Manager** → New Group, then Add Keyword — keyword and folder management
+   is always per-tenant there, never from the Admin page
+4. `npm run ingest` picks up the new keywords automatically (keywords load from Supabase)
+5. `scripts/generate-digest.js` discovers tenants from `keyword_tenants`, so the new
+   tenant gets its own digest once it has keywords
+
+Rename/deactivate/delete also live in Admin → Departments. Deleting refuses while
+users are still assigned; it cascades the tenant's folder mappings, keyword tags and
+digests, deactivates keywords no other tenant tracks, and **never** deletes mentions.
+
+**Do not reintroduce a hardcoded department list.** `app_users` and
+`department_group_access` used to carry `CHECK (department IN ('CCD','Infra'))`;
+`db/migrations/003_tenants.sql` drops those in favour of FKs to `tenants(name)`.
+
+Note: `src/data/fallbackKeywords.js` is a CCD-shaped offline fallback and is not
+tenant-aware — don't add other tenants' keywords to it.
 
 ## Adding a new keyword
 
@@ -66,6 +175,68 @@ Each source has a `fetch*()` function that returns rows matching the Supabase sc
 - **BLACKLIST** in ingest — a constant list of UEM Edgenta's own domains/accounts excluded from Serper searches so owned content doesn't pollute external mention counts.
 - **Keywords** are loaded dynamically from Supabase (`keyword_groups` + `keywords` tables). If the DB is empty, a hardcoded fallback list is used (UEM Edgenta, Edgenta NXT, Shaiful Subhan, Chua Yong Howe).
 
+### Source strategy and Serper credits
+
+`mentions.source` records **how we found it**; `mentions.platform` records
+**where it was published**. Only platform is user-facing as a channel. The
+Sources filter groups vendor keys behind readable labels in
+`FilterBar.jsx → SOURCE_GROUPS` — grouping happens in the UI, not by rewriting
+`source`, so provenance survives and regrouping is a one-line change.
+
+| Group shown | Underlying keys |
+|---|---|
+| Claude Search | `claude_search` |
+| Google Search | `serper`, `serper_news`, `serper_social`, `google_cse` |
+| News APIs | `google_news_rapidapi`, `gnews`, `realtimesnews`, `worldnews`, `google_alerts`, `rss_my` |
+| Twitter / X | `twitter135` |
+| IG @Mentions / IG Comments | `instagram_tags`, `instagram_comments` |
+
+**Serper is metered — 2,500 prepaid credits, then it costs money.** One credit
+per API call. It is deliberately the most restricted source:
+
+- **Social runs, and must keep running.** It is the ONLY source of LinkedIn,
+  Facebook and YouTube — 105/105 LinkedIn rows came from it. Losing it loses
+  those channels entirely.
+- **News runs as a cheap cross-check only.** Serper supplied 14 of 337 news
+  rows; `claude_search` already covers that ground. Kept because it does catch
+  the occasional Malay-language piece Claude misses.
+- Both are capped to **page 1, English, primary keyword terms only** (no
+  aliases). That is ~2 credits per keyword per run, versus ~120 credits for a
+  full run under the original config.
+- The run logs its estimated credit cost before spending anything.
+
+All other news APIs (google-news13, real-time-news-data, worldnewsapi) and the
+Google Alerts RSS feeds were verified live on 2026-09-02 and all return HTTP
+200. Where a source looks dead, the cause is almost always that `npm run
+ingest` has not been run — not a broken key.
+
+## Server-side ingest (Edge Functions + pg_cron)
+
+`scripts/ingest.js` only runs when a human has a shell, and the daily routine has
+none — that is why every API source went from May/June 2026 to September without
+saving a row. The work now lives in `supabase/functions/ingest-apis` and
+`supabase/functions/ingest-instagram`, triggered by pg_cron (`db/migrations/006_ingest_cron.sql`).
+`ingest_runs` — not the HTTP response — is the source of truth for a run's result.
+
+- **`?group=` is REQUIRED.** `social`, `news`, `twitter` or `all`; a bare call is
+  rejected with 400. It used to default to `all`, so an accidental invocation
+  silently repeated the three grouped cron jobs and spent 14 Serper credits.
+- **Attribution: believe the text, not the query.** The searched keyword is added
+  to `keyword_matched` ONLY where the row's text is a truncated snippet (Serper
+  LinkedIn/YouTube results legitimately omit the searched phrase — requiring it
+  discarded 64 of 64). Where the full text is in hand (`twitter135`, `worldnews`,
+  and anything News/Web), an absent keyword means the query matched something
+  else and the row is dropped. Adding it unconditionally put a keyword that
+  appeared nowhere in the row on 222 of 915 keyword links.
+- **Sanitise AFTER truncating.** `clean()` strips lone surrogates; slicing to 500
+  chars afterwards splits an emoji pair and recreates one, which Postgres rejects
+  as `invalid input syntax for type json`. One tweet failed four runs that way.
+- **`toRow` returns `null`** for rejected rows, so any `.filter(r => r.url)` over
+  its output must be `r?.url` — the unguarded version threw and discarded the
+  whole keyword's results for that source.
+- `platform.ts` in the function directory is a **verbatim copy** of
+  `scripts/lib/platform.js`. Edge Functions cannot import across directories.
+  Change one, change the other, or the same outlet lands in two channels.
 ## Post-ingest workflow
 
 **Every time after running ingest, follow ALL six steps in order — never stop at step 1.**
@@ -95,6 +266,17 @@ node scripts/fix-dates.js --apply      # write corrected dates to Supabase
 
 **Step 3 — Send unfixed URLs to user**
 After `--apply`, collect all URLs that still couldn't be dated (403s, JS-rendered, paywalled). Present the full list to the user — they provide correct dates, then apply them manually via Supabase UPDATE.
+
+**Step 4a — Re-score Instagram sentiment with Claude**
+`instagram_comments` and `instagram_tags` rows are written with
+`sentiment_confidence: 0.3` because AFINN cannot read them: it is an
+English-word lexicon, and these comments are emoji-heavy and roughly half
+Malay. It scores "😍😍😍", "Tahniah" and "Sangat membantu bila diperlukan"
+all as neutral. Fetch rows where `sentiment_confidence < 0.5`, judge each one
+directly, and PATCH back `sentiment_label`, `sentiment_score`, a real
+`sentiment_confidence`, and an English gloss in `full_text` for non-English or
+emoji-only text. Leave genuinely ambiguous rows at confidence ≤ 0.4 so a human
+reviews them rather than trusting a guess.
 
 **Step 4 — Generate AI summaries**
 Spawn an agent to generate summaries for mentions that don't have one yet. The agent should:

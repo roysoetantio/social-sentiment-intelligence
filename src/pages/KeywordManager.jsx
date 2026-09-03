@@ -533,9 +533,11 @@ export default function KeywordManager() {
     if (!newGroupName.trim()) return
     if (!currentDepartment) { showToast('No department selected', 'error'); return }
     const name = newGroupName.trim()
-    const base = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
-    // Namespace the id by tenant so two departments can have same-named groups without collision.
-    const id = `${currentDepartment.toLowerCase()}-${base}`
+    const slug = (v) => v.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+    // Namespace the id by tenant so two departments can have same-named groups without
+    // collision. Slugify the tenant too — names like "UEM Group" would otherwise put a
+    // space in the id.
+    const id = `${slug(currentDepartment)}-${slug(name)}`
     const colors = ['#2940BE', '#1490EA', '#732BCC', '#E97132', '#19C9A5', '#F59E0B', '#EF4444']
     const color = colors[groups.length % colors.length]
     const { error } = await supabase.from('keyword_groups').insert({ id, name, color })

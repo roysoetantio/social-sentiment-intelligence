@@ -8,6 +8,7 @@
 import { createClient } from '@supabase/supabase-js'
 import Sentiment from 'sentiment'
 import ws from 'ws'
+import { classify } from './lib/platform.js'
 
 // ── Config ────────────────────────────────────────────────────────────────────
 const SUPABASE_URL  = process.env.VITE_SUPABASE_URL
@@ -76,8 +77,8 @@ const loadKeywordsFromDB = async () => {
     const base = { keywordId: k.id, group: k.group_id, isCompetitor: k.group_id === competitorGroupId }
     const aliases = Array.isArray(k.aliases) ? k.aliases.filter(Boolean) : []
     return [
-      { query: k.term, ...base },
-      ...aliases.map(alias => ({ query: alias, ...base })),
+      { query: k.term, ...base, isAlias: false },
+      ...aliases.map(alias => ({ query: alias, ...base, isAlias: true })),
     ]
   })
 
@@ -157,14 +158,10 @@ const analyzeSentiment = (text) => {
   return { label, score: parseFloat(normalized.toFixed(3)), confidence }
 }
 
-const guessPlatform = (url = '') => {
-  const u = url.toLowerCase()
-  if (u.includes('reddit.com')) return 'Reddit'
-  if (u.includes('youtube.com')) return 'YouTube'
-  if (u.includes('linkedin.com')) return 'LinkedIn'
-  if (u.includes('twitter.com') || u.includes('x.com')) return 'Twitter'
-  return 'News'
-}
+// Shared with backfill-platform.js. The previous local version defaulted
+// EVERYTHING non-social to 'News' and knew nothing about Instagram or
+// Facebook, which is how 185 web pages ended up mislabelled.
+const guessPlatform = (url = '') => classify(url).platform
 
 const detectLanguage = (text) => {
   if (/[一-鿿㐀-䶿]/.test(text)) return 'zh'
@@ -257,7 +254,7 @@ const fetchTwitter135 = async ({ query, keywordId, group, isCompetitor }) => {
               geography_region: 'Malaysia',
               language: detectLanguage(text),
               mention_type: guessMentionType(text),
-              risk_flag: sent.label === 'negative' && sent.confidence > 0.7,
+              risk_flag: ['high', 'medium'].includes(riskLevel(sent, text)),
               risk_level: riskLevel(sent, text),
               topics: extractTopics(text),
               is_competitor: isCompetitor || false,
@@ -328,7 +325,7 @@ const fetchRealTimeNews = async ({ query, keywordId, group, isCompetitor }) => {
         geography_region: 'Malaysia',
         language: detectLanguage(text),
         mention_type: guessMentionType(text),
-        risk_flag: sent.label === 'negative' && sent.confidence > 0.7,
+        risk_flag: ['high', 'medium'].includes(riskLevel(sent, text)),
         risk_level: riskLevel(sent, text),
         topics: extractTopics(text),
         is_competitor: isCompetitor || false,
@@ -492,7 +489,7 @@ const serperItemToMention = (item, { query, keywordId, group, isCompetitor }, so
     geography_region: 'Malaysia',
     language: detectLanguage(text),
     mention_type: guessMentionType(text),
-    risk_flag: sent.label === 'negative' && sent.confidence > 0.7,
+    risk_flag: ['high', 'medium'].includes(riskLevel(sent, text)),
     risk_level: riskLevel(sent, text),
     topics: extractTopics(text),
     is_competitor: isCompetitor || false,
@@ -514,11 +511,18 @@ const serperPost = async (endpoint, body) => {
 }
 
 // ── Serper News fetch ─────────────────────────────────────────────────────────
+/**
+ * Serper credits are a finite prepaid pool (2,500), so this is deliberately
+ * minimal. Serper NEWS overlaps almost entirely with claude_search — it
+ * supplied 14 of 337 news rows — so it runs as a single cheap cross-check
+ * (page 1, English, primary terms only) purely to catch what Claude misses,
+ * mostly Malay-language pieces. 1 credit per primary term.
+ */
 const fetchSerperNews = async (search) => {
   if (!SERPER_KEY) { console.warn(`[SerperNews] No API key`); return [] }
   const results = []
-  for (const hl of ['en', 'ms']) {
-    for (const page of [1, 2]) {
+  for (const hl of ['en']) {
+    for (const page of [1]) {
       try {
         const data = await serperPost('news', {
           q: `${search.query} ${BLACKLIST}`,
@@ -535,6 +539,11 @@ const fetchSerperNews = async (search) => {
 }
 
 // ── Serper Social fetch ───────────────────────────────────────────────────────
+/**
+ * Serper SOCIAL earns its credits: it is the ONLY source of LinkedIn, Facebook
+ * and YouTube in this pipeline (105/105 LinkedIn rows came from it). Trimmed to
+ * page 1 + English only — 1 credit per primary term.
+ */
 const fetchSerperSocial = async (search) => {
   if (!SERPER_KEY) { console.warn(`[SerperSocial] No API key`); return [] }
   const socialSites = [
@@ -545,8 +554,8 @@ const fetchSerperSocial = async (search) => {
     'site:youtube.com/watch',
   ].join(' OR ')
   const results = []
-  for (const hl of ['en', 'ms']) {
-    for (const page of [1, 2]) {
+  for (const hl of ['en']) {
+    for (const page of [1]) {
       try {
         const data = await serperPost('search', {
           q: `${search.query} (${socialSites}) ${BLACKLIST}`,
@@ -622,7 +631,7 @@ const fetchReddit = async ({ query, keywordId, group, isCompetitor }) => {
         geography_region: p.subreddit ? `r/${p.subreddit}` : 'Unknown',
         language: detectLanguage(text),
         mention_type: guessMentionType(text),
-        risk_flag: sent.label === 'negative' && sent.confidence > 0.7,
+        risk_flag: ['high', 'medium'].includes(riskLevel(sent, text)),
         risk_level: riskLevel(sent, text),
         topics: extractTopics(text),
         is_competitor: isCompetitor,
@@ -689,7 +698,7 @@ const fetchGoogleNews = async ({ query, keywordId, group, isCompetitor }) => {
         geography_region: 'Unknown',
         language: detectLanguage(text),
         mention_type: guessMentionType(text),
-        risk_flag: sent.label === 'negative' && sent.confidence > 0.7,
+        risk_flag: ['high', 'medium'].includes(riskLevel(sent, text)),
         risk_level: riskLevel(sent, text),
         topics: extractTopics(text),
         is_competitor: isCompetitor,
@@ -753,7 +762,7 @@ const fetchWorldNews = async ({ query, keywordId, group, isCompetitor }) => {
         geography_region: article.source_country || 'Unknown',
         language: article.language || detectLanguage(text),
         mention_type: guessMentionType(text),
-        risk_flag: sent.label === 'negative' && sent.confidence > 0.7,
+        risk_flag: ['high', 'medium'].includes(riskLevel(sent, text)),
         risk_level: riskLevel(sent, text),
         topics: extractTopics(text),
         is_competitor: isCompetitor || false,
@@ -912,7 +921,7 @@ const fetchRSS = async (searches) => {
           geography_region: 'Malaysia',
           language: feed.lang,
           mention_type: guessMentionType(text),
-          risk_flag: sent.label === 'negative' && sent.confidence > 0.7,
+          risk_flag: ['high', 'medium'].includes(riskLevel(sent, text)),
           risk_level: riskLevel(sent, text),
           topics: extractTopics(text),
           is_competitor: matched.search.isCompetitor || false,
@@ -1022,6 +1031,13 @@ const run = async () => {
 
   const noHashtag = searches.filter(s => !s.query.startsWith('#'))
 
+  // Serper bills per call from a finite prepaid pool, so it runs on primary
+  // keyword terms only — aliases surface largely the same results. Every other
+  // source is unmetered or generous, so those still use the full alias list.
+  const primaryTerms = searches.filter(s => !s.isAlias)
+  const serperCost = primaryTerms.length * 2
+  console.log(`[Ingest] Serper scoped to ${primaryTerms.length} primary terms (~${serperCost} credits this run)`)
+
   // Twitter135 — 3 concurrent, 1s gap between batches
   const twitterResults = await withConcurrency(noHashtag, async (s) => {
     const r = await fetchTwitter135(s); return r
@@ -1037,14 +1053,14 @@ const run = async () => {
   await new Promise(r => setTimeout(r, 500))
 
   // Serper News — 3 concurrent
-  const serperNewsResults = await withConcurrency(searches, async (s) => {
+  const serperNewsResults = await withConcurrency(primaryTerms, async (s) => {
     const r = await fetchSerperNews(s); return r
   }, 3)
   collect('SerperNews', serperNewsResults)
   await new Promise(r => setTimeout(r, 300))
 
   // Serper Social — 3 concurrent
-  const serperSocialResults = await withConcurrency(searches, async (s) => {
+  const serperSocialResults = await withConcurrency(primaryTerms, async (s) => {
     const r = await fetchSerperSocial(s); return r
   }, 3)
   collect('SerperSocial', serperSocialResults)

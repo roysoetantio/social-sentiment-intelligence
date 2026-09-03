@@ -363,17 +363,20 @@ function DetailPanel({ mention, onClose, onSaved, onPrev, onNext, hasPrev, hasNe
               <span className="text-xs px-2 py-1 rounded-md bg-surface-strong border border-hairline-strong text-body font-medium">
                 {{
                   twitter135:    '🐦 Twitter',
-                  serper_news:   '📰 Google News (Serper)',
-                  serper_social: '💬 Social Media (Serper)',
-                  realtimesnews: '⚡ Real-Time News',
+                  serper:        '🔍 Google Search',
+                  serper_news:   '🔍 Google Search (news)',
+                  serper_social: '🔍 Google Search (social)',
+                  realtimesnews: '📰 News API (real-time)',
                   rss_my:        '🇲🇾 MY News Portals',
                   google_alerts: '🔔 Google Alerts',
                   gnews:         '📡 GNews',
                   reddit:               '🔴 Reddit',
-                  google_news_rapidapi: '📰 Google News',
-                  worldnews:            '🌐 World News API',
+                  google_news_rapidapi: '📰 News API (Google News)',
+                  worldnews:            '📰 News API (World News)',
                   claude_search:        'Claude Search',
                   apify_instagram:      '📸 Instagram (Apify)',
+                  instagram_comments:   '💬 Instagram Comment',
+                  instagram_tags:       '📸 Instagram @Mention',
                 }[mention.source] || `🔗 ${mention.source}`}
               </span>
             </div>

@@ -5,7 +5,8 @@ import {
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { supabase } from '../lib/supabase'
-import { useAuth, DEPARTMENTS } from '../context/AuthContext'
+import { useAuth } from '../context/AuthContext'
+import DepartmentsPanel from '../components/admin/DepartmentsPanel'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -34,19 +35,20 @@ const roleBadge = {
   viewer: 'bg-surface-strong text-body dark:bg-white/8',
 }
 
-// Top-level admin sections. Only User Management is live; the rest are placeholders.
+// Top-level admin sections. Audit Log and Settings are still placeholders.
 const MAIN_TABS = [
   { id: 'users', label: 'User Management', enabled: true },
-  { id: 'departments', label: 'Departments', enabled: false },
+  { id: 'departments', label: 'Departments', enabled: true },
   { id: 'audit', label: 'Audit Log', enabled: false },
   { id: 'settings', label: 'Settings', enabled: false },
 ]
 
-const DEPT_FILTERS = ['All', ...DEPARTMENTS]
-
 export default function Admin() {
-  const { user: me, isSuperAdmin } = useAuth()
+  const { user: me, isSuperAdmin, departments } = useAuth()
   const iAmMaster = me?.email === MASTER_OWNER
+  const [tab, setTab] = useState('users')
+  // Department filter options track the live tenant list.
+  const deptFilters = useMemo(() => ['All', ...departments], [departments])
 
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
@@ -131,7 +133,7 @@ export default function Admin() {
   return (
     <div className="w-full space-y-5">
       {/* Main tab bar (shadcn Tabs) */}
-      <Tabs value="users">
+      <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="h-auto flex-wrap">
           {MAIN_TABS.map(t => (
             <TabsTrigger
@@ -145,6 +147,10 @@ export default function Admin() {
           ))}
         </TabsList>
       </Tabs>
+
+      {tab === 'departments' && <DepartmentsPanel />}
+
+      {tab === 'users' && (<>
 
       {/* Summary */}
       <div className="flex flex-wrap gap-3">
@@ -177,7 +183,7 @@ export default function Admin() {
             <Select value={deptFilter} onValueChange={setDeptFilter}>
               <SelectTrigger className="h-8 w-40 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {DEPT_FILTERS.map(d => (
+                {deptFilters.map(d => (
                   <SelectItem key={d} value={d}>{d === 'All' ? 'All departments' : d}</SelectItem>
                 ))}
               </SelectContent>
@@ -266,9 +272,12 @@ export default function Admin() {
         )}
       </div>
 
-      {showAdd && (
+      </>)}
+
+      {tab === 'users' && showAdd && (
         <AddUserModal
           canAddSuperAdmin={iAmMaster}
+          departments={departments}
           onClose={() => setShowAdd(false)}
           onError={setError}
           onAdded={() => { setShowAdd(false); load() }}
@@ -291,9 +300,9 @@ function Th({ label, sortKey, sort, onSort }) {
   )
 }
 
-function AddUserModal({ canAddSuperAdmin, onClose, onError, onAdded }) {
+function AddUserModal({ canAddSuperAdmin, departments, onClose, onError, onAdded }) {
   const [email, setEmail] = useState('')
-  const [department, setDepartment] = useState(DEPARTMENTS[0])
+  const [department, setDepartment] = useState(departments[0] ?? '')
   const [role, setRole] = useState('viewer')
   const [saving, setSaving] = useState(false)
   const [localErr, setLocalErr] = useState('')
@@ -352,7 +361,7 @@ function AddUserModal({ canAddSuperAdmin, onClose, onError, onAdded }) {
               >
                 <SelectTrigger><SelectValue placeholder="— (all)" /></SelectTrigger>
                 <SelectContent>
-                  {DEPARTMENTS.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                  {departments.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

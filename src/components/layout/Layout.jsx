@@ -16,6 +16,10 @@ const pageTitles = {
   '/mentions': { full: 'Mentions Explorer', short: 'Mentions' },
   '/analytics': { full: 'Sentiment Analytics', short: 'Analytics' },
   '/keywords': { full: 'Keyword Manager', short: 'Keywords' },
+  // Sidebar already shows these sit under Social Feed; prefixing it here just
+  // makes the title long enough to truncate at ordinary desktop widths.
+  '/social/instagram': { full: 'Instagram', short: 'Instagram' },
+  '/social/facebook': { full: 'Facebook', short: 'Facebook' },
   '/more': { full: 'More', short: 'More' },
   '/admin': { full: 'Admin', short: 'Admin' },
 }

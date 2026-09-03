@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard,
@@ -8,9 +8,14 @@ import {
   X,
   LogOut,
   Users,
+  Instagram,
+  Facebook,
+  Share2,
+  ChevronDown,
 } from 'lucide-react'
 import { useDashboard } from '../../context/DashboardContext'
 import { useAuth } from '../../context/AuthContext'
+import { isAtRisk } from '../../constants/sentiment'
 import { Select, SelectTrigger, SelectContent, SelectItem } from '@/components/ui/select'
 import clsx from 'clsx'
 
@@ -19,7 +24,31 @@ const navItems = [
   { path: '/mentions', label: 'Mentions Explorer', icon: MessageSquare },
   { path: '/analytics', label: 'Sentiment Analytics', icon: BarChart3 },
   { path: '/keywords', label: 'Keyword Manager', icon: Tags },
+  // Everything above is mentions of us; everything below is our own channels.
+  { divider: true, key: 'after-keywords' },
+  // Owned social content. Only Corporate Comms runs the social accounts, so the
+  // group is scoped to that tenant rather than shown to every department.
+  {
+    key: 'social',
+    label: 'Social Feed',
+    icon: Share2,
+    departments: ['CCD'],
+    children: [
+      { path: '/social/instagram', label: 'Instagram', icon: Instagram },
+      { path: '/social/facebook', label: 'Facebook', icon: Facebook },
+    ],
+  },
 ]
+
+// A divider only earns its place between two visible items — drop the ones
+// left stranded at either end (or doubled up) once role/tenant gating has run.
+function pruneDividers(items) {
+  return items.filter((item, i) => {
+    if (!item.divider) return true
+    if (i === 0 || i === items.length - 1) return false
+    return !items[i - 1].divider
+  })
+}
 
 const Logo = ({ onClose }) => (
   <div className="flex items-center justify-between px-4 border-b border-hairline flex-shrink-0" style={{ height: '64px' }}>
@@ -58,10 +87,12 @@ const ROLE_LABELS = {
 }
 
 export default function Sidebar({ isOpen, onClose }) {
+  const location = useLocation()
   const { globalFilteredMentions: filteredMentions } = useDashboard()
   const {
     user, department, role, signOut,
     isSuperAdmin, viewDepartment, setViewDepartment, departments,
+    currentDepartment,
   } = useAuth()
 
   const email = user?.email || ''
@@ -70,10 +101,31 @@ export default function Sidebar({ isOpen, onClose }) {
   // Non-super users show their department; super admins show just the role.
   const subLabel = isSuperAdmin ? roleLabel : [department, roleLabel].filter(Boolean).join(' · ')
 
-  const riskCount = filteredMentions.filter(m => m.riskFlag).length
+  // isAtRisk is the shared predicate (risk_level based). Using m.riskFlag here
+  // showed a different number from Overview: risk_flag was written as
+  // "negative && confidence > 0.7" while risk_level is a severity rule.
+  const riskCount = filteredMentions.filter(isAtRisk).length
   const positiveCount = filteredMentions.filter(m => m.sentiment.label === 'positive').length
   const total = filteredMentions.length
   const positivePct = total > 0 ? Math.round(positiveCount / total * 100) : 0
+
+  const visibleNavItems = pruneDividers(
+    navItems
+      .filter(({ path }) => path !== '/keywords' || role !== 'viewer')
+      .filter(({ departments: only }) => !only || only.includes(currentDepartment))
+  )
+
+  // Groups start collapsed unless the current route lives inside one, so a
+  // deep link or refresh never lands on a hidden active item.
+  const [openGroups, setOpenGroups] = useState({})
+  const toggleGroup = (key) => setOpenGroups(prev => ({ ...prev, [key]: !prev[key] }))
+
+  useEffect(() => {
+    const inGroup = navItems.find(
+      i => i.children && i.children.some(c => location.pathname.startsWith(c.path))
+    )
+    if (inGroup) setOpenGroups(prev => (prev[inGroup.key] ? prev : { ...prev, [inGroup.key]: true }))
+  }, [location.pathname])
 
   return (
     <aside
@@ -104,22 +156,85 @@ export default function Sidebar({ isOpen, onClose }) {
           </div>
         )}
 
-        <div className="space-y-0.5" onClick={onClose}>
-          {navItems
-            .filter(({ path }) => path !== '/keywords' || role !== 'viewer')
-            .map(({ path, label, icon: Icon }) => (
-            <NavLink
-              key={path}
-              to={path}
-              end={path === '/'}
-              className={({ isActive }) =>
-                isActive ? 'nav-item-active' : 'nav-item'
-              }
-            >
-              <Icon size={16} style={{ color: '#787881' }} />
-              <span>{label}</span>
-            </NavLink>
-          ))}
+        <div className="space-y-0.5">
+          {visibleNavItems.map((item) => {
+            if (item.divider) {
+              // Spacing has to be padding on a wrapper, not margin on the rule:
+              // the list's space-y-* sets margin-y on every child through a
+              // higher-specificity selector, which silently wins over my-*.
+              return (
+                <div key={item.key} className="py-3">
+                  <div className="border-t border-hairline" />
+                </div>
+              )
+            }
+
+            if (item.children) {
+              const { key, label, icon: Icon, children } = item
+              const open = !!openGroups[key]
+              const groupActive = children.some(c => location.pathname.startsWith(c.path))
+              return (
+                <div key={key}>
+                  <button
+                    type="button"
+                    onClick={() => toggleGroup(key)}
+                    aria-expanded={open}
+                    className={clsx(
+                      'w-full',
+                      groupActive && !open ? 'nav-item-active' : 'nav-item'
+                    )}
+                  >
+                    <Icon size={16} style={{ color: '#787881' }} />
+                    <span className="flex-1 text-left">{label}</span>
+                    <ChevronDown
+                      size={14}
+                      style={{ color: '#787881' }}
+                      className={clsx('transition-transform duration-200', open && 'rotate-180')}
+                    />
+                  </button>
+
+                  {/* grid-rows trick: animates to the children's natural height
+                      without hardcoding a max-height that would clip a third item */}
+                  <div
+                    className={clsx(
+                      'grid transition-[grid-template-rows] duration-200 ease-in-out',
+                      open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+                    )}
+                  >
+                    <div className="overflow-hidden">
+                      <div className="mt-0.5 ml-[15px] pl-3 border-l border-hairline space-y-0.5">
+                        {children.map(({ path, label: childLabel, icon: ChildIcon }) => (
+                          <NavLink
+                            key={path}
+                            to={path}
+                            onClick={onClose}
+                            className={({ isActive }) => (isActive ? 'nav-item-active' : 'nav-item')}
+                          >
+                            <ChildIcon size={15} style={{ color: '#787881' }} />
+                            <span>{childLabel}</span>
+                          </NavLink>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )
+            }
+
+            const { path, label, icon: Icon } = item
+            return (
+              <NavLink
+                key={path}
+                to={path}
+                end={path === '/'}
+                onClick={onClose}
+                className={({ isActive }) => (isActive ? 'nav-item-active' : 'nav-item')}
+              >
+                <Icon size={16} style={{ color: '#787881' }} />
+                <span>{label}</span>
+              </NavLink>
+            )
+          })}
         </div>
 
         {isSuperAdmin && (

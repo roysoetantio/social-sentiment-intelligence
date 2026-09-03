@@ -1,5 +1,5 @@
 import React from 'react'
-import { TrendingUp, AlertTriangle, Hash, Sun, Moon, LogOut, Tags, ChevronRight, BellOff, Users } from 'lucide-react'
+import { TrendingUp, AlertTriangle, Hash, Sun, Moon, LogOut, Tags, ChevronRight, BellOff, Users, Instagram, Facebook } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useDashboard } from '../context/DashboardContext'
 import { useAuth } from '../context/AuthContext'
@@ -22,7 +22,9 @@ function StatRow({ icon: Icon, label, value, color }) {
 export default function More() {
   const navigate = useNavigate()
   const { globalFilteredMentions: filteredMentions } = useDashboard()
-  const { fullName, user, department, role, signOut, isSuperAdmin } = useAuth()
+  const { fullName, user, department, role, signOut, isSuperAdmin, currentDepartment } = useAuth()
+  // Social accounts are Corporate Comms' remit — mirrors the sidebar gate.
+  const showSocialFeed = currentDepartment === 'CCD'
   const { isDark, toggleTheme } = useTheme()
   const riskCount = filteredMentions.filter(m => m.riskFlag).length
   const positiveCount = filteredMentions.filter(m => m.sentiment.label === 'positive').length
@@ -46,7 +48,7 @@ export default function More() {
       </div>
 
       {/* Menu — viewers don't manage keywords */}
-      {(role !== 'viewer' || isSuperAdmin) && (
+      {(role !== 'viewer' || isSuperAdmin || showSocialFeed) && (
         <div className="rounded-xl border border-hairline bg-surface-card overflow-hidden">
           {role !== 'viewer' && (
             <button
@@ -57,6 +59,28 @@ export default function More() {
               <span className="flex-1 text-sm text-left text-ink">Keyword Manager</span>
               <ChevronRight size={15} className="text-muted" />
             </button>
+          )}
+          {/* Mobile has no collapsible tree — the Social Feed platforms are
+              listed flat, mirroring the sidebar's expanded state. */}
+          {showSocialFeed && (
+            <>
+              <button
+                onClick={() => navigate('/social/instagram')}
+                className="w-full flex items-center gap-3 px-4 py-4 border-t border-hairline hover:bg-surface-strong transition-colors first:border-t-0"
+              >
+                <Instagram size={17} className="text-body flex-shrink-0" />
+                <span className="flex-1 text-sm text-left text-ink">Social Feed · Instagram</span>
+                <ChevronRight size={15} className="text-muted" />
+              </button>
+              <button
+                onClick={() => navigate('/social/facebook')}
+                className="w-full flex items-center gap-3 px-4 py-4 border-t border-hairline hover:bg-surface-strong transition-colors first:border-t-0"
+              >
+                <Facebook size={17} className="text-body flex-shrink-0" />
+                <span className="flex-1 text-sm text-left text-ink">Social Feed · Facebook</span>
+                <ChevronRight size={15} className="text-muted" />
+              </button>
+            </>
           )}
           {isSuperAdmin && (
             <button

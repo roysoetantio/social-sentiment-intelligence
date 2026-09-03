@@ -1,24 +1,41 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react'
-import { ChevronDown, ChevronUp, Twitter, Newspaper, MessageSquare, Zap, Radio, Globe, Rss, Link, Check, Search } from 'lucide-react'
+import { ChevronDown, ChevronUp, Twitter, Newspaper, MessageSquare, Zap, Radio, Globe, Rss, Link, Check, Search, AtSign } from 'lucide-react'
 import { useDashboard } from '../../context/DashboardContext'
 import KeywordFilterPanel from './KeywordFilterPanel'
 import clsx from 'clsx'
 
 // UI display groups — keys are group IDs, keys[] are the actual source values in DB
+/**
+ * Sources answer "how did we find this", NOT "where was it published" — that
+ * is the Platform filter, which is now reliable. So these are grouped by what
+ * a reader would recognise, and vendor names stay out of the UI:
+ *   - "Serper" is a Google Search API wrapper → shown as Google Search
+ *   - google-news13 / real-time-news-data / worldnewsapi are three RapidAPI
+ *     news vendors doing the same job → shown as one News APIs group
+ * The exact vendor key is still stored per row and shown in the detail panel,
+ * so nothing is lost for debugging.
+ *
+ * Grouping happens here rather than by rewriting `mentions.source`, which
+ * keeps provenance intact and makes any regrouping a one-line change.
+ */
 const SOURCE_GROUPS = [
-  { id: 'claude_search',        label: 'Claude Search',    Icon: Globe,          keys: ['claude_search'] },
-  { id: 'serper',               label: 'Serper',           Icon: Search,         keys: ['serper', 'serper_news', 'serper_social'] },
-  { id: 'google_news_rapidapi', label: 'Google News',      Icon: Newspaper,      keys: ['google_news_rapidapi', 'gnews'] },
-  { id: 'twitter135',           label: 'Twitter',          Icon: Twitter,        keys: ['twitter135'] },
-  { id: 'realtimesnews',        label: 'Real-Time News',   Icon: Zap,            keys: ['realtimesnews'] },
-  { id: 'worldnews',            label: 'World News API',   Icon: Globe,          keys: ['worldnews'] },
-  { id: 'rss_my',               label: 'MY News Portals',  Icon: Rss,            keys: ['rss_my'] },
-  { id: 'google_alerts',        label: 'Google Alerts',    Icon: Radio,          keys: ['google_alerts'] },
-  { id: 'reddit',               label: 'Reddit',           Icon: MessageSquare,  keys: ['reddit'] },
-  { id: 'apify_instagram',      label: 'Instagram',        Icon: Globe,          keys: ['apify_instagram'] },
+  { id: 'claude_search',  label: 'Claude Search', Icon: Globe,         keys: ['claude_search'] },
+  { id: 'google_search',  label: 'Google Search', Icon: Search,        keys: ['serper', 'serper_news', 'serper_social', 'google_cse'] },
+  { id: 'news_apis',      label: 'News APIs',     Icon: Newspaper,     keys: ['google_news_rapidapi', 'gnews', 'realtimesnews', 'worldnews', 'google_alerts', 'rss_my'] },
+  { id: 'twitter135',     label: 'Twitter / X',   Icon: Twitter,       keys: ['twitter135'] },
+  { id: 'instagram_tags', label: 'IG @Mentions',  Icon: AtSign,        keys: ['instagram_tags'] },
+  { id: 'instagram_comments', label: 'IG Comments', Icon: MessageSquare, keys: ['instagram_comments'] },
 ]
 
-const PLATFORMS = ['Twitter', 'LinkedIn', 'YouTube', 'News', 'Blog', 'Forum']
+// Must stay in sync with SOCIAL_HOSTS in scripts/lib/platform.js — a platform
+// written by ingest but missing here produces rows nobody can filter to.
+const PLATFORMS = ['News', 'Twitter', 'LinkedIn', 'Instagram', 'Threads', 'Facebook', 'YouTube', 'Web']
+
+// 'Web' is the catch-all for domains the classifier doesn't recognise, not a
+// channel anyone deliberately filters to — so it sits last and is labelled for
+// what it is. It stays in the list on purpose: dropping it would make those
+// rows exist but be unfilterable, which is the bug this list just had.
+const PLATFORM_LABELS = { Web: 'Other' }
 const SENTIMENTS = ['positive', 'negative', 'neutral']
 const LANGUAGES = [{ value: 'en', label: 'English' }, { value: 'ms', label: 'Malay' }, { value: 'zh', label: 'Chinese' }]
 const MENTION_TYPES = ['news', 'complaint', 'praise', 'question', 'rumor']
@@ -285,7 +302,6 @@ export default function FilterBar({ inline = false }) {
                       active: group.keys.some(k => selectedSources.includes(k)),
                     }))
                     .filter(group => showAllSources || group.count > 0)
-                    .sort((a, b) => b.count - a.count)
                     .map(group => {
                       const isEmpty = group.count === 0 && !group.active
                       return (
@@ -337,7 +353,7 @@ export default function FilterBar({ inline = false }) {
                       onClick={() => !isEmpty && togglePlatform(p)}
                       disabled={isEmpty}
                     >
-                      {p}
+                      {PLATFORM_LABELS[p] || p}
                     </ToggleButton>
                   )
                 })}
