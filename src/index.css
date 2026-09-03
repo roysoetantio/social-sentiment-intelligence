@@ -8,6 +8,10 @@
   :root {
     /* Semantic brand tokens — space-separated RGB channels so Tailwind's
        rgb(var(--token) / <alpha-value>) supports opacity utilities. */
+    /* Single radius for every rectangular surface. Tailwind's whole
+       borderRadius scale points at this, so the corner style is one edit. */
+    --radius: 0.5rem;
+
     --canvas: 255 255 255;
     --canvas-soft: 250 250 250;
     --surface-card: 255 255 255;
@@ -15,8 +19,8 @@
     --ink: 23 23 23;
     --body: 96 100 108;
     --muted: 120 120 129;
-    --hairline: 230 230 232;
-    --hairline-strong: 230 230 232;
+    --hairline: 229 231 235;         /* hsl(220 13% 91%) */
+    --hairline-strong: 229 231 235;  /* hsl(220 13% 91%) */
     --ai-hatch: rgba(207, 231, 255, 0.6);
     --chart-grid: #eceded;         /* dotted grid / axis lines */
     --cal-selected: #2940BE;       /* date picker selected day */
@@ -37,8 +41,8 @@
     --accent-foreground: 0 0% 9%;
     --destructive: 22 81% 55%;         /* brand negative #E97132 */
     --destructive-foreground: 0 0% 100%;
-    --border: 240 3% 90%;              /* hairline */
-    --input: 240 3% 90%;
+    --border: 220 13% 91%;             /* hairline */
+    --input: 220 13% 91%;
     --ring: 231 64% 45%;
   }
   .dark {
@@ -161,10 +165,10 @@
     display: none;
   }
 
-  /* Card — matches KPI cards: canvas bg, 12px radius, strong hairline border */
+  /* Card — matches KPI cards: canvas bg, token radius, strong hairline border */
   .card {
     background-color: rgb(var(--canvas));
-    border-radius: 12px;
+    border-radius: var(--radius);
     border: 1px solid rgb(var(--hairline-strong));
     padding: 12px;
     transition: box-shadow 200ms;
@@ -182,7 +186,7 @@
   /* Dark card */
   .card-dark {
     background-color: #1a1a1a;
-    border-radius: 12px;
+    border-radius: var(--radius);
     border: 1px solid rgba(255,255,255,0.08);
     padding: 20px;
     color: #ffffff;

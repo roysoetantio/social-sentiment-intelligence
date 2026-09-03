@@ -37,7 +37,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen w-full bg-canvas p-0 dark:bg-surface-dark sm:p-4">
-      <div className="relative flex min-h-screen items-center justify-center overflow-hidden rounded-none border-0 bg-white px-6 py-12 dark:bg-surface-dark sm:min-h-[calc(100vh-2rem)] sm:rounded-[28px] sm:border sm:border-hairline-strong sm:dark:border-white/10">
+      <div className="relative flex min-h-screen items-center justify-center overflow-hidden rounded-none border-0 bg-white px-6 py-12 dark:bg-surface-dark sm:min-h-[calc(100vh-2rem)] sm:rounded-lg sm:border sm:border-hairline-strong sm:dark:border-white/10">
         {/* interactive dotted background — fills the whole container */}
         <LoginDotGrid />
 

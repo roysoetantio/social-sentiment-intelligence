@@ -86,13 +86,17 @@ export default {
         sans: ['Inter', ...defaultTheme.fontFamily.sans],
         mono: ['JetBrains Mono', ...defaultTheme.fontFamily.mono],
       },
+      // One radius across the app, driven by --radius (0.5rem). The scale
+      // names are kept so the ~140 existing rounded-* classes still resolve —
+      // they now all land on the same corner rather than six different ones.
+      // `rounded-full` is untouched: avatars and pills still need it.
       borderRadius: {
-        xs: '4px',
-        sm: '6px',
-        md: '8px',
-        lg: '12px',
-        xl: '16px',
-        xxl: '24px',
+        xs: 'var(--radius)',
+        sm: 'var(--radius)',
+        md: 'var(--radius)',
+        lg: 'var(--radius)',
+        xl: 'var(--radius)',
+        xxl: 'var(--radius)',
       },
       boxShadow: {
         card: '0 4px 12px rgba(0,0,0,0.04)',
