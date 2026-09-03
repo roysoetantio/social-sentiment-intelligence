@@ -33,6 +33,9 @@ const navItems = [
     label: 'Social Feed',
     icon: Share2,
     departments: ['CCD'],
+    // The only group with more than one destination, and both are cheap to
+    // reach — open it by default rather than hiding two items behind a click.
+    defaultOpen: true,
     children: [
       { path: '/social/instagram', label: 'Instagram', icon: Instagram },
       { path: '/social/facebook', label: 'Facebook', icon: Facebook },
@@ -115,9 +118,14 @@ export default function Sidebar({ isOpen, onClose }) {
       .filter(({ departments: only }) => !only || only.includes(currentDepartment))
   )
 
-  // Groups start collapsed unless the current route lives inside one, so a
-  // deep link or refresh never lands on a hidden active item.
-  const [openGroups, setOpenGroups] = useState({})
+  // Groups honour their own `defaultOpen`, and any group holding the current
+  // route is forced open below — so a deep link or refresh never lands on a
+  // hidden active item.
+  const [openGroups, setOpenGroups] = useState(() =>
+    Object.fromEntries(
+      navItems.filter(i => i.children && i.defaultOpen).map(i => [i.key, true])
+    )
+  )
   const toggleGroup = (key) => setOpenGroups(prev => ({ ...prev, [key]: !prev[key] }))
 
   useEffect(() => {

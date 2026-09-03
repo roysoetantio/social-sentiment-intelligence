@@ -29,12 +29,10 @@ export default function TopBar({ title, shortTitle, onMenuClick }) {
   const inGroupDetail = showBack && searchParams.has('g')
   const handleBack = () => inGroupDetail ? navigate('/keywords') : navigate('/more')
   // Pages with nothing to filter show the controls visually disabled rather
-  // than live-but-inert: Keyword Manager, and Facebook until it has a source.
-  const filtersDisabled =
-    location.pathname === '/keywords' || location.pathname === '/social/facebook'
-  const FILTERS_NA_MSG = location.pathname === '/social/facebook'
-    ? 'Facebook is not connected yet — nothing to filter'
-    : "Search & date filters don't apply to Keyword Manager"
+  // than live-but-inert. Facebook used to sit here too; it now has its own
+  // social_posts rows and drives the same date/search store as Instagram.
+  const filtersDisabled = location.pathname === '/keywords'
+  const FILTERS_NA_MSG = "Search & date filters don't apply to Keyword Manager"
 
   const dashboard = useDashboard()
   const social = useSocialFilter()

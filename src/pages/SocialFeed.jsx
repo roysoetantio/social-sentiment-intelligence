@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import {
-  Instagram, Heart, MessageCircle, Share2, Bookmark, Eye, Users,
+  Instagram, Facebook, Heart, MessageCircle, Share2, Bookmark, Eye, Users,
   ArrowUpRight, ArrowDownRight, Minus, Activity,
 } from 'lucide-react'
 import { fetchSocialPosts } from '../services/apiService'
@@ -8,6 +8,7 @@ import { useSocialFilter } from '../context/SocialFilterContext'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip'
+import { Skeleton } from '@/components/ui/skeleton'
 import clsx from 'clsx'
 
 const BRAND = {
@@ -18,12 +19,42 @@ const BRAND = {
   mixed: '#732BCC',
 }
 
+/**
+ * Per-platform differences. The feed body is identical for every owned
+ * account, so a platform only supplies its identity plus the handful of
+ * metrics it actually reports: Facebook has no saves, and its reach stays 0
+ * until the Meta app is granted read_insights.
+ */
+const PLATFORMS = {
+  instagram: {
+    label: 'Instagram',
+    Icon: Instagram,
+    hasSaves: true,
+    handlePrefix: '@',
+    profileUrl: (handle) => `https://www.instagram.com/${handle}/`,
+    ingestCmd: 'node scripts/ingest-instagram-owned.js',
+    // Instagram posts weekly, so the shared default range is fine.
+    defaultPreset: null,
+  },
+  facebook: {
+    label: 'Facebook',
+    Icon: Facebook,
+    hasSaves: false,
+    handlePrefix: '',
+    profileUrl: (handle) => `https://www.facebook.com/${handle}`,
+    ingestCmd: 'node scripts/ingest-facebook-owned.js',
+    // The page has been dormant since Nov 2024, so every rolling window is
+    // empty and the feed would open on "no posts" every time.
+    defaultPreset: 'all',
+  },
+}
+
 const SORTS = [
   { key: 'recent', label: 'Most recent' },
   { key: 'engagement', label: 'Most engagement' },
   { key: 'comments', label: 'Most commented' },
-  { key: 'reach', label: 'Most reach' },
-  { key: 'rate', label: 'Best engagement rate' },
+  { key: 'reach', label: 'Most reach', needsReach: true },
+  { key: 'rate', label: 'Best engagement rate', needsReach: true },
 ]
 
 const PAGE_SIZE = 24
@@ -38,6 +69,8 @@ const TYPE_LABEL = {
   VIDEO: 'Video',
   IMAGE: 'Image',
   CAROUSEL_ALBUM: 'Carousel',
+  LINK: 'Link',
+  STATUS: 'Post',
 }
 
 /* ------------------------------------------------------------------ */
@@ -103,7 +136,108 @@ function IconStat({ icon: Icon, label, hint, value, color, valueClassName }) {
   )
 }
 
-function PostCard({ post }) {
+/**
+ * Loading state. Mirrors the real layout — handle, four stat tiles, the sort
+ * row and a grid of cards — so the page doesn't jump when the data lands. A
+ * centred spinner would be less work but shifts everything on arrival.
+ */
+function FeedSkeleton({ cfg }) {
+  return (
+    <div className="space-y-5" aria-busy="true" aria-live="polite">
+      <span className="sr-only">Loading {cfg.label} feed…</span>
+
+      <Skeleton className="h-3.5 w-32" />
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {Array.from({ length: 4 }, (_, i) => (
+          <Card key={i} className="border-hairline bg-surface-card">
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1 space-y-2">
+                  <Skeleton className="h-3 w-24" />
+                  <Skeleton className="h-7 w-16" />
+                </div>
+                <Skeleton className="w-9 h-9 flex-shrink-0" />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <Skeleton className="h-3 w-12" />
+        {[64, 92, 88, 76].map((w, i) => (
+          <Skeleton key={i} className="h-6" style={{ width: w }} />
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
+        {Array.from({ length: 10 }, (_, i) => (
+          <Card key={i} className="overflow-hidden flex flex-col border-hairline bg-surface-card">
+            {/* The real card leads with a square image, so the placeholder must
+                too — this is most of the card's height. */}
+            <Skeleton className="aspect-square w-full rounded-none" />
+            <CardContent className="p-3 flex-1 flex flex-col gap-2">
+              <div className="flex items-center justify-between gap-2">
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-3 w-10" />
+              </div>
+              <div className="space-y-1.5 flex-1">
+                <Skeleton className="h-2.5 w-full" />
+                <Skeleton className="h-2.5 w-[85%]" />
+              </div>
+              <div className="grid grid-cols-3 gap-y-1.5 gap-x-2 pt-2 border-t border-hairline">
+                {Array.from({ length: 4 }, (_, j) => (
+                  <Skeleton key={j} className="h-3 w-10" />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * A dormant account lands here on every default range — Facebook stopped
+ * posting in 2024, so "last 3 months" is legitimately empty. A bare "no posts
+ * match" reads as a broken integration, so say where the posts actually are
+ * and offer the jump rather than making the reader find the All tab.
+ */
+function EmptyRange({ posts, searchQuery, onShowAll }) {
+  const searching = searchQuery.trim().length > 0
+  const newest = posts.reduce((max, p) => {
+    const t = new Date(p.publishedAt).getTime()
+    return Number.isFinite(t) && t > max ? t : max
+  }, -Infinity)
+  const haveOutside = posts.length > 0 && Number.isFinite(newest)
+
+  return (
+    <div className="py-12 text-center">
+      <p className="text-sm text-muted">
+        No posts in this date range{searching ? ' matching your search' : ''}.
+      </p>
+      {haveOutside && (
+        <p className="mt-1.5 text-xs text-muted">
+          {nf(posts.length)} post{posts.length === 1 ? '' : 's'} loaded — the most recent
+          is from {fmtDate(new Date(newest).toISOString())}.
+        </p>
+      )}
+      {haveOutside && !searching && (
+        <button
+          onClick={onShowAll}
+          className="mt-3 px-3 py-1.5 rounded-md text-xs text-white transition-opacity hover:opacity-90"
+          style={{ backgroundColor: BRAND.primary }}
+        >
+          Show all posts
+        </button>
+      )}
+    </div>
+  )
+}
+
+function PostCard({ post, cfg, showReach }) {
   const [imgFailed, setImgFailed] = useState(false)
 
   return (
@@ -123,10 +257,10 @@ function PostCard({ post }) {
             className="absolute inset-0 w-full h-full object-cover object-center"
           />
         ) : (
-          // Instagram CDN links are signed and expire — degrade to a caption
-          // tile rather than a broken image.
+          // Meta CDN links are signed and expire — degrade to a platform tile
+          // rather than a broken image.
           <div className="absolute inset-0 flex items-center justify-center p-4">
-            <Instagram size={22} className="text-muted flex-shrink-0" />
+            <cfg.Icon size={22} className="text-muted flex-shrink-0" />
           </div>
         )}
         <div className="absolute top-2 left-2">
@@ -142,7 +276,7 @@ function PostCard({ post }) {
       <CardContent className="p-3 flex-1 flex flex-col gap-2">
         <div className="flex items-center justify-between gap-2 text-xs">
           <span className="text-muted">{fmtDate(post.publishedAt)}</span>
-          {post.engagementRate != null && (
+          {showReach && post.engagementRate != null && (
             <IconStat
               icon={Activity}
               label="Engagement rate"
@@ -159,15 +293,22 @@ function PostCard({ post }) {
         </p>
 
         <div className="grid grid-cols-3 gap-y-1.5 gap-x-2 pt-2 border-t border-hairline text-xs">
-          <IconStat icon={Heart} label="Likes" value={nf(post.likes)} />
-          <IconStat icon={MessageCircle} label="Comments" value={nf(post.comments)} />
           <IconStat
-            icon={Users} label="Reach"
-            hint="Unique accounts that saw this post"
-            value={nf(post.reach)}
+            icon={Heart}
+            label={cfg.hasSaves ? 'Likes' : 'Reactions'}
+            hint={cfg.hasSaves ? undefined : 'Every reaction type — the figure Facebook shows on the post'}
+            value={nf(post.likes)}
           />
+          <IconStat icon={MessageCircle} label="Comments" value={nf(post.comments)} />
+          {showReach && (
+            <IconStat
+              icon={Users} label="Reach"
+              hint="Unique accounts that saw this post"
+              value={nf(post.reach)}
+            />
+          )}
           <IconStat icon={Share2} label="Shares" value={nf(post.shares)} />
-          <IconStat icon={Bookmark} label="Saves" value={nf(post.saves)} />
+          {cfg.hasSaves && <IconStat icon={Bookmark} label="Saves" value={nf(post.saves)} />}
           {post.views > 0 && <IconStat icon={Eye} label="Views" value={nf(post.views)} />}
         </div>
       </CardContent>
@@ -177,7 +318,8 @@ function PostCard({ post }) {
 
 /* ------------------------------------------------------------------ */
 
-export default function SocialFeed() {
+export default function SocialFeed({ platform = 'instagram' }) {
+  const cfg = PLATFORMS[platform] ?? PLATFORMS.instagram
   const [posts, setPosts] = useState([])
   const [state, setState] = useState('loading')
   const [sort, setSort] = useState('recent')
@@ -186,22 +328,44 @@ export default function SocialFeed() {
   const [visible, setVisible] = useState(PAGE_SIZE)
   const sentinelRef = useRef(null)
   // Date window and search come from the TopBar, same controls as the mentions pages.
-  const { dateRange, searchQuery, setPosts: registerPosts } = useSocialFilter()
+  const {
+    dateRange, searchQuery, setDatePreset,
+    posts: registeredPosts, setPosts: registerPosts,
+  } = useSocialFilter()
 
   useEffect(() => {
     let cancelled = false
+    setState('loading')
     ;(async () => {
-      const { posts, status } = await fetchSocialPosts({ platform: 'instagram' })
+      const { posts, status } = await fetchSocialPosts({ platform })
       if (cancelled) return
       setPosts(posts)
       setState(status)
     })()
     return () => { cancelled = true }
-  }, [])
+  }, [platform])
 
   // Hand the loaded posts to the TopBar's date picker so it can mark the days
   // that have posts, the way allMentions does on the mentions side.
   useEffect(() => { registerPosts(posts) }, [posts, registerPosts])
+
+  // Platforms that publish rarely open on their full history instead of the
+  // shared rolling default. This has to wait for the posts to reach the
+  // context, because 'all' resolves against the oldest row registered there —
+  // firing it earlier would land on the 10-year fallback span.
+  const defaultedFor = useRef(null)
+  useEffect(() => {
+    if (!cfg.defaultPreset || defaultedFor.current === platform) return
+    if (!registeredPosts.length) return
+    defaultedFor.current = platform
+    setDatePreset(cfg.defaultPreset)
+  }, [platform, cfg.defaultPreset, registeredPosts.length, setDatePreset])
+
+  // Reach is a Meta insights metric. Instagram reports it; Facebook will only
+  // once the app holds read_insights. Decide from the data rather than from a
+  // per-platform flag, so the reach column lights up on its own the day the
+  // permission lands instead of needing a code change.
+  const hasReach = useMemo(() => posts.some(p => p.reach > 0), [posts])
 
   const start = dateRange.start.getTime()
   const end = dateRange.end.getTime()
@@ -263,6 +427,10 @@ export default function SocialFeed() {
     return {
       posts: windowed.length,
       prevPosts: previous.length,
+      comments: sum(windowed, 'comments'),
+      prevComments: sum(previous, 'comments'),
+      shares: sum(windowed, 'shares'),
+      prevShares: sum(previous, 'shares'),
       reach: sum(windowed, 'reach'),
       prevReach: sum(previous, 'reach'),
       engagements: sum(windowed, 'engagements'),
@@ -272,24 +440,26 @@ export default function SocialFeed() {
     }
   }, [windowed, previous])
 
+  // A reach-less platform can't offer these orderings; drop back rather than
+  // leaving the list sorted by a button that is no longer rendered.
+  useEffect(() => {
+    if (!hasReach && (sort === 'reach' || sort === 'rate')) setSort('recent')
+  }, [hasReach, sort])
+
   /* ---------------- states ---------------- */
 
-  if (state === 'loading') {
-    return (
-      <div className="py-16 text-center text-sm text-muted">Loading Instagram feed…</div>
-    )
-  }
+  if (state === 'loading') return <FeedSkeleton cfg={cfg} />
 
   if (state === 'error' || state === 'empty') {
     return (
       <div className="max-w-lg mx-auto py-16 text-center">
-        <Instagram size={28} className="mx-auto text-muted" />
-        <h2 className="mt-4 text-base font-semibold text-ink">No Instagram posts yet</h2>
+        <cfg.Icon size={28} className="mx-auto text-muted" />
+        <h2 className="mt-4 text-base font-semibold text-ink">No {cfg.label} posts yet</h2>
         <p className="mt-2 text-sm text-muted">
-          Run the ingest to pull our own posts and engagement figures from Instagram.
+          Run the ingest to pull our own posts and engagement figures from {cfg.label}.
         </p>
         <code className="mt-4 inline-block px-3 py-2 rounded-md bg-surface-strong text-xs text-body">
-          node scripts/ingest-instagram-owned.js
+          {cfg.ingestCmd}
         </code>
       </div>
     )
@@ -299,7 +469,7 @@ export default function SocialFeed() {
     <TooltipProvider delayDuration={200}>
     <div className="space-y-5">
       {/* Header */}
-      {/* No page heading — the TopBar already says "Instagram". */}
+      {/* No page heading — the TopBar already names the platform. */}
       <p className="text-xs">
         {(() => {
           // Built from the handle rather than hardcoded, so the link follows
@@ -307,12 +477,12 @@ export default function SocialFeed() {
           const handle = posts[0]?.handle || 'uemedgenta'
           return (
             <a
-              href={`https://www.instagram.com/${handle}/`}
+              href={cfg.profileUrl(handle)}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-0.5 text-muted no-underline hover:no-underline hover:text-[#2940BE] dark:hover:text-[#6B80FF] transition-colors"
             >
-              @{handle}
+              {cfg.handlePrefix}{handle}
               <ArrowUpRight size={12} />
             </a>
           )
@@ -322,27 +492,45 @@ export default function SocialFeed() {
       {/* Totals */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard
-          icon={Instagram} label="Posts published" value={nf(totals.posts)}
+          icon={cfg.Icon} label="Posts published" value={nf(totals.posts)}
           sub={<TrendPill current={totals.posts} previous={totals.prevPosts} />}
-        />
-        <StatCard
-          icon={Users} label="Total reach" value={nf(totals.reach)} color={BRAND.neutral}
-          sub={<TrendPill current={totals.reach} previous={totals.prevReach} />}
         />
         <StatCard
           icon={Heart} label="Total engagements" value={nf(totals.engagements)} color={BRAND.mixed}
           sub={<TrendPill current={totals.engagements} previous={totals.prevEngagements} />}
         />
-        <StatCard
-          icon={ArrowUpRight} label="Engagement rate" value={`${totals.rate.toFixed(1)}%`} color={BRAND.positive}
-          sub={<TrendPill current={totals.rate} previous={totals.prevRate} />}
-        />
+        {/* Reach and the rate derived from it need insights. Where they are
+            absent, show the two counts we do have rather than a pair of
+            zeroes that read as "nobody saw this". */}
+        {hasReach ? (
+          <>
+            <StatCard
+              icon={Users} label="Total reach" value={nf(totals.reach)} color={BRAND.neutral}
+              sub={<TrendPill current={totals.reach} previous={totals.prevReach} />}
+            />
+            <StatCard
+              icon={ArrowUpRight} label="Engagement rate" value={`${totals.rate.toFixed(1)}%`} color={BRAND.positive}
+              sub={<TrendPill current={totals.rate} previous={totals.prevRate} />}
+            />
+          </>
+        ) : (
+          <>
+            <StatCard
+              icon={MessageCircle} label="Comments" value={nf(totals.comments)} color={BRAND.neutral}
+              sub={<TrendPill current={totals.comments} previous={totals.prevComments} />}
+            />
+            <StatCard
+              icon={Share2} label="Shares" value={nf(totals.shares)} color={BRAND.positive}
+              sub={<TrendPill current={totals.shares} previous={totals.prevShares} />}
+            />
+          </>
+        )}
       </div>
 
       {/* Sort */}
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-xs text-muted">Sort by</span>
-        {SORTS.map(s => (
+        {SORTS.filter(s => hasReach || !s.needsReach).map(s => (
           <button
             key={s.key}
             onClick={() => setSort(s.key)}
@@ -360,13 +548,17 @@ export default function SocialFeed() {
       </div>
 
       {sorted.length === 0 ? (
-        <div className="py-12 text-center text-sm text-muted">
-          No posts match the selected date range{searchQuery.trim() ? ' and search' : ''}.
-        </div>
+        <EmptyRange
+          posts={posts}
+          searchQuery={searchQuery}
+          onShowAll={() => setDatePreset('all')}
+        />
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
-            {sorted.slice(0, visible).map(p => <PostCard key={p.id} post={p} />)}
+            {sorted.slice(0, visible).map(p => (
+              <PostCard key={p.id} post={p} cfg={cfg} showReach={hasReach} />
+            ))}
           </div>
           {visible < sorted.length && (
             // The observer does the work on scroll; the button is the fallback

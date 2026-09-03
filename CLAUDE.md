@@ -44,8 +44,9 @@ Each source has a `fetch*()` function that returns rows matching the Supabase sc
 
 ## Social Feed (owned accounts)
 
-`social_posts` holds **our own published posts** — currently Instagram
-(`@uemedgenta`). It is deliberately NOT part of the mentions pipeline: owned
+`social_posts` holds **our own published posts** — Instagram (`@uemedgenta`)
+and Facebook (`UEMEdgentaBerhad`). It is deliberately NOT part of the mentions
+pipeline: owned
 content in `mentions` would inflate the headline counts, which is the same
 reason the ingest `BLACKLIST` exists. The "new source → update FilterBar +
 MentionsExplorer" rule does **not** apply here.
@@ -54,10 +55,18 @@ MentionsExplorer" rule does **not** apply here.
 node scripts/ingest-instagram-owned.js            # last 12 months
 node scripts/ingest-instagram-owned.js --all      # full history
 node scripts/ingest-instagram-owned.js --dry      # preview, writes nothing
+
+node scripts/ingest-facebook-owned.js  --all      # same flags, Facebook page
+node scripts/fb-setup.js                          # re-mint FB_PAGE_TOKEN
 ```
 
-- Pages: `src/pages/SocialFeed.jsx` at `/social/instagram` and the Facebook
-  placeholder `src/pages/SocialFeedFacebook.jsx` at `/social/facebook`.
+- Pages: `src/pages/SocialFeed.jsx` is the whole feed for **every** platform —
+  it takes a `platform` prop and reads its differences from `PLATFORMS` inside
+  that file. `src/pages/SocialFeedFacebook.jsx` is a three-line binding, not a
+  second copy; adding LinkedIn means one `PLATFORMS` entry plus a wrapper.
+  Reach-derived UI (the reach tile, engagement rate, the two reach sorts) is
+  gated on `hasReach`, computed from the loaded rows rather than a flag — so it
+  appears by itself the day Facebook's `read_insights` lands.
   `/social` redirects to the Instagram page. In the sidebar these sit under a
   collapsible **Social Feed** group (`children` on the nav item in
   `Sidebar.jsx`); add a platform by adding a child there plus a route.
@@ -97,6 +106,31 @@ node scripts/ingest-instagram-owned.js --dry      # preview, writes nothing
   Development mode before assuming a permissions problem.
 - Comment author is `from{id,username}`. A bare `username` field is accepted by
   the API and silently returns nothing — it is not an error, just absent.
+
+### Facebook Pages API
+
+Verified working 2026-09-03 against `UEMEdgentaBerhad` (Page id
+`1647201428701188`, FB app `2170440680186289`).
+
+- **Facebook does NOT have Instagram's dev-mode comment blackout.** A Page owns
+  the comments on its own posts, so `/{post}/comments` returns real bodies with
+  `pages_read_user_content` under Standard Access — no App Review. Do not
+  assume the Instagram limitation applies here; it does not.
+- Scopes: `pages_show_list`, `pages_read_engagement`, `pages_read_user_content`.
+  `FB_PAGE_TOKEN` is derived from a long-lived user token and **never expires**,
+  so there is no refresh script — unlike `IG_ACCESS_TOKEN`.
+- **`read_insights` is NOT granted**, so reach / impressions / views come back
+  as an EMPTY data array with no error — the same "silence means denied" tell as
+  Instagram's comments. Grant it, then set `FB_INSIGHTS=1` to turn the inline
+  insights request on.
+- Comment **authors are `null`** even with the scopes above. Text yes, identity
+  no.
+- `/{page}/tagged` — the Mentions tab, where third parties tag us — is blocked
+  behind Page Public Content Access, i.e. the same verified Business Portfolio
+  that gates Instagram. **This is now the single unlock for all Meta data.**
+- `likes` in `social_posts` stores the **total reaction count**, not the bare
+  like count, because that is the figure Facebook prints under the post. The
+  breakdown survives in `raw`.
 
 ### Instagram keyword attribution
 
