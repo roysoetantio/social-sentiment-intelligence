@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   UserPlus, Trash2, Loader2, AlertCircle, X, Search,
-  ArrowUp, ArrowDown, ChevronsUpDown,
+  ArrowUp, ArrowDown, ChevronsUpDown, Pencil, Check,
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { supabase } from '../lib/supabase'
+import clsx from 'clsx'
 import { useAuth } from '../context/AuthContext'
 import DepartmentsPanel from '../components/admin/DepartmentsPanel'
+import Avatar, { AVATAR_COLORS, avatarColor } from '../components/common/Avatar'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -58,6 +60,7 @@ export default function Admin() {
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState({ key: 'email', dir: 'asc' })
   const [showAdd, setShowAdd] = useState(false)
+  const [editing, setEditing] = useState(null)
 
   const load = useCallback(async () => {
     setError('')
@@ -208,7 +211,7 @@ export default function Admin() {
                 <Th label="Department" sortKey="department" sort={sort} onSort={toggleSort} />
                 <Th label="Status" sortKey="status" sort={sort} onSort={toggleSort} />
                 <Th label="Last login" sortKey="lastlogin" sort={sort} onSort={toggleSort} />
-                <TableHead className="w-10" />
+                <TableHead className="w-20" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -229,8 +232,21 @@ export default function Admin() {
                 return (
                   <TableRow key={u.email}>
                     <TableCell>
-                      <span className="font-medium text-ink">{u.email}</span>
-                      {isMe && <span className="ml-1.5 text-[0.625rem] text-muted">(you)</span>}
+                      <div className="flex items-center gap-2.5">
+                        <Avatar user={u} size={30} />
+                        <div className="min-w-0">
+                          {u.full_name && (
+                            <div className="font-medium text-ink truncate">
+                              {u.full_name}
+                              {isMe && <span className="ml-1.5 text-[0.625rem] text-muted">(you)</span>}
+                            </div>
+                          )}
+                          <div className={clsx('truncate', u.full_name ? 'text-xs text-muted' : 'font-medium text-ink')}>
+                            {u.email}
+                            {isMe && !u.full_name && <span className="ml-1.5 text-[0.625rem] text-muted">(you)</span>}
+                          </div>
+                        </div>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge variant="secondary" className={`capitalize whitespace-nowrap ${roleBadge[u.role] || roleBadge.viewer}`}>
@@ -255,7 +271,14 @@ export default function Admin() {
                     <TableCell className="text-body whitespace-nowrap" title={u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleString() : 'Never signed in'}>
                       {relTime(u.last_sign_in_at)}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right whitespace-nowrap">
+                      <button
+                        onClick={() => setEditing(u)}
+                        title="Edit name and avatar colour"
+                        className="h-7 w-7 inline-flex items-center justify-center rounded-md text-muted hover:text-ink hover:bg-surface-strong transition-colors"
+                      >
+                        <Pencil size={14} />
+                      </button>
                       <button
                         onClick={() => removeUser(u)} disabled={locked}
                         title={lockReason || 'Remove user'}
@@ -274,6 +297,15 @@ export default function Admin() {
 
       </>)}
 
+      {tab === 'users' && editing && (
+        <EditProfileModal
+          user={editing}
+          onClose={() => setEditing(null)}
+          onError={setError}
+          onSaved={() => { setEditing(null); load() }}
+        />
+      )}
+
       {tab === 'users' && showAdd && (
         <AddUserModal
           canAddSuperAdmin={iAmMaster}
@@ -283,6 +315,110 @@ export default function Admin() {
           onAdded={() => { setShowAdd(false); load() }}
         />
       )}
+    </div>
+  )
+}
+
+/**
+ * Display name and avatar colour.
+ *
+ * Both are cosmetic, so this is deliberately not behind the `locked` rules that
+ * guard role, activation and deletion — nobody can escalate anything by picking
+ * a colour. Leaving the colour on Auto keeps it derived from the email hash,
+ * which is what everyone gets before an admin touches anything.
+ */
+function EditProfileModal({ user, onClose, onError, onSaved }) {
+  const [fullName, setFullName] = useState(user.full_name || '')
+  const [color, setColor] = useState(user.avatar_color || null)
+  const [saving, setSaving] = useState(false)
+  const [localErr, setLocalErr] = useState('')
+
+  const preview = { ...user, full_name: fullName, avatar_color: color }
+
+  const submit = async (e) => {
+    e.preventDefault()
+    setLocalErr('')
+    setSaving(true)
+    const { error } = await supabase.from('app_users')
+      .update({ full_name: fullName.trim() || null, avatar_color: color })
+      .eq('email', user.email)
+    setSaving(false)
+    if (error) { setLocalErr(error.message); onError?.(error.message); return }
+    onSaved()
+  }
+
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 px-4" onClick={onClose}>
+      <div className="w-full max-w-md rounded-xl border border-hairline-strong bg-canvas shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-hairline">
+          <span className="text-sm font-semibold text-ink">Edit Profile</span>
+          <button onClick={onClose} className="text-muted hover:text-ink"><X size={16} /></button>
+        </div>
+        <form onSubmit={submit} className="p-4 space-y-4">
+          <div className="flex items-center gap-3">
+            <Avatar user={preview} size={48} />
+            <div className="min-w-0">
+              <div className="text-sm font-medium text-ink truncate">{fullName || user.email}</div>
+              <div className="text-xs text-muted truncate">{user.email}</div>
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Display name</Label>
+            <Input
+              autoFocus value={fullName} onChange={e => setFullName(e.target.value)}
+              placeholder="Leave blank to use the email"
+            />
+            <p className="text-[0.6875rem] text-muted">
+              Filled in automatically from Microsoft the next time they sign in.
+            </p>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Avatar colour</Label>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button" onClick={() => setColor(null)}
+                title="Auto — derived from the email"
+                className={clsx(
+                  'h-7 px-2.5 rounded-full text-[0.6875rem] font-medium border transition-colors',
+                  color === null
+                    ? 'border-ink/40 text-ink bg-surface-strong'
+                    : 'border-hairline-strong text-muted hover:text-ink'
+                )}
+              >
+                Auto
+              </button>
+              {AVATAR_COLORS.map(c => (
+                <button
+                  key={c} type="button" onClick={() => setColor(c)} title={c}
+                  style={{ backgroundColor: c }}
+                  className={clsx(
+                    'h-7 w-7 rounded-full flex items-center justify-center transition-transform',
+                    color === c ? 'ring-2 ring-offset-2 ring-ink/40 ring-offset-canvas' : 'hover:scale-110'
+                  )}
+                >
+                  {color === c && <Check size={13} className="text-white" />}
+                </button>
+              ))}
+            </div>
+            {color === null && (
+              <p className="text-[0.6875rem] text-muted">
+                Auto gives <span style={{ color: avatarColor(user) }} className="font-medium">this colour</span>, and stays stable for this email.
+              </p>
+            )}
+          </div>
+
+          {localErr && <p className="text-xs text-error">{localErr}</p>}
+
+          <div className="flex justify-end gap-2 pt-1">
+            <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
+            <Button type="submit" disabled={saving}>
+              {saving ? <Loader2 size={14} className="animate-spin" /> : 'Save'}
+            </Button>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }

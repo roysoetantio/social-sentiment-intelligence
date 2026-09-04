@@ -6,6 +6,7 @@ import { formatDateTime } from '../utils/format'
 import { useDashboard } from '../context/DashboardContext'
 import { sortMentions } from '../services/filterService'
 import { isSocialUrl } from '../services/apiService'
+import { getOutletName } from '../utils/outlets'
 import MentionCard from '../components/common/MentionCard'
 import SentimentBadge from '../components/common/SentimentBadge'
 import RiskBadge from '../components/common/RiskBadge'
@@ -221,7 +222,11 @@ function DetailPanel({ mention, onClose, onSaved, onPrev, onNext, hasPrev, hasNe
         <div className="flex items-start justify-between">
           <div>
             <p className="text-sm font-semibold text-ink">{mention.author.name}</p>
-            {isSocialUrl(mention.url) && <p className="text-xs text-muted">@{mention.author.handle}</p>}
+            {isSocialUrl(mention.url)
+              ? <p className="text-xs text-muted">@{mention.author.handle}</p>
+              : getOutletName(mention.url) !== mention.author.name && (
+                  <p className="text-xs text-muted">Published by {getOutletName(mention.url)}</p>
+                )}
           </div>
           <div className="text-right">
             <p className="text-xs text-muted">{mention.platform}</p>
@@ -510,7 +515,7 @@ function DetailPanel({ mention, onClose, onSaved, onPrev, onNext, hasPrev, hasNe
 }
 
 export default function MentionsExplorer() {
-  const { filteredMentions, allMentions, selectedSentiments, toggleSentiment, activeFilterCount, resetFilters, setSelectedSentiments, setRiskOnly, markRead } = useDashboard()
+  const { filteredMentions, allMentions, selectedSentiments, toggleSentiment, activeFilterCount, resetFilters, setSelectedSentiments, setRiskOnly, markViewed } = useDashboard()
   const location = useLocation()
   const [selectedMention, setSelectedMention] = useState(null)
   const [sortBy, setSortBy] = useState('recent')
@@ -575,7 +580,9 @@ export default function MentionsExplorer() {
 
   // Mark high risk mention as read when detail panel opens
   useEffect(() => {
-    if (selectedMention?.riskLevel === 'high') markRead(selectedMention.id)
+    // Opening the detail panel is a genuine view, so it stamps this user's face
+    // on the mention as well as clearing it for the tenant.
+    if (selectedMention?.riskLevel === 'high') markViewed(selectedMention.id)
   }, [selectedMention?.id])
 
   // Init scroll-down indicator

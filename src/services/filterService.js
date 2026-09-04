@@ -1,4 +1,6 @@
 import { isWithinInterval, parseISO, startOfDay, endOfDay } from 'date-fns'
+import { getOutletRef } from '../utils/outlets'
+import { isAtRisk } from '../constants/sentiment'
 
 export const filterMentions = (mentions, filters, allKeywordsFlat = []) => {
   const {
@@ -12,8 +14,10 @@ export const filterMentions = (mentions, filters, allKeywordsFlat = []) => {
     selectedMentionTypes,
     selectedSources,
     riskOnly,
+    atRiskOnly,
     showExcluded,
     heatmapFilter,
+    outletFilter,
   } = filters
 
   // Build a map of keywordId -> groupId for fast lookup
@@ -79,10 +83,26 @@ export const filterMentions = (mentions, filters, allKeywordsFlat = []) => {
       if (pubDate.getDay() !== heatmapFilter.day || pubDate.getHours() !== heatmapFilter.hour) return false
     }
 
+    // Outlet / voice drill-down from the Top Sources leaderboard. Matching on
+    // the same key the leaderboard groups by means the count in the list and
+    // the number of rows you land on can never disagree.
+    if (outletFilter?.key) {
+      if (getOutletRef(mention).key !== outletFilter.key) return false
+    }
+
     // Risk only filter
     if (riskOnly) {
       if (mention.riskLevel !== 'high') return false
     }
+
+    // At-risk is NOT the same as riskOnly, and conflating them loses rows.
+    // `riskOnly` is the sidebar's "Show high risk only" — literally high.
+    // `isAtRisk` is what the Overview KPI, the sidebar count and the Sources
+    // leaderboard all mean by at-risk: medium OR high, not positive, and not
+    // already overridden away from negative by an analyst. All four of The Edge
+    // Malaysia's at-risk rows are `medium`, so drilling in via riskOnly showed
+    // nothing at all.
+    if (atRiskOnly && !isAtRisk(mention)) return false
 
     // Search query
     if (searchQuery && searchQuery.trim().length > 0) {

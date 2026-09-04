@@ -6,8 +6,10 @@ import AuthGate from './components/auth/AuthGate'
 import { DashboardProvider } from './context/DashboardContext'
 import { SocialFilterProvider } from './context/SocialFilterContext'
 import Layout from './components/layout/Layout'
+import { TooltipProvider } from '@/components/ui/tooltip'
 import Overview from './pages/Overview'
 import MentionsExplorer from './pages/MentionsExplorer'
+import SourcesCoverage from './pages/SourcesCoverage'
 import SentimentAnalytics from './pages/SentimentAnalytics'
 import KeywordManager from './pages/KeywordManager'
 import SocialFeed from './pages/SocialFeed'
@@ -23,10 +25,14 @@ export default function App() {
           <AuthGate>
             <DashboardProvider>
               <SocialFilterProvider>
+              <TooltipProvider delayDuration={150}>
               <Layout>
                 <Routes>
                   <Route path="/" element={<Overview />} />
                   <Route path="/mentions" element={<MentionsExplorer />} />
+                  {/* Drill-down from the Overview's Sources & Coverage card —
+                      deliberately not in the sidebar; you arrive from the card. */}
+                  <Route path="/sources" element={<SourcesCoverage />} />
                   <Route path="/analytics" element={<SentimentAnalytics />} />
                   <Route path="/keywords" element={<KeywordManager />} />
                   {/* /social kept as an alias — older links and the mobile More page point at it */}
@@ -37,6 +43,7 @@ export default function App() {
                   <Route path="/admin" element={<UserManagement />} />
                 </Routes>
               </Layout>
+              </TooltipProvider>
               </SocialFilterProvider>
             </DashboardProvider>
           </AuthGate>

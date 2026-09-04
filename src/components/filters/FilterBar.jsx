@@ -74,7 +74,9 @@ export default function FilterBar({ inline = false }) {
     selectedSources, toggleSource, setSelectedSources,
     riskOnly, setRiskOnly,
     showExcluded, setShowExcluded,
+    atRiskOnly, setAtRiskOnly,
     heatmapFilter, setHeatmapFilter,
+    outletFilter, setOutletFilter,
     activeFilterCount,
     resetFilters,
     setDatePreset,
@@ -151,6 +153,24 @@ export default function FilterBar({ inline = false }) {
               {DAYS[heatmapFilter.day]} {String(heatmapFilter.hour).padStart(2, '0')}:00
             </span>
             <button onClick={() => setHeatmapFilter(null)} className="text-[#2940BE] hover:opacity-70 text-xs">✕</button>
+          </div>
+        )}
+
+        {/* At-risk drill-down chip — set from an at-risk count. Uses the same
+            isAtRisk() definition as the count that was clicked, so the number in
+            the leaderboard and the rows landed on cannot disagree. */}
+        {atRiskOnly && (
+          <div className="mb-4 flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-[#E97132]/10 border border-[#E97132]/25">
+            <span className="text-xs text-[#E97132] font-medium flex-1">At-risk only</span>
+            <button onClick={() => setAtRiskOnly(false)} className="text-[#E97132] hover:opacity-70 text-xs">✕</button>
+          </div>
+        )}
+
+        {/* Source drill-down chip — set from the Overview's Top Sources list */}
+        {outletFilter && (
+          <div className="mb-4 flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-[#2940BE]/10 border border-[#2940BE]/20">
+            <span className="text-xs text-[#2940BE] font-medium flex-1 truncate">{outletFilter.label}</span>
+            <button onClick={() => setOutletFilter(null)} className="text-[#2940BE] hover:opacity-70 text-xs">✕</button>
           </div>
         )}
 

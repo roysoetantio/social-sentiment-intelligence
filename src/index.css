@@ -24,6 +24,10 @@
     --ai-hatch: rgba(207, 231, 255, 0.6);
     --chart-grid: #eceded;         /* dotted grid / axis lines */
     --cal-selected: #2940BE;       /* date picker selected day */
+    /* Brand blue as *text* on a surface. #2940BE is unreadable on the dark
+       canvas, so anything using the brand colour for a label — pills, badges,
+       accent numbers — reads this rather than the raw hex. */
+    --accent-brand: #2940BE;
     --cal-range: #dde3f8;          /* date picker in-range fill */
 
     --background: 0 0% 100%;
@@ -59,6 +63,7 @@
     --ai-hatch: rgba(107, 128, 255, 0.12);
     --chart-grid: #313236;         /* muted grid in dark, not jarring white */
     --cal-selected: #6B80FF;
+    --accent-brand: #6B80FF;
     --cal-range: rgba(107, 128, 255, 0.20);
 
     --background: 0 0% 9%;
@@ -250,13 +255,13 @@
 
   /* Nav items */
   .nav-item {
-    @apply flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer;
+    @apply flex items-center gap-3 px-3 py-2 rounded-md text-[13px] font-normal transition-colors cursor-pointer;
     color: rgb(var(--body));
   }
   .nav-item:hover { background-color: rgb(var(--surface-strong)); }
 
   .nav-item-active {
-    @apply flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer;
+    @apply flex items-center gap-3 px-3 py-2 rounded-md text-[13px] font-normal transition-colors cursor-pointer;
     background-color: rgb(var(--surface-strong));
     color: rgb(var(--ink));
   }

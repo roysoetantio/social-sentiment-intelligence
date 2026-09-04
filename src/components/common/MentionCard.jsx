@@ -1,5 +1,6 @@
 import React from 'react'
 import { isSocialUrl } from '../../services/apiService'
+import { getOutletName } from '../../utils/outlets'
 import { formatDistanceToNow, parseISO } from 'date-fns'
 import {
   Twitter, Youtube, Globe, Linkedin, MessageCircle,
@@ -27,6 +28,7 @@ const PlatformIcon = ({ platform }) => {
 export default function MentionCard({ mention, onClick, selected }) {
   const { allKeywordsFlat } = useDashboard()
   const group = KEYWORD_GROUPS.find(g => g.id === mention.keywordGroup)
+  const outlet = getOutletName(mention.url)
 
   const keywordPills = (mention.keywordMatched || [])
     .map(id => allKeywordsFlat.find(k => k.id === id))
@@ -48,7 +50,14 @@ export default function MentionCard({ mention, onClick, selected }) {
           <div className="flex items-center gap-2 min-w-0">
             <PlatformIcon platform={mention.platform} />
             <span className="text-sm font-semibold text-ink truncate">{mention.author.name}</span>
-            {isSocialUrl(mention.url) && <span className="text-[0.8125rem] text-muted truncate">@{mention.author.handle}</span>}
+            {isSocialUrl(mention.url)
+              ? <span className="text-[0.8125rem] text-muted truncate">@{mention.author.handle}</span>
+              // A wire byline on another outlet's domain: the leaderboard counts
+              // the publication, the byline names the writer. Showing only one
+              // made a filtered list look like it had leaked.
+              : outlet !== mention.author.name && (
+                  <span className="text-[0.8125rem] text-muted truncate">· {outlet}</span>
+                )}
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0">
             <RiskBadge level={mention.riskLevel} minimal />

@@ -1,29 +1,38 @@
-import React, { useMemo, useRef, useState, useCallback, useEffect } from 'react'
+import React, { useMemo, useState, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { MessageSquare, TrendingUp, TrendingDown, AlertTriangle, Tag, BarChart2, Eye } from 'lucide-react'
+import { MessageSquare, TrendingUp, TrendingDown, AlertTriangle, Tag, BarChart2, Maximize2 } from 'lucide-react'
 import { parseISO, startOfMonth, endOfMonth, startOfWeek, endOfWeek, startOfDay, endOfDay, startOfHour, endOfHour, parse } from 'date-fns'
 import { useDashboard } from '../context/DashboardContext'
 import { useAuth } from '../context/AuthContext'
-import { getKPIs, pickGranularity } from '../data/analytics'
+import { getKPIs, pickGranularity, getTimelineData, getKPIComparison, getCoverageQuality } from '../data/analytics'
 import { getAllKeywords, getGroupById } from '../data/fallbackKeywords'
 import KPICard from '../components/common/KPICard'
-import MentionCard from '../components/common/MentionCard'
 import SentimentTimelineChart from '../components/charts/SentimentTimelineChart'
 import PlatformBreakdownChart from '../components/charts/PlatformBreakdownChart'
 import KeywordComparisonChart from '../components/charts/KeywordComparisonChart'
-import { isAtRisk } from '../constants/sentiment'
+import MediaCoverage from '../components/charts/MediaCoverage'
+import SegmentedControl from '../components/common/SegmentedControl'
 import { BRAND_COLORS, SENTIMENT_COLORS } from '../constants/colors'
-import { formatNum } from '../utils/format'
 import AICard from '../components/common/AICard'
 import { fetchAIDigest } from '../services/apiService'
 
 export default function Overview() {
-  const { globalFilteredMentions: filteredMentions, dateRange, setDateRange, allKeywordsFlat } = useDashboard()
+  const {
+    globalFilteredMentions: filteredMentions,
+    previousPeriodMentions,
+    previousRange,
+    dateRange, setDateRange, allKeywordsFlat,
+    hasComparisonPeriod,
+    setOutletFilter,
+    setAtRiskOnly,
+  } = useDashboard()
   const { fullName, isSuperAdmin, viewDepartment, department } = useAuth()
   const navigate = useNavigate()
   // Bucket size follows the actual selected range, so presets and manual ranges match.
   const granularity = useMemo(() => pickGranularity(dateRange.start, dateRange.end), [dateRange])
   const [digest, setDigest] = useState(undefined)
+  // Owned here so the tabs can sit in the card header rather than above the list.
+  const [sourceTab, setSourceTab] = useState('outlet')
 
   // The tenant whose digest we show: super admins follow the department switcher.
   const currentDepartment = isSuperAdmin ? viewDepartment : department
@@ -63,26 +72,45 @@ export default function Overview() {
 
   const kpis = useMemo(() => getKPIs(filteredMentions), [filteredMentions])
 
-  const riskListRef = useRef(null)
-  const [riskScrolled, setRiskScrolled] = useState(false)
-  const [riskScrolledToBottom, setRiskScrolledToBottom] = useState(false)
-  const handleRiskScroll = useCallback(() => {
-    const el = riskListRef.current
-    if (!el) return
-    setRiskScrolled(el.scrollTop > 0)
-    setRiskScrolledToBottom(el.scrollTop + el.clientHeight >= el.scrollHeight - 4)
-  }, [])
+  // Every headline number is diffed against the equivalent window immediately
+  // before this one — same tenant scope, same search, same length.
+  const prevKPIs = useMemo(() => getKPIs(previousPeriodMentions), [previousPeriodMentions])
+  const comparison = useMemo(() => getKPIComparison(kpis, prevKPIs), [kpis, prevKPIs])
 
-  const highRiskMentions = useMemo(() =>
-    filteredMentions
-      .filter(isAtRisk)
-      .sort((a, b) => {
-        const order = { high: 0, medium: 1, low: 2, null: 3 }
-        return (order[a.riskLevel] ?? 3) - (order[b.riskLevel] ?? 3)
-      })
-      ,
-    [filteredMentions]
+  // Bucketed once here and reused for every sparkline, at the same granularity
+  // as the timeline chart so the small trends agree with the big one.
+  const timeline = useMemo(
+    () => getTimelineData(filteredMentions, { start: dateRange.start, end: dateRange.end, granularity }),
+    [filteredMentions, dateRange, granularity]
   )
+  const series = useMemo(() => ({
+    volume:   timeline.map(b => b.total),
+    positive: timeline.map(b => b.positive),
+    negative: timeline.map(b => b.negative),
+    net:      timeline.map(b => (b.total > 0 ? ((b.positive - b.negative) / b.total) * 100 : 0)),
+  }), [timeline])
+
+  const coverage = useMemo(() => getCoverageQuality(filteredMentions), [filteredMentions])
+
+  const comparisonLabel = useMemo(() => {
+    const start = new Date(previousRange.start)
+    const end = new Date(previousRange.end)
+    // A long range lands the comparison window in another year, and "3 Sep –
+    // 3 Sep" then reads as a single day. Show the year whenever it isn't this one.
+    const thisYear = new Date().getFullYear()
+    const needsYear = start.getFullYear() !== end.getFullYear() || start.getFullYear() !== thisYear
+    const opts = needsYear
+      ? { day: 'numeric', month: 'short', year: 'numeric' }
+      : { day: 'numeric', month: 'short' }
+    return `${start.toLocaleDateString('en-GB', opts)} – ${end.toLocaleDateString('en-GB', opts)}`
+  }, [previousRange])
+
+  // Drill down from a leaderboard row into exactly the mentions behind it.
+  const handleSourceSelect = useCallback((row, opts = {}) => {
+    setOutletFilter({ key: row.key, label: row.kind === 'voice' && row.handle ? `@${row.handle}` : row.label })
+    setAtRiskOnly(Boolean(opts.atRisk))
+    navigate('/mentions')
+  }, [setOutletFilter, setAtRiskOnly, navigate])
 
   // Prefer the real (tenant-scoped) keywords from Supabase; fall back to the
   // hardcoded offline list only if not found there.
@@ -98,7 +126,7 @@ export default function Overview() {
   })()
 
   return (
-    <div className="flex flex-col lg:h-full gap-3 lg:gap-4">
+    <div className="flex flex-col lg:min-h-full gap-3 lg:gap-4">
 
       {/* Greeting + AI Digest */}
       <div className="grid grid-cols-1 sm:grid-cols-6 gap-3 lg:gap-4 items-stretch">
@@ -140,8 +168,15 @@ export default function Overview() {
           value={kpis.totalMentions}
           icon={MessageSquare}
           iconColor={BRAND_COLORS.primary}
-          subtitle={`${formatNum(kpis.totalReach)} reach`}
-          tooltip="All mentions across every source in the selected date range."
+          subtitle={`${coverage.outletCount} outlet${coverage.outletCount === 1 ? '' : 's'} · ${coverage.tier1Count} tier 1`}
+          comparisonLabel={hasComparisonPeriod ? comparisonLabel : undefined}
+          delta={hasComparisonPeriod ? comparison.totalMentions : undefined}
+          /* Volume alone is not good or bad news — a spike can be a campaign or
+             a crisis — so this delta stays neutral rather than green-on-up. */
+          deltaGoodWhen="none"
+          series={series.volume}
+          seriesColor={BRAND_COLORS.primary}
+          tooltip="All mentions across every source in the selected date range. The subtitle counts distinct publications, not reach — reach is reported by only some sources."
         />
         <KPICard
           title="Positive Rate"
@@ -151,7 +186,12 @@ export default function Overview() {
           iconColor={SENTIMENT_COLORS.positive}
           valueColor={SENTIMENT_COLORS.positive}
           subtitle={`${kpis.positiveCount} positive mentions`}
-          tooltip="Share of mentions with positive sentiment."
+          comparisonLabel={hasComparisonPeriod ? comparisonLabel : undefined}
+          delta={hasComparisonPeriod ? comparison.positivePercent : undefined}
+          deltaGoodWhen="up"
+          series={series.positive}
+          seriesColor={SENTIMENT_COLORS.positive}
+          tooltip="Share of mentions with positive sentiment. The change is in percentage points against the previous period."
         />
         <KPICard
           title="Negative Rate"
@@ -161,7 +201,12 @@ export default function Overview() {
           iconColor={SENTIMENT_COLORS.negative}
           valueColor={SENTIMENT_COLORS.negative}
           subtitle={`${kpis.negativeCount} negative mentions`}
-          tooltip="Share of mentions with negative sentiment."
+          comparisonLabel={hasComparisonPeriod ? comparisonLabel : undefined}
+          delta={hasComparisonPeriod ? comparison.negativePercent : undefined}
+          deltaGoodWhen="down"
+          series={series.negative}
+          seriesColor={SENTIMENT_COLORS.negative}
+          tooltip="Share of mentions with negative sentiment. The change is in percentage points against the previous period."
         />
         <KPICard
           title="Net Sentiment"
@@ -171,7 +216,12 @@ export default function Overview() {
           iconColor={kpis.netSentimentScore >= 0 ? SENTIMENT_COLORS.positive : SENTIMENT_COLORS.negative}
           valueColor={kpis.netSentimentScore >= 0 ? SENTIMENT_COLORS.positive : SENTIMENT_COLORS.negative}
           subtitle="Positive minus negative"
-          tooltip="Positive rate minus negative rate."
+          comparisonLabel={hasComparisonPeriod ? comparisonLabel : undefined}
+          delta={hasComparisonPeriod ? comparison.netSentimentScore : undefined}
+          deltaGoodWhen="up"
+          series={series.net}
+          seriesColor={kpis.netSentimentScore >= 0 ? SENTIMENT_COLORS.positive : SENTIMENT_COLORS.negative}
+          tooltip="Positive rate minus negative rate. The change is in percentage points against the previous period."
         />
         <KPICard
           title="At-Risk Mentions"
@@ -180,6 +230,9 @@ export default function Overview() {
           iconColor={kpis.atRiskCount > 5 ? SENTIMENT_COLORS.negative : '#f59e0b'}
           valueColor={kpis.atRiskCount > 5 ? SENTIMENT_COLORS.negative : undefined}
           subtitle="Flagged for review"
+          comparisonLabel={hasComparisonPeriod ? comparisonLabel : undefined}
+          delta={hasComparisonPeriod ? comparison.atRiskCount : undefined}
+          deltaGoodWhen="down"
           tooltip="Negative mentions with Medium or High risk. Excludes Low risk."
         />
         <KPICard
@@ -193,9 +246,13 @@ export default function Overview() {
         />
       </div>
 
-      {/* Row 2+3 — Left column (Timeline + Platform + Keyword) | Right column (High-Risk tall) */}
-      <div className="grid grid-cols-1 lg:grid-cols-6 gap-3 lg:gap-4 lg:items-stretch lg:flex-1 lg:min-h-0">
-        {/* Left: stacked — spans 4 of 6 columns */}
+      {/* Row 2+3 — Left: timeline over media coverage. Right: distribution charts.
+          The Recent At-Risk panel used to occupy the right column; it was removed
+          because the notification bell already lists high-risk mentions. Note the
+          bell is high-risk only, while the At-Risk KPI counts medium as well —
+          those still surface through the risk filter in Mentions Explorer. */}
+      <div className="grid grid-cols-1 lg:grid-cols-6 gap-3 lg:gap-4 lg:items-stretch lg:flex-1 lg:min-h-[38rem]">
+        {/* Left — spans 4 of 6 columns */}
         <div className="lg:col-span-4 flex flex-col gap-3 lg:gap-4 lg:min-h-0">
           <div className="card h-[320px] lg:flex-1 lg:h-auto lg:min-h-[290px] lg:max-h-[600px] flex flex-col">
             <div className="flex items-center justify-between mb-4 flex-shrink-0">
@@ -206,59 +263,56 @@ export default function Overview() {
               <SentimentTimelineChart mentions={filteredMentions} start={dateRange.start} end={dateRange.end} granularity={granularity} onPointClick={handleTimelineClick} />
             </div>
           </div>
-          <div className="flex flex-col sm:flex-row gap-3 lg:gap-4 lg:flex-1 lg:min-h-[290px] lg:max-h-[600px]">
-            <div className="card h-[320px] sm:h-auto sm:flex-1 flex flex-col min-h-0">
-              <h2 className="text-base font-semibold text-ink tracking-tight mb-4 flex-shrink-0">Platform Breakdown</h2>
-              <div className="flex-1 min-h-0">
-                <PlatformBreakdownChart mentions={filteredMentions} />
+
+          <div className="card h-auto lg:flex-1 lg:h-auto lg:min-h-[290px] lg:max-h-[600px] flex flex-col">
+            <div className="flex items-center justify-between mb-3 flex-shrink-0 gap-2">
+              <h2 className="text-base font-semibold text-ink tracking-tight truncate">Top 5 Sources &amp; Coverage</h2>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <SegmentedControl
+                  value={sourceTab}
+                  onChange={setSourceTab}
+                  options={[{ value: 'outlet', label: 'Outlets' }, { value: 'voice', label: 'Voices' }]}
+                />
+                <button
+                  onClick={() => navigate('/sources')}
+                  aria-label="Expand sources and coverage"
+                  title="Expand"
+                  className="p-1 rounded-md text-muted hover:text-ink hover:bg-surface-strong dark:hover:bg-white/8 transition-colors"
+                >
+                  <Maximize2 size={14} />
+                </button>
               </div>
             </div>
-            <div className="card h-[320px] sm:h-auto sm:flex-1 flex flex-col min-h-0">
-              <h2 className="text-base font-semibold text-ink tracking-tight mb-4 flex-shrink-0">Keyword Comparison</h2>
-              <div className="flex-1 min-h-0">
-                <KeywordComparisonChart mentions={filteredMentions} />
-              </div>
+            <div className="flex-1 min-h-0">
+              <MediaCoverage
+                mentions={filteredMentions}
+                previousMentions={previousPeriodMentions}
+                onSelect={handleSourceSelect}
+                showTrend={hasComparisonPeriod}
+                tab={sourceTab}
+                onTabChange={setSourceTab}
+              />
             </div>
           </div>
         </div>
 
-        {/* Right: tall High-Risk — spans 2 of 6 columns */}
-        {/* Mobile: normal flow with 12px padding, no scroll. Desktop: absolute fill with scroll */}
-        <div className="card lg:col-span-2 relative lg:min-h-[400px] p-3 lg:p-0">
-          {/* Desktop inner absolute fill */}
-          <div className="lg:absolute lg:inset-0 flex flex-col lg:pt-5 lg:px-5 lg:pb-0 overflow-hidden lg:overflow-hidden">
-            <div className="flex items-center justify-between mb-4 flex-shrink-0">
-              <h2 className="text-base font-semibold text-ink tracking-tight">Recent At-Risk Mentions</h2>
-              <span className="text-xs text-muted">{kpis.atRiskCount} total mentions</span>
+        {/* Right — distribution, spans 2 of 6 columns */}
+        <div className="lg:col-span-2 flex flex-col gap-3 lg:gap-4 lg:min-h-0">
+          <div className="card h-[320px] lg:flex-1 lg:h-auto lg:min-h-0 flex flex-col">
+            <h2 className="text-base font-semibold text-ink tracking-tight mb-4 flex-shrink-0">Platform Breakdown</h2>
+            <div className="flex-1 min-h-0">
+              <PlatformBreakdownChart mentions={filteredMentions} />
             </div>
-            {highRiskMentions.length === 0 ? (
-              <div className="text-center py-8 text-sm text-muted">No at-risk mentions</div>
-            ) : (
-              <div className="relative lg:flex-1 lg:min-h-0">
-                {riskScrolled && (
-                  <div className="hidden lg:block absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-canvas to-transparent z-10 pointer-events-none" />
-                )}
-                {!riskScrolledToBottom && (
-                  <div className="hidden lg:block absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-canvas to-transparent z-10 pointer-events-none" />
-                )}
-                <div
-                  ref={riskListRef}
-                  onScroll={handleRiskScroll}
-                  className="space-y-2 lg:overflow-y-auto lg:h-full lg:pb-4 scrollbar-hide"
-                >
-                  {highRiskMentions.map(m => (
-                    <MentionCard
-                      key={m.id}
-                      mention={m}
-                      onClick={() => navigate('/mentions', { state: { mentionId: m.id, sentimentFilter: 'negative' } })}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
+          </div>
+          <div className="card h-[320px] lg:flex-1 lg:h-auto lg:min-h-0 flex flex-col">
+            <h2 className="text-base font-semibold text-ink tracking-tight mb-4 flex-shrink-0">Keyword Comparison</h2>
+            <div className="flex-1 min-h-0">
+              <KeywordComparisonChart mentions={filteredMentions} />
+            </div>
           </div>
         </div>
       </div>
+
     </div>
   )
 }

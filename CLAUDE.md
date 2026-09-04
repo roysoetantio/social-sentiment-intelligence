@@ -42,6 +42,82 @@ Each source has a `fetch*()` function that returns rows matching the Supabase sc
 - `src/components/filters/FilterBar.jsx` → `SOURCE_GROUPS` (icon + label for filter sidebar)
 - `src/pages/MentionsExplorer.jsx` → mention card source label map
 
+## Overview: comparison, sources and coverage quality
+
+Three things on the Overview depend on conventions that are easy to break:
+
+**Period-over-period.** The **All** range has no window before it — it starts at
+the oldest row there is — so `hasComparisonPeriod` is false there and the pages
+drop every delta and the leaderboard's Trend column rather than printing "new"
+on all 216 sources. The Sources page swaps its New Sources tile for Busiest
+Source on that range, for the same reason.
+
+`DashboardContext` exposes `previousPeriodMentions` —
+the window of equal length immediately before the selected one, built from the
+same `scopedMentions` and the same `searchQuery` as `globalFilteredMentions`, so
+the two sets are comparable and both are tenant-scoped. Volume deltas are
+percent; rate deltas (positive/negative/net) are **percentage points**, because
+a percent change of a percent means nothing. A previous period of zero renders
+as `new`, never as +100%.
+
+`deltaGoodWhen` on `KPICard` decides the colour, not the direction: Total
+Mentions is deliberately `"none"` (neutral grey) because a volume spike can be
+a campaign or a crisis, and green-on-up would assert the wrong one.
+
+**Sources & Coverage** is a page (`/sources`, in the sidebar) plus a compact
+card on the Overview that links to it. The page carries the sortable, searchable
+`SourceTable`, the coverage panel, and a **How to read this** legend; the card
+carries `TopSourcesChart` beside the same coverage panel. Both read the same
+`getSourceLeaderboard` rows, so they can differ in density but never in fact.
+
+Every badge — tier, at-risk, new, trend — lives in `components/common/SourceMarks.jsx`
+and carries its own hover explanation. Tiers are explained inside **Coverage
+Quality**, where each tier expands to its definition and the outlets in it (Tier
+1 open by default); `SourceLegend` covers only the leaderboard's marks, because
+repeating the tiers there made it long enough to skip. Either way the panel says
+out loud that tiers are an editorial list rather than a measured ranking — a
+reader must never have to guess what "T3" claims. Radix tooltips need a
+provider: one is mounted around `Layout` in `App.jsx`.
+
+**"At-risk" and "high risk" are different filters, and mixing them loses rows.**
+`isAtRisk()` in `constants/sentiment.js` is what the Overview KPI, the sidebar
+count and the leaderboard's At-risk column all mean: `medium` OR `high`, not
+positive, and not already overridden away from negative by an analyst. The
+Explorer's **"Show high risk only"** checkbox (`riskOnly` in `filterService`) is
+literally `riskLevel === 'high'`. The Edge Malaysia's at-risk coverage is entirely
+`medium`, so drilling in through `riskOnly` would land on an empty list under a
+count that said 2.
+
+So the at-risk count is its own drill-down: `atRiskOnly` in `DashboardContext`,
+filtered with the very same `isAtRisk()` the count uses, surfaced as a removable
+chip like `heatmapFilter` and `outletFilter`. Clicking the **row** still goes to
+everything that outlet published; clicking the **count** goes to the rows it is
+counting. Do not "simplify" this by pointing it at `riskOnly` or at a negative
+sentiment filter — negative happens to match today's Edge Malaysia rows and would
+silently drop a neutral-labelled high-risk story.
+
+**Top Sources.** `getOutletRef()` in `src/utils/outlets.js` is the single
+definition of "which source is this". The leaderboard groups by its `key`, and
+`filterService` filters by the same key, so the count in the list and the number
+of rows the drill-down lands on cannot disagree. Published coverage is
+attributed to the **publication** (domain), social posts to the **account** —
+hence two tabs, not one mixed ranking. Rows whose author the source API never
+supplied are bucketed as `Unattributed · {platform}` and sorted below every real
+source; before that, a placeholder called "LinkedIn" outranked every actual
+person posting about us.
+
+Domain matching is **suffix-based** (`es.linkedin.com`, `klse.i3investor.com`).
+An exact-match set files country subdomains as if they were outlets.
+
+**Outlet tiers are editorial.** `TIER_1_DOMAINS` / `TIER_2_DOMAINS` in
+`utils/outlets.js` decide what "Tier 1 coverage" means on the front page —
+changing them changes a number executives read. Add domains deliberately.
+
+Tiering exists because **reach is not a defensible headline**: it is reported on
+a minority of rows (Twitter and Instagram only), so a summed "total reach" is a
+partial number presented as a total. Anywhere reach appears it is stated with
+its coverage (`getReachCoverage`), and the KPI subtitle counts outlets instead.
+
 ## Social Feed (owned accounts)
 
 `social_posts` holds **our own published posts** — Instagram (`@uemedgenta`)
@@ -79,8 +155,9 @@ node scripts/fb-setup.js                          # re-mint FB_PAGE_TOKEN
   TopBar reads, and the TopBar swaps stores when the route starts with
   `/social`. The page registers its loaded posts back into the context so the
   date picker can mark days that have posts.
-- The TopBar gains an **All** preset on `/social` only, resolved to the oldest
-  loaded post rather than a fixed span. Its ceiling is whatever ingest pulled —
+- The TopBar's **All** preset resolves to the oldest loaded post rather than a
+  fixed span (the mentions side has the same preset, resolved against the oldest
+  mention in tenant scope). Its ceiling is whatever ingest pulled —
   the default run is 12 months, so `--all` is required for real full history.
   `fetchSocialPosts` pages the table in blocks of 1000 so a long history isn't
   silently truncated by PostgREST's response cap.
@@ -154,6 +231,169 @@ Verified working 2026-09-03 against `UEMEdgentaBerhad` (Page id
   yet judged by Claude". Re-running ingest preserves any other value, including
   a deliberately low one — flagging a row as too ambiguous to call is a
   decision and must not be reverted to the baseline.
+
+## Notification bell and user identity
+
+**Alerts are per event, in a window.** `TopBar` used to render every
+`riskLevel === 'high'` mention ever ingested, one row per article: Infra opened
+to 41 unread, of which 3 were from the last 30 days, and one Kulai pile-up
+accounted for nine of them because dedup is on `url` and eight outlets carried
+it. A ransomware story naming PLUS Malaysia sat at position 28, styled
+identically to a lorry collision.
+
+`utils/alerts.js → buildAlertClusters()` fixes both: a fixed
+**`ALERT_WINDOW_DAYS`** (30) bound, and one alert per *event*, grouping
+headlines by token overlap within 3 days. The window is deliberately fixed
+rather than following the TopBar date filter — a notification count that moves
+when you change a chart filter is not a notification count. Clustering is tuned
+to **under-merge**: missing a merge costs a duplicate row, over-merging hides an
+event. Read state applies to the whole cluster (`cluster.ids`), so
+acknowledging one outlet's copy acknowledges the syndicated pile.
+
+**The window has to be visible.** 41 high-risk Infra mentions minus the 3 inside
+the window leaves 38 that the bell silently stopped showing — and "Show
+completed" cannot explain them, because they are not completed, they are out of
+window. A filter that leaves no trace of what it removed is indistinguishable
+from data loss, so the dropdown ends with `Showing the last 30 days. 38 older
+high risk mentions →`, linking to the Mentions Explorer with the risk filter
+applied. `countOlderAlerts()` sits next to `buildAlertClusters()` so both read
+the same bound.
+
+Still true and still wrong:
+
+**Three states, three homes** (migration `008`), because none can be inferred
+from another and `localStorage` could hold none of them:
+
+| Fact | Where | Scope |
+|---|---|---|
+| viewed | `mention_views` | per person, permanent — the audit trail, and what the avatars draw |
+| read | `mention_alert_state.read_at` | per **(mention, department)** — drives the badge |
+| handled | `mention_alert_state.handled_at` | per tenant, explicit, high-risk only |
+
+Read is keyed per department because one mention reaches several tenants through
+`keyword_matched` — a story CCD has read must still be unread for Infra. Read
+un-badges an item for the whole tenant but **hides nothing**: read rows stay in
+the All tab carrying the first viewer's face, so the second person to log in can
+still find everything and see who got there first.
+
+**Done is an action, not a glance.** The bell lists only *outstanding* work: an
+alert leaves the list when someone marks it **handled**, a review item when
+someone **resolves** it, and a "Show completed" checkbox brings the finished ones
+back, dimmed, with who did it. Tab counts and the badge count outstanding items,
+so they measure work rather than rows on screen.
+
+Read state still exists and still drives the avatars and `read_by`, but it
+deliberately **clears nothing** — reading a fatal-crash report is not the same as
+deciding nothing needs doing about it. Handling, however, *does* imply reading:
+`set_alert_handled` writes `read_at` too, because an item that showed "Handled"
+next to an unread dot was a state that should never have existed.
+
+**Undo puts an alert back, all the way.** Un-handling clears `read_at` as well as
+`handled_at`, so the row returns to the list wearing the unread dot — the state
+that makes people look — rather than a quiet "seen" tick. The permanent record of
+who looked is in `mention_views` and is untouched, since `read_at` is only badge
+and dot state.
+
+**There is no bulk dismiss.** "Mark all read" was removed: every row in this list
+is one decision, and a single button that clears all of them is exactly how the
+one that mattered gets lost. `markViewed` (opening one item) is the only thing
+that stamps a face.
+
+Writes are optimistic and go through SECURITY DEFINER functions that check
+`can_touch_department()`; a failed write logs and triggers
+`reloadNotificationState()`, so the UI corrects itself rather than leaving
+someone believing an alert was acknowledged.
+
+**`review_queue`** is the Needs Review tab, keyed `(mention_id, department,
+reason)` — one mention can need two different things, which a boolean on
+`mentions` cannot express. Reasons are `unreadable | ambiguous_sentiment |
+risk_unhandled | out_of_scope`. The monitoring routine writes it in its Step 6B;
+the `ON CONFLICT DO NOTHING` there is load-bearing, because a resolved row must
+not reappear the next morning.
+
+**What belongs in Needs Review.** A row qualifies only if all three hold:
+
+1. the routine already **tried** and could not decide — not work it skipped;
+2. a person can resolve it **from the dashboard**;
+3. resolving it writes back to **our data** (sentiment, exclusion, a keyword),
+   not to the outside world.
+
+Three things are excluded by that test, and each was in the queue at some point
+before it was applied:
+
+- **Wrong dates** fail (1). Step 1D recovers the date itself — URL path, then the
+  page byline, then a title search for a syndicated copy when the page 403s. All
+  seven rows in the first backfill were recoverable that way, so the queue had
+  been handing people work the routine had simply skipped. A date that survives
+  all three signals is *reported*, not queued.
+- **`risk_unhandled`** fails (3). Deciding whether to respond to a fatal crash is
+  a comms action, and high-risk alerts already carry `handled_at`. Queueing it
+  put one story in two tabs with two separate states — marking it handled in
+  Alerts left the Needs Review row untouched. **A high-risk mention is an alert,
+  full stop.**
+- **The thin-body backlog** (294 rows) is the routine's own Step 1C queue,
+  cleared 30 a day.
+
+The surviving reasons are all data decisions: `ambiguous_sentiment`,
+`unreadable`, `out_of_scope`.
+
+**The answer closes the row from wherever it is given.** A bare "Resolve" that
+changed nothing was hollow — the mention kept its machine-guessed label. But
+putting the decision in the row (three sentiment buttons per item) made the list
+unreadable, so the row keeps one quiet action and a **trigger on `mentions`**
+(`close_review_on_analyst_decision`) does the closing: set `analyst_sentiment`,
+`analyst_excluded` or `analyst_reviewed` anywhere — the analyst panel in the
+Mentions Explorer, the routine, a SQL fix — and matching open rows close with the
+decision recorded as their `resolution`.
+
+That also handles multi-tenant for free: the override lives on the mention, so
+one write closes CCD's and UEM Group's rows together, in SQL, without the clicker
+needing rights over the other tenant's row.
+
+"Resolve" in the bell therefore means **"I looked, nothing needs changing"** —
+a real answer, and the only one left that writes nothing. Undo
+(`unresolve_review_item`) reopens just that row and deliberately does **not**
+touch the mention: a queue row is not a mandate to erase somebody's sentiment
+override.
+
+Each review row is presented as **Claude asking a question**, not as a category:
+a robot icon on a `#FAFAFA` panel (translucent white in dark mode, where a
+near-white block would glare), the first-person line ("I couldn't tell whether
+this is positive or negative"), then the row's own `needed` ask underneath ("Read
+it and set the sentiment"), and the outlet on the footer line the way an alert
+carries it — resolved through `getOutletName()` from the URL, since review rows
+have no author record and there is one definition of "which source is this". The first-person lines live in `REASON_QUESTIONS` in
+`NotificationRows.jsx`, not in the database — three reasons, three sentences, one
+voice that cannot drift row to row, and nothing repeated across hundreds of rows.
+A `reason` outside the three renders a generic fallback and the reader loses the
+question, so adding a reason means adding its sentence in the same commit.
+
+**Dev caveat:** `VITE_DEV_NO_AUTH=true` uses the service-role key, so reads work
+but `mark_mentions_viewed` cannot (there is no `auth.email()` to attribute a
+view to). Verifying the write paths needs a real Microsoft login.
+
+**Identity comes from the user's own login, not the directory.**
+`app_users.full_name / avatar_color / avatar_url` (migration `007`) exist so a
+colleague can be rendered as a face or initials. The photo comes from Microsoft
+Graph, and the timing is the whole design: Supabase exposes `provider_token`
+only on the session right after the OAuth redirect, and Azure returns no
+provider refresh token, so it is gone after the first session refresh.
+`AuthContext` therefore harvests **your own** photo once per sign-in
+(`/me/photos/96x96/$value`, `User.Read`, user-consentable) and writes it to
+`app_users`; everyone else reads the stored copy. Reading colleagues' photos
+live would need `User.ReadBasic.All` and an Entra admin's consent.
+
+- `sync_my_profile()` is the only write path — RLS still restricts `app_users`
+  UPDATE to super admins, because a self-update policy would let a user write
+  their own `role`. The function touches three columns of the caller's own row.
+- `list_directory_avatars()` is the read path for non-admins, exposing the
+  presentational columns only, scoped to the caller's department.
+- `admin_list_app_users()` is a fixed-column function: **new columns are
+  invisible to the Admin page until they are named in it**, and Postgres will
+  not widen the return type in place, so changing it needs a drop and recreate.
+- A missing photo is normal, not a failure. Initials are the design: colour is
+  derived from an email hash so everyone is distinct from day one, with an
+  optional override in Admin → User Management.
 
 ## Multi-tenancy (departments)
 

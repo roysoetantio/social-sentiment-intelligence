@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react'
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 
 const AuthContext = createContext(null)
@@ -10,6 +10,29 @@ const DEV_NO_AUTH = import.meta.env.VITE_DEV_NO_AUTH === 'true'
 // Admin → Departments. This list is only a last-resort fallback for when that
 // table can't be read (missing migration / offline), so the app still renders.
 export const FALLBACK_DEPARTMENTS = ['CCD', 'Infra']
+
+// Microsoft Graph is the only source of a colleague's face this app can reach,
+// and the window to call it is narrow: Supabase exposes `provider_token` on the
+// session right after the OAuth redirect, and Azure returns no provider refresh
+// token, so it is gone after the first session refresh. So each person deposits
+// their own name and photo into `app_users` at login and every other screen
+// reads the stored copy — no directory-wide permission, no Graph call at render.
+const GRAPH_PHOTO_URL = 'https://graph.microsoft.com/v1.0/me/photos/96x96/$value'
+const MAX_PHOTO_BYTES = 200 * 1024
+
+// Entra often appends a " - <Company>" org suffix to the display name.
+const cleanFullName = (user) => {
+  const m = user?.user_metadata || {}
+  const raw = m.full_name || m.name || m.preferred_username || (user?.email ? user.email.split('@')[0] : '')
+  return String(raw).split(' - ')[0].trim()
+}
+
+const blobToDataUrl = (blob) => new Promise((resolve, reject) => {
+  const reader = new FileReader()
+  reader.onload = () => resolve(reader.result)
+  reader.onerror = reject
+  reader.readAsDataURL(blob)
+})
 
 /**
  * Auth + authorization layer.
@@ -69,6 +92,38 @@ export function AuthProvider({ children }) {
     const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => setSession(s ?? null))
     return () => sub.subscription.unsubscribe()
   }, [])
+
+  // Deposit this user's own name and photo for everyone else to render.
+  // Runs once per signed-in email: a 404 from Graph means they simply have no
+  // photo set, which is common and not a failure — initials cover it.
+  const harvestedFor = useRef(null)
+  useEffect(() => {
+    if (DEV_NO_AUTH) return
+    const email = session?.user?.email
+    if (!email || !profile) return
+    if (harvestedFor.current === email) return
+    harvestedFor.current = email
+
+    ;(async () => {
+      let photo = null
+      const token = session.provider_token
+      if (token) {
+        try {
+          const res = await fetch(GRAPH_PHOTO_URL, { headers: { Authorization: `Bearer ${token}` } })
+          if (res.ok) {
+            const blob = await res.blob()
+            if (blob.size > 0 && blob.size <= MAX_PHOTO_BYTES) photo = await blobToDataUrl(blob)
+          }
+        } catch {
+          // Graph unreachable or the token already expired. Not worth surfacing:
+          // the user still has a name and initials.
+        }
+      }
+      const name = cleanFullName(session.user)
+      if (!name && !photo) return
+      await supabase.rpc('sync_my_profile', { p_full_name: name, p_avatar_url: photo })
+    })()
+  }, [session, profile])
 
   // Resolve the allowlist profile + group access whenever the session changes
   useEffect(() => {
@@ -229,16 +284,7 @@ export function AuthProvider({ children }) {
   const isSuperAdmin = profile?.role === 'super_admin'
 
   // Full name from the SSO profile (Azure populates user_metadata.full_name / name).
-  // Entra often appends a " - <Company>" org suffix to the display name — strip it.
-  const fullName = useMemo(() => {
-    const m = user?.user_metadata || {}
-    const raw =
-      m.full_name ||
-      m.name ||
-      m.preferred_username ||
-      (user?.email ? user.email.split('@')[0] : '')
-    return raw.split(' - ')[0].trim()
-  }, [user])
+  const fullName = useMemo(() => cleanFullName(user), [user])
 
   // The keyword groups (folders) the current view is scoped to.
   // Super admin: the selected department's groups. Others: their own department's.

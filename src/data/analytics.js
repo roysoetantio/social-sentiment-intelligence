@@ -1,5 +1,6 @@
 import { subDays, format, startOfDay, startOfWeek, startOfMonth, startOfHour } from 'date-fns'
 import { isAtRisk } from '../constants/sentiment'
+import { getOutletRef, isSocialUrl, TIER_META } from '../utils/outlets'
 
 const now = new Date('2026-05-18T12:00:00')
 
@@ -241,4 +242,167 @@ export const getKeywordComparisonData = (mentions, allKeywords = []) => {
     engagementScore: parseFloat((k.engagement / maxEngagement * 100).toFixed(1)),
     reachScore: parseFloat((k.reach / maxReach * 100).toFixed(1)),
   }))
+}
+
+// ── Period-over-period comparison ────────────────────────────────────────────
+// A KPI with no baseline says nothing, so every headline number on the Overview
+// is diffed against the immediately preceding window of the same length.
+
+// The window of equal length that ends the instant the selected one begins.
+export const getPreviousRange = (start, end) => {
+  const s = new Date(start).getTime()
+  const e = new Date(end).getTime()
+  const span = Math.max(e - s, 0)
+  return { start: new Date(s - span - 1), end: new Date(s - 1) }
+}
+
+// Below this many rows in the comparison window, a percentage stops describing
+// the brand and starts describing how little data we had: 3 → 44 is "+1366.7%".
+// The UI shows the raw movement instead.
+const LOW_BASELINE = 5
+
+// mode 'relative' → percent change (volumes). mode 'points' → percentage-point
+// change (rates, where a "percent change of a percent" is meaningless).
+// A null `percent` means there is no baseline to divide by; the UI shows "new"
+// rather than a fake +100%.
+export const getDelta = (current, previous, mode = 'relative') => {
+  const diff = parseFloat((current - previous).toFixed(1))
+  if (mode === 'points') {
+    return { current, previous, diff, percent: diff, mode, hasBaseline: previous !== 0 || current !== 0 }
+  }
+  const percent = previous > 0
+    ? parseFloat(((current - previous) / previous * 100).toFixed(1))
+    : null
+  return {
+    current, previous, diff, percent, mode,
+    hasBaseline: previous > 0,
+    // Percentage is mathematically right here but tells you nothing useful.
+    lowBaseline: previous > 0 && previous < LOW_BASELINE,
+  }
+}
+
+// Deltas for every KPI on the Overview, from two already-computed KPI objects.
+export const getKPIComparison = (kpis, prevKPIs) => ({
+  totalMentions:    getDelta(kpis.totalMentions, prevKPIs.totalMentions),
+  positivePercent:  getDelta(kpis.positivePercent, prevKPIs.positivePercent, 'points'),
+  negativePercent:  getDelta(kpis.negativePercent, prevKPIs.negativePercent, 'points'),
+  netSentimentScore: getDelta(kpis.netSentimentScore, prevKPIs.netSentimentScore, 'points'),
+  atRiskCount:      getDelta(kpis.atRiskCount, prevKPIs.atRiskCount),
+  totalEngagement:  getDelta(kpis.totalEngagement, prevKPIs.totalEngagement),
+})
+
+// Bare counts per bucket, for the sparklines in the KPI cards. `pick` selects
+// which tally to plot so one series builder serves volume and sentiment alike.
+export const getVolumeSeries = (mentions, opts = {}, pick = b => b.total) =>
+  getTimelineData(mentions, opts).map(pick)
+
+// ── Source leaderboard ───────────────────────────────────────────────────────
+// Who is publishing about us, ranked — the media-relations map the dashboard
+// was missing. Published coverage ranks by publication, social by account;
+// see getOutletRef for why those are two different questions.
+
+export const getSourceLeaderboard = (mentions, previousMentions = []) => {
+  const prevCounts = {}
+  previousMentions.forEach(m => {
+    const ref = getOutletRef(m)
+    prevCounts[ref.key] = (prevCounts[ref.key] || 0) + 1
+  })
+
+  const bucket = {}
+  mentions.forEach(m => {
+    const ref = getOutletRef(m)
+    if (!bucket[ref.key]) {
+      bucket[ref.key] = {
+        ...ref,
+        total: 0, positive: 0, negative: 0, neutral: 0, mixed: 0,
+        atRisk: 0, engagement: 0, lastAt: null, sampleUrl: m.url,
+        platforms: new Set(),
+      }
+    }
+    const b = bucket[ref.key]
+    b.total++
+    b[m.sentiment.label] = (b[m.sentiment.label] || 0) + 1
+    if (isAtRisk(m)) b.atRisk++
+    b.engagement += m.engagement.likes + m.engagement.shares + m.engagement.comments
+    if (m.platform) b.platforms.add(m.platform)
+    if (!b.lastAt || new Date(m.publishedAt) > new Date(b.lastAt)) {
+      b.lastAt = m.publishedAt
+      b.sampleUrl = m.url
+    }
+  })
+
+  return Object.values(bucket)
+    .map(b => {
+      const previous = prevCounts[b.key] || 0
+      return {
+        ...b,
+        platforms: [...b.platforms],
+        previous,
+        // No prior appearance at all is the interesting signal — an outlet
+        // covering us for the first time this period.
+        isNew: previous === 0,
+        diff: b.total - previous,
+        netSentiment: b.total > 0
+          ? parseFloat(((b.positive - b.negative) / b.total * 100).toFixed(1))
+          : 0,
+      }
+    })
+    // Rows with no identifiable author sink below every real one — they are a
+    // gap in the source data, not a top voice.
+    .sort((a, b) =>
+      (a.unattributed ? 1 : 0) - (b.unattributed ? 1 : 0) ||
+      b.total - a.total ||
+      a.label.localeCompare(b.label)
+    )
+}
+
+// ── Coverage quality ─────────────────────────────────────────────────────────
+// Reach is populated on a minority of rows (only the sources that report it),
+// so a summed "total reach" is not a defensible headline. Outlet tier is known
+// for every published row, which makes it the honest quality signal.
+
+export const getCoverageQuality = (mentions) => {
+  const published = mentions.filter(m => !isSocialUrl(m.url))
+  const tiers = { 1: { count: 0, outlets: new Set() }, 2: { count: 0, outlets: new Set() }, 3: { count: 0, outlets: new Set() } }
+
+  published.forEach(m => {
+    const ref = getOutletRef(m)
+    const t = ref.tier || 3
+    tiers[t].count++
+    tiers[t].outlets.add(ref.label)
+  })
+
+  const total = published.length
+  const rows = [1, 2, 3].map(t => ({
+    tier: t,
+    label: TIER_META[t].label,
+    description: TIER_META[t].description,
+    count: tiers[t].count,
+    outlets: [...tiers[t].outlets].sort(),
+    percent: total > 0 ? parseFloat((tiers[t].count / total * 100).toFixed(1)) : 0,
+  }))
+
+  return {
+    total,
+    socialCount: mentions.length - total,
+    rows,
+    tier1Count: tiers[1].count,
+    tier1Outlets: [...tiers[1].outlets].sort(),
+    tier1Percent: total > 0 ? parseFloat((tiers[1].count / total * 100).toFixed(1)) : 0,
+    outletCount: new Set(published.map(m => getOutletRef(m).key)).size,
+  }
+}
+
+// How much of the selected set actually carries a reach figure. Shown wherever
+// reach is, so nobody reads a partial number as a total.
+export const getReachCoverage = (mentions) => {
+  const withReach = mentions.filter(m => m.engagement.reach > 0)
+  return {
+    rows: withReach.length,
+    total: mentions.length,
+    percent: mentions.length > 0
+      ? parseFloat((withReach.length / mentions.length * 100).toFixed(1))
+      : 0,
+    reach: withReach.reduce((s, m) => s + m.engagement.reach, 0),
+  }
 }

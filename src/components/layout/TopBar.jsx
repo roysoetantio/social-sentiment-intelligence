@@ -1,12 +1,13 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react'
-import { Search, Bell, Calendar, X, Menu, ChevronDown, ArrowLeft, Circle, CheckCircle, CheckCheck, Sun, Moon } from 'lucide-react'
-import { formatDateTime } from '../../utils/format'
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import { Search, Bell, Calendar, X, Menu, ChevronDown, ArrowLeft, Sun, Moon } from 'lucide-react'
 import { format } from 'date-fns'
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { useDashboard } from '../../context/DashboardContext'
 import { useSocialFilter } from '../../context/SocialFilterContext'
 import { useTheme } from '../../context/ThemeContext'
 import DateRangePicker from '../ui/DateRangePicker'
+import { buildAlertClusters, countOlderAlerts, ALERT_WINDOW_DAYS } from '../../utils/alerts'
+import { AlertRow, ReviewRow } from './NotificationRows'
 import clsx from 'clsx'
 
 const presets = [
@@ -15,11 +16,11 @@ const presets = [
   { label: '1M', value: '1m' },
   { label: '3M', value: '3m' },
   { label: '1Y', value: '1y' },
+  // 'All' resolves to the oldest row actually loaded — the publishing history on
+  // Social Feed, the oldest mention in this tenant's scope everywhere else — so
+  // the token still reads as a real span rather than an arbitrary decade.
+  { label: 'All', value: 'all' },
 ]
-
-// Social Feed holds our full publishing history, so it gets a ceiling the
-// mentions pages don't — those are windowed by design.
-const socialPresets = [...presets, { label: 'All', value: 'all' }]
 
 export default function TopBar({ title, shortTitle, onMenuClick }) {
   const navigate = useNavigate()
@@ -47,12 +48,16 @@ export default function TopBar({ title, shortTitle, onMenuClick }) {
     setDatePreset,
     activePreset, setActivePreset,
   } = filters
-  const { allMentions, setRiskOnly, readIds, markRead, markAllRead } = dashboard
+  const {
+    allMentions, setRiskOnly, readIds,
+    handledIds, alertStates, viewers, directory, reviewItems,
+    markViewed, setAlertHandled, resolveReviewItem, undoReviewAnswer,
+  } = dashboard
 
   // The picker dots days that actually carry data — posts on social, mentions elsewhere.
   const pickerItems = onSocial ? social.posts : allMentions
   const searchPlaceholder = onSocial ? 'Search posts...' : 'Search mentions...'
-  const activePresets = onSocial ? socialPresets : presets
+  const activePresets = presets
   const { isDark, toggleTheme } = useTheme()
 
   const [pickerOpen, setPickerOpen] = useState(false)
@@ -100,7 +105,12 @@ export default function TopBar({ title, shortTitle, onMenuClick }) {
     setPickerOpen(v => !v)
   }
 
-  const highRiskMentions = allMentions.filter(m => m.riskLevel === 'high')
+  // One alert per event, bounded to the last 30 days — see utils/alerts.js for
+  // why. `ids` covers every article in the cluster, so reading one outlet's
+  // version of a crash acknowledges the whole pile of syndicated copies.
+  const alertClusters = useMemo(() => buildAlertClusters(allMentions), [allMentions])
+  // What the window is hiding, so the bound is visible rather than silent.
+  const olderAlertCount = useMemo(() => countOlderAlerts(allMentions), [allMentions])
 
   const [notifOpen, setNotifOpen] = useState(false)
   const [notifTab, setNotifTab] = useState('all')
@@ -113,8 +123,38 @@ export default function TopBar({ title, shortTitle, onMenuClick }) {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  const unreadCount = highRiskMentions.filter(m => !readIds.has(m.id)).length
-  const riskCount = unreadCount
+  const isClusterRead = useCallback(
+    (cluster) => cluster.ids.every(id => readIds.has(id)),
+    [readIds]
+  )
+  // "Done" is an action, not a glance. An alert is finished when someone marks it
+  // handled; a review item when someone resolves it. Read state still exists —
+  // it records who saw what first and feeds the avatars — but it deliberately no
+  // longer clears anything from this list. Reading a fatal-crash report is not
+  // the same as deciding nothing needs doing about it.
+  const [showCompleted, setShowCompleted] = useState(false)
+
+  const openAlertCount = alertClusters.filter(c => !handledIds.has(c.id)).length
+  const openReviewCount = reviewItems.filter(r => !r.resolved_at).length
+  const riskCount = openAlertCount + openReviewCount
+
+  const notifItems = useMemo(() => {
+    const alerts = alertClusters.map(c => ({
+      kind: 'alert', id: c.id, cluster: c,
+      at: new Date(c.lead.publishedAt).getTime(),
+      isDone: handledIds.has(c.id),
+    }))
+    const reviews = reviewItems.map(r => ({
+      kind: 'review', id: r.id, review: r,
+      at: new Date(r.mention?.published_at || r.raised_at).getTime(),
+      isDone: Boolean(r.resolved_at),
+    }))
+    const pool = notifTab === 'alerts' ? alerts
+      : notifTab === 'review' ? reviews
+      : [...alerts, ...reviews]
+    const filtered = showCompleted ? pool : pool.filter(i => !i.isDone)
+    return [...filtered].sort((a, b) => Number(a.isDone) - Number(b.isDone) || b.at - a.at)
+  }, [alertClusters, reviewItems, notifTab, showCompleted, handledIds])
 
   return (
     <header className="bg-canvas flex-shrink-0 sticky top-0 z-40" style={{ touchAction: 'pan-x' }}>
@@ -124,6 +164,7 @@ export default function TopBar({ title, shortTitle, onMenuClick }) {
         {showBack && (
           <button
             onClick={handleBack}
+            aria-label="Back"
             className="md:hidden flex items-center justify-center p-1 -ml-1 mr-1 text-[#2940BE] dark:text-[#6B80FF]"
           >
             <ArrowLeft size={20} />
@@ -371,81 +412,119 @@ export default function TopBar({ title, shortTitle, onMenuClick }) {
             )}>
               {/* Header */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-hairline flex-shrink-0">
-                <span className="text-sm font-semibold text-ink">High Risk Alerts</span>
+                <span className="text-sm font-semibold text-ink">Notifications</span>
                 <div className="flex items-center gap-2">
-                  {unreadCount > 0 && (
-                    <button onClick={() => markAllRead(highRiskMentions.map(m => m.id))} className="flex items-center gap-1 text-xs text-[#2940BE] dark:text-[#6B80FF] hover:opacity-70 transition-opacity">
-                      <CheckCheck size={13} />
-                      Mark all read
-                    </button>
-                  )}
+                  {/* No bulk dismiss. Every item here is one decision, and a
+                      single button that clears all of them is how the one that
+                      mattered gets lost. */}
                   <button onClick={() => setNotifOpen(false)} className="text-muted hover:text-ink transition-colors">
                     <X size={14} />
                   </button>
                 </div>
               </div>
 
-              {/* Tabs */}
-              <div className="px-4 pt-4 pb-4 flex-shrink-0">
+              {/* Tabs — type, not state. Unread is a filter below, because
+                  mixing "what kind is it" with "have I seen it" in one row of
+                  tabs makes "unread alerts" unaskable. */}
+              <div className="px-4 pt-4 pb-3 flex-shrink-0 space-y-2.5">
                 <div className="flex items-center gap-1 bg-surface-strong rounded-lg p-0.5 w-fit">
-                  {[{ id: 'all', label: 'All' }, { id: 'unread', label: `Unread${unreadCount > 0 ? ` (${unreadCount})` : ''}` }].map(t => (
+                  {[
+                    { id: 'all', label: 'All', count: openAlertCount + openReviewCount },
+                    { id: 'alerts', label: 'Alerts', count: openAlertCount },
+                    { id: 'review', label: 'Needs Review', count: openReviewCount },
+                  ].map(t => (
                     <button
                       key={t.id}
                       onClick={() => setNotifTab(t.id)}
                       className={clsx(
-                        'px-3 h-8 text-xs font-medium rounded-md transition-all',
+                        'px-3 h-8 text-xs font-medium rounded-md transition-all whitespace-nowrap',
                         notifTab === t.id ? 'bg-surface-card text-ink shadow-sm' : 'text-body hover:text-ink'
                       )}
                     >
-                      {t.label}
+                      {t.label}{t.count > 0 ? ` (${t.count})` : ''}
                     </button>
                   ))}
                 </div>
+                <label className="flex items-center gap-1.5 text-[0.6875rem] text-body cursor-pointer w-fit">
+                  <input
+                    type="checkbox"
+                    checked={showCompleted}
+                    onChange={e => setShowCompleted(e.target.checked)}
+                    className="h-3 w-3 accent-[#2940BE]"
+                  />
+                  Show completed
+                </label>
               </div>
 
               {/* List */}
               <div className="overflow-y-auto flex-1 px-4 pb-4 space-y-1.5 scrollbar-hide">
-                {(() => {
-                  const displayed = notifTab === 'unread' ? highRiskMentions.filter(m => !readIds.has(m.id)) : highRiskMentions
-                  if (displayed.length === 0) return (
-                    <div className="py-8 text-center text-sm text-muted">
-                      {notifTab === 'unread' ? 'All caught up!' : 'No high risk mentions'}
-                    </div>
-                  )
-                  return displayed.map(m => {
-                    const isRead = readIds.has(m.id)
-                    return (
-                      <button
-                        key={m.id}
-                        onClick={() => {
-                          markRead(m.id)
+                {notifItems.length === 0 ? (
+                  <div className="py-8 text-center text-sm text-muted">
+                    {notifTab === 'review'
+                      ? 'Nothing waiting on a human'
+                      : showCompleted
+                        ? `Nothing in the last ${ALERT_WINDOW_DAYS} days`
+                        : 'All caught up!'}
+                  </div>
+                ) : notifItems.map(item => (
+                  item.kind === 'alert'
+                    ? <AlertRow
+                        key={`a-${item.id}`}
+                        cluster={item.cluster}
+                        isRead={isClusterRead(item.cluster)}
+                        isHandled={item.isDone}
+                        state={alertStates.get(item.id)}
+                        viewers={viewers.get(item.id) || []}
+                        directory={directory}
+                        showTag={notifTab === 'all'}
+                        onOpen={() => {
+                          markViewed(item.cluster.ids)
                           setNotifOpen(false)
                           setRiskOnly(true)
-                          navigate('/mentions', { state: { mentionId: m.id, sentimentFilter: 'negative' } })
+                          navigate('/mentions', { state: { mentionId: item.id, sentimentFilter: 'negative' } })
                         }}
-                        className={clsx(
-                          'w-full text-left rounded-lg p-3 border transition-colors hover:bg-gray-50 dark:hover:bg-white/12',
-                          isRead
-                            ? 'bg-surface-card border-hairline opacity-60'
-                            : 'bg-surface-card border-hairline-strong dark:border-white/12'
-                        )}
-                      >
-                        <div className="flex items-start justify-between gap-2 mb-1.5">
-                          <span className="text-sm font-semibold text-ink line-clamp-2 flex-1">{m.text}</span>
-                          {isRead
-                            ? <CheckCircle size={13} className="text-muted flex-shrink-0 mt-0.5" />
-                            : <Circle size={8} className="text-red-600 flex-shrink-0 mt-1 fill-red-600" />
-                          }
-                        </div>
-                        <div className="flex items-center justify-between text-xs text-muted">
-                          <span>{formatDateTime(m.publishedAt)}</span>
-                          <span>{m.author?.name || m.author?.handle}</span>
-                        </div>
-                      </button>
-                    )
-                  })
-                })()}
+                        onHandled={() => setAlertHandled(item.id, true)}
+                        onUnhandled={() => setAlertHandled(item.id, false)}
+                      />
+                    : <ReviewRow
+                        key={`r-${item.id}`}
+                        item={item.review}
+                        viewers={viewers.get(item.review.mention_id) || []}
+                        directory={directory}
+                        showTag={notifTab === 'all'}
+                        onOpen={() => {
+                          markViewed([item.review.mention_id])
+                          setNotifOpen(false)
+                          navigate('/mentions', { state: { mentionId: item.review.mention_id } })
+                        }}
+                        onResolve={() => resolveReviewItem(item.review.id, 'Reviewed — no change needed')}
+                        onUndo={() => undoReviewAnswer(item.review)}
+                      />
+                ))}
               </div>
+
+              {/* The window, stated, with a way past it. A filter that leaves no
+                  trace of what it removed is indistinguishable from data loss —
+                  and "Show completed" cannot answer it, because these rows are
+                  not completed, they are out of window. */}
+              {notifTab !== 'review' && olderAlertCount > 0 && (
+                <button
+                  onClick={() => {
+                    setNotifOpen(false)
+                    setRiskOnly(true)
+                    // No sentiment filter: countOlderAlerts() counts high-risk
+                    // rows whatever their label, so adding one here could land
+                    // on fewer rows than the number just clicked.
+                    navigate('/mentions')
+                  }}
+                  className="flex-shrink-0 w-full px-4 py-2.5 border-t border-hairline text-left text-[0.6875rem] text-body hover:text-ink hover:bg-surface-strong dark:hover:bg-white/[0.06] transition-colors"
+                >
+                  Showing the last {ALERT_WINDOW_DAYS} days.{' '}
+                  <span className="font-medium text-[#2940BE] dark:text-[#6B80FF]">
+                    {olderAlertCount} older high risk {olderAlertCount === 1 ? 'mention' : 'mentions'} →
+                  </span>
+                </button>
+              )}
             </div>
           )}
         </div>

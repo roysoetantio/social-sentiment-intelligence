@@ -1,5 +1,5 @@
 import React from 'react'
-import { TrendingUp, AlertTriangle, Hash, Sun, Moon, LogOut, Tags, ChevronRight, BellOff, Users, Instagram, Facebook } from 'lucide-react'
+import { TrendingUp, AlertTriangle, Hash, Sun, Moon, LogOut, Tags, ChevronRight, BellOff, Users, Instagram, Facebook, Newspaper } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useDashboard } from '../context/DashboardContext'
 import { useAuth } from '../context/AuthContext'
@@ -48,12 +48,19 @@ export default function More() {
       </div>
 
       {/* Menu — viewers don't manage keywords */}
-      {(role !== 'viewer' || isSuperAdmin || showSocialFeed) && (
-        <div className="rounded-xl border border-hairline bg-surface-card overflow-hidden">
+      <div className="rounded-xl border border-hairline bg-surface-card overflow-hidden">
+          <button
+            onClick={() => navigate('/sources')}
+            className="w-full flex items-center gap-3 px-4 py-4 hover:bg-surface-strong transition-colors"
+          >
+            <Newspaper size={17} className="text-body flex-shrink-0" />
+            <span className="flex-1 text-sm text-left text-ink">Sources &amp; Coverage</span>
+            <ChevronRight size={15} className="text-muted" />
+          </button>
           {role !== 'viewer' && (
             <button
               onClick={() => navigate('/keywords')}
-              className="w-full flex items-center gap-3 px-4 py-4 hover:bg-surface-strong transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-4 border-t border-hairline hover:bg-surface-strong transition-colors"
             >
               <Tags size={17} className="text-body flex-shrink-0" />
               <span className="flex-1 text-sm text-left text-ink">Keyword Manager</span>
@@ -92,8 +99,7 @@ export default function More() {
               <ChevronRight size={15} className="text-muted" />
             </button>
           )}
-        </div>
-      )}
+      </div>
 
 {/* Settings */}
       <div>

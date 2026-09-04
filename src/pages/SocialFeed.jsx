@@ -97,18 +97,51 @@ function StatCard({ icon: Icon, label, value, sub, color = BRAND.primary }) {
   )
 }
 
-function TrendPill({ current, previous }) {
+// Below this, a percentage describes how little we published last period rather
+// than how we did this one — 3 posts to 44 reads as "+1367%". Same rule as the
+// KPI cards on the mentions side.
+const LOW_BASELINE = 5
+
+const fmtStat = (n) => (Number.isInteger(n) ? n.toLocaleString() : n.toFixed(1))
+
+/**
+ * Change against the previous window of equal length.
+ *
+ * The bare percentage never said what it was measured against, so the pill now
+ * carries both numbers and the dates on hover. `kind="rate"` keeps the
+ * percentage on a metric that is already a ratio, where a small previous value
+ * is a real value rather than a thin sample.
+ */
+function TrendPill({ current, previous, comparisonLabel, kind = 'count' }) {
   if (previous == null || previous === 0) return null
   const delta = ((current - previous) / previous) * 100
   const flat = Math.abs(delta) < 1
   const up = delta > 0
   const Icon = flat ? Minus : up ? ArrowUpRight : ArrowDownRight
   const color = flat ? '#787881' : up ? BRAND.positive : BRAND.negative
+  const thin = kind === 'count' && previous < LOW_BASELINE
+
+  const text = flat
+    ? 'flat'
+    : thin
+    ? `${fmtStat(previous)} → ${fmtStat(current)}`
+    : `${Math.abs(delta).toFixed(0)}%`
+
   return (
-    <span className="inline-flex items-center gap-0.5 text-xs font-medium" style={{ color }}>
-      <Icon size={13} />
-      {flat ? 'flat' : `${Math.abs(delta).toFixed(0)}%`}
-    </span>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="inline-flex items-center gap-0.5 text-xs font-medium cursor-help" style={{ color }}>
+          <Icon size={13} />
+          {text}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side="bottom" className="max-w-[15rem]">
+        <p className="font-semibold mb-0.5">{fmtStat(previous)} → {fmtStat(current)}</p>
+        <p className="text-muted leading-snug">
+          Compared with {comparisonLabel}, the period of the same length before this one.
+        </p>
+      </TooltipContent>
+    </Tooltip>
   )
 }
 
@@ -390,6 +423,18 @@ export default function SocialFeed({ platform = 'instagram' }) {
     }
   }, [posts, start, end, searchQuery])
 
+  const comparisonLabel = useMemo(() => {
+    const span = end - start
+    const from = new Date(start - span)
+    const to = new Date(start - 1)
+    const thisYear = new Date().getFullYear()
+    const needsYear = from.getFullYear() !== to.getFullYear() || from.getFullYear() !== thisYear
+    const opts = needsYear
+      ? { day: 'numeric', month: 'short', year: 'numeric' }
+      : { day: 'numeric', month: 'short' }
+    return `${from.toLocaleDateString('en-GB', opts)} – ${to.toLocaleDateString('en-GB', opts)}`
+  }, [start, end])
+
   const sorted = useMemo(() => {
     const list = [...windowed]
     switch (sort) {
@@ -493,11 +538,11 @@ export default function SocialFeed({ platform = 'instagram' }) {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard
           icon={cfg.Icon} label="Posts published" value={nf(totals.posts)}
-          sub={<TrendPill current={totals.posts} previous={totals.prevPosts} />}
+          sub={<TrendPill current={totals.posts} previous={totals.prevPosts} comparisonLabel={comparisonLabel} />}
         />
         <StatCard
           icon={Heart} label="Total engagements" value={nf(totals.engagements)} color={BRAND.mixed}
-          sub={<TrendPill current={totals.engagements} previous={totals.prevEngagements} />}
+          sub={<TrendPill current={totals.engagements} previous={totals.prevEngagements} comparisonLabel={comparisonLabel} />}
         />
         {/* Reach and the rate derived from it need insights. Where they are
             absent, show the two counts we do have rather than a pair of
@@ -506,22 +551,22 @@ export default function SocialFeed({ platform = 'instagram' }) {
           <>
             <StatCard
               icon={Users} label="Total reach" value={nf(totals.reach)} color={BRAND.neutral}
-              sub={<TrendPill current={totals.reach} previous={totals.prevReach} />}
+              sub={<TrendPill current={totals.reach} previous={totals.prevReach} comparisonLabel={comparisonLabel} />}
             />
             <StatCard
               icon={ArrowUpRight} label="Engagement rate" value={`${totals.rate.toFixed(1)}%`} color={BRAND.positive}
-              sub={<TrendPill current={totals.rate} previous={totals.prevRate} />}
+              sub={<TrendPill current={totals.rate} previous={totals.prevRate} comparisonLabel={comparisonLabel} kind="rate" />}
             />
           </>
         ) : (
           <>
             <StatCard
               icon={MessageCircle} label="Comments" value={nf(totals.comments)} color={BRAND.neutral}
-              sub={<TrendPill current={totals.comments} previous={totals.prevComments} />}
+              sub={<TrendPill current={totals.comments} previous={totals.prevComments} comparisonLabel={comparisonLabel} />}
             />
             <StatCard
               icon={Share2} label="Shares" value={nf(totals.shares)} color={BRAND.positive}
-              sub={<TrendPill current={totals.shares} previous={totals.prevShares} />}
+              sub={<TrendPill current={totals.shares} previous={totals.prevShares} comparisonLabel={comparisonLabel} />}
             />
           </>
         )}

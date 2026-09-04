@@ -1,64 +1,9 @@
 import { supabase } from '../lib/supabase'
+import { getOutletName } from '../utils/outlets'
 
-const DOMAIN_NAMES = {
-  'thestar.com.my': 'The Star',
-  'nst.com.my': 'New Straits Times',
-  'malaymail.com': 'Malay Mail',
-  'freemalaysiatoday.com': 'Free Malaysia Today',
-  'malaysiakini.com': 'Malaysiakini',
-  'theedgemalaysia.com': 'The Edge Malaysia',
-  'theedgemarkets.com': 'The Edge Markets',
-  'bernama.com': 'Bernama',
-  'sinchew.com.my': 'Sin Chew Daily',
-  'chinapress.com.my': 'China Press',
-  'orientaldaily.com.my': 'Oriental Daily',
-  'kwongwah.com.my': 'Kwong Wah',
-  'hmetro.com.my': 'Harian Metro',
-  'utusan.com.my': 'Utusan Malaysia',
-  'bharian.com.my': 'Berita Harian',
-  'astroawani.com': 'Astro Awani',
-  'businesstimes.com.sg': 'Business Times',
-  'straitstimes.com': 'The Straits Times',
-  'reuters.com': 'Reuters',
-  'bloomberg.com': 'Bloomberg',
-  'cnbc.com': 'CNBC',
-  'ft.com': 'Financial Times',
-  'wsj.com': 'Wall Street Journal',
-  'twitter.com': 'Twitter',
-  'x.com': 'X (Twitter)',
-  'linkedin.com': 'LinkedIn',
-  'youtube.com': 'YouTube',
-  'facebook.com': 'Facebook',
-  'instagram.com': 'Instagram',
-  'reddit.com': 'Reddit',
-  'klsescreener.com': 'KLSE Screener',
-  'i3investor.com': 'i3investor',
-  'investalks.com': 'InvestAlks',
-  'bursamalaysia.com': 'Bursa Malaysia',
-  'stocknews.com': 'StockNews',
-}
-
-const SOCIAL_DOMAINS = new Set(['twitter.com', 'x.com', 'linkedin.com', 'facebook.com', 'instagram.com', 'reddit.com', 'youtube.com'])
-
-export const isSocialUrl = (url) => {
-  try {
-    const hostname = new URL(url).hostname.replace(/^www\./, '')
-    return SOCIAL_DOMAINS.has(hostname)
-  } catch {
-    return false
-  }
-}
-
-const getSourceName = (url) => {
-  try {
-    const hostname = new URL(url).hostname.replace(/^www\./, '')
-    if (DOMAIN_NAMES[hostname]) return DOMAIN_NAMES[hostname]
-    const base = hostname.split('.')[0]
-    return base.charAt(0).toUpperCase() + base.slice(1)
-  } catch {
-    return 'Unknown'
-  }
-}
+// Outlet identity lives in utils/outlets.js — the leaderboard on the Overview
+// and this author fallback must resolve the same name for the same domain.
+export { isSocialUrl } from '../utils/outlets'
 
 const rowToMention = (row) => ({
   id: row.id,
@@ -68,7 +13,7 @@ const rowToMention = (row) => ({
   platform: row.platform,
   url: row.url || '#',
   author: {
-    name: row.author_name || getSourceName(row.url),
+    name: row.author_name || getOutletName(row.url),
     handle: row.author_handle || 'unknown',
     followers: row.author_followers || 0,
     verified: row.author_verified || false,

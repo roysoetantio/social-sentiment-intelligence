@@ -14,6 +14,7 @@ const DISCLAIMER_KEY = 'data_disclaimer_dismissed'
 const pageTitles = {
   '/': { full: 'Overview', short: 'Overview' },
   '/mentions': { full: 'Mentions Explorer', short: 'Mentions' },
+  '/sources': { full: 'Sources & Coverage', short: 'Sources' },
   '/analytics': { full: 'Sentiment Analytics', short: 'Analytics' },
   '/keywords': { full: 'Keyword Manager', short: 'Keywords' },
   // Sidebar already shows these sit under Social Feed; prefixing it here just

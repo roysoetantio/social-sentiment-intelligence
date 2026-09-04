@@ -24,7 +24,12 @@ export default function Login() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'azure',
       options: {
-        scopes: 'email openid profile',
+        // User.Read is the smallest scope that reaches Microsoft Graph, and it
+        // is user-consentable — it reads only the signed-in person's own
+        // profile photo. Reading colleagues' photos directly would need
+        // User.ReadBasic.All and an Entra admin's consent; instead each user
+        // deposits their own photo at login (see AuthContext).
+        scopes: 'email openid profile User.Read',
         redirectTo: window.location.origin,
       },
     })
