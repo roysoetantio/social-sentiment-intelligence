@@ -17,6 +17,7 @@ import {
 import { useDashboard } from '../../context/DashboardContext'
 import { useAuth } from '../../context/AuthContext'
 import { isAtRisk } from '../../constants/sentiment'
+import Avatar from '../common/Avatar'
 import { Select, SelectTrigger, SelectContent, SelectItem } from '@/components/ui/select'
 import clsx from 'clsx'
 
@@ -95,13 +96,17 @@ export default function Sidebar({ isOpen, onClose }) {
   const location = useLocation()
   const { globalFilteredMentions: filteredMentions } = useDashboard()
   const {
-    user, department, role, signOut,
+    user, profile, department, role, signOut,
     isSuperAdmin, viewDepartment, setViewDepartment, departments,
     currentDepartment,
   } = useAuth()
 
   const email = user?.email || ''
-  const initials = email.slice(0, 2).toUpperCase()
+  // The signed-in person, as the rest of the app draws them: the Microsoft photo
+  // harvested at login, else initials. This used to be a hand-rolled grey circle
+  // with `email.slice(0, 2)`, which showed no photo and disagreed with every
+  // other avatar in the app — "roy.soetantio" read RO here and RS everywhere else.
+  const me = { email, full_name: profile?.full_name, avatar_color: profile?.avatar_color, avatar_url: profile?.avatar_url }
   const roleLabel = ROLE_LABELS[role] || role
   // Non-super users show their department; super admins show just the role.
   const subLabel = isSuperAdmin ? roleLabel : [department, roleLabel].filter(Boolean).join(' · ')
@@ -262,11 +267,11 @@ export default function Sidebar({ isOpen, onClose }) {
 
       <div className="p-4 border-t border-hairline">
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-full bg-surface-strong flex items-center justify-center flex-shrink-0">
-            <span className="text-xs text-ink">{initials}</span>
-          </div>
+          <Avatar user={me} size={28} title={email} />
           <div className="min-w-0 flex-1">
-            <div className="text-[11px] text-ink truncate" title={email}>{email}</div>
+            <div className="text-[11px] text-ink truncate" title={email}>
+              {profile?.full_name?.trim() || email}
+            </div>
             <div className="text-[0.625rem] text-muted">
               {subLabel}
             </div>

@@ -121,7 +121,19 @@ export function AuthProvider({ children }) {
       }
       const name = cleanFullName(session.user)
       if (!name && !photo) return
-      await supabase.rpc('sync_my_profile', { p_full_name: name, p_avatar_url: photo })
+      const { error } = await supabase.rpc('sync_my_profile', { p_full_name: name, p_avatar_url: photo })
+      if (error) {
+        // eslint-disable-next-line no-console
+        console.warn('[auth] profile sync failed:', error.message)
+        return
+      }
+      // The profile row was read before this wrote, so reflect it now rather
+      // than making the user reload to see their own face.
+      setProfile(prev => (prev ? {
+        ...prev,
+        full_name: name || prev.full_name,
+        avatar_url: photo || prev.avatar_url,
+      } : prev))
     })()
   }, [session, profile])
 
